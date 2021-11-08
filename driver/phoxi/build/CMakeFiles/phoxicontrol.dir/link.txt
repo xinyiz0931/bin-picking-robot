@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC   -shared  -o ../phoxicontrol.cpython-36m-x86_64-linux-gnu.so CMakeFiles/phoxicontrol.dir/phoxicontrol.cpp.o -Wl,-rpath,/opt/Photoneo/PhoXiControl-1.4.1/API/lib /opt/Photoneo/PhoXiControl-1.4.1/API/lib/libPhoXi_API_gcc5.5.0_Release.so -lrt -flto 
