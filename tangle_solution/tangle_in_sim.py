@@ -93,8 +93,8 @@ def main():
     """Configurations defined by users"""
 
     # root_dir = "./vision/tmp/tangle_example_1"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\example_2"
-    shape = "c"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\example_1"
+    shape = "omega"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
