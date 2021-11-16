@@ -9,7 +9,7 @@ import math
 import random
 import numpy as np
 import itertools
-
+from sklearn import svm
 np.set_printoptions(suppress=True)
 np.seterr(divide='ignore', invalid='ignore')
 import matplotlib.pyplot as plt
@@ -122,10 +122,10 @@ class TopoCoor6D(object):
         # segments of both graphs
         graph = np.array(graph)
         n_obj = graph.shape[0]
-        avgh_collection = []
+        avhglist_collection = []
         for nodes in graph:
-            avgh_collection.append(np.mean(nodes[:1]))
-        return avgh_collection
+            avhglist_collection.append(np.mean(nodes[:1]))
+        return avhglist_collection
 
 
     def compute_writhe_matrix(self, node1, node2):
@@ -238,7 +238,7 @@ class TopoCoor6D(object):
         obj_collection = np.array(obj_collection)
 
         # get their heights
-        avgh = self.compute_avg_height(graph)
+        avhglist = self.compute_avg_height(graph)
         for i in range(n_obj):
             obj1 = obj_collection[i]
             for j in range(i + 1, n_obj):
@@ -251,9 +251,9 @@ class TopoCoor6D(object):
                 gli_mat[i][j] = gli_sum
                 # gli_mat[j][i] = gli_sum
                 distance = np.linalg.norm(pose[j] - pose[i])
-                diff_h = np.abs(avgh[i] - avgh[j])
+                diff_h = np.abs(avhglist[i] - avhglist[j])
                 singulated = self.check_overlap(root_dir, i, j)
-                # print("obj {}&{}: writhe={:.3f}, singulated?: {}, height=({:.3f}, {:.3f})".format(i, j, gli_sum, singulated, avgh[i], avgh[j]))
+                # print("obj {}&{}: writhe={:.3f}, singulated?: {}, height=({:.3f}, {:.3f})".format(i, j, gli_sum, singulated, avhglist[i], avhglist[j]))
 
         """start voting"""
         voting = np.zeros(n_obj)
@@ -272,18 +272,18 @@ class TopoCoor6D(object):
                     voting[i] -= 1
                     voting[j] -= 1
                 else:
-                    if avgh[i] > avgh[j]:
+                    if avhglist[i] > avhglist[j]:
                         voting[j] -= 1
                     else:
                         voting[i] -= 1
             else:
                 if overlapped == True:
-                    if avgh[i] > avgh[j]:
+                    if avhglist[i] > avhglist[j]:
                         voting[j] -= 1
                     else:
                         voting[i] -= 1
                 # else:
-                #     if avgh[i] > avgh[j]:
+                #     if avhglist[i] > avhglist[j]:
                 #         voting[j] -= 1
                 #     else:
                 #         voting[i] -= 1
@@ -316,5 +316,18 @@ class TopoCoor6D(object):
 
         # for (i,j) in itertools.combinations(range(n_obj),2):
         #     print(i,j)
-        return glilist
+
+        return glilist, avhglist
+    
+    def find_writhe_thre(self, glilist, avhglist):
+        X = glilist.reshape(-1,1)
+        Y = [int(h) for h in avhglist]
+    
+        clf = svm.SVC(decision_function_shape='ovo')
+        clf.fit(X, Y)
+        dec = clf.decision_function([[1]])
+        num_class = dec.shape[1] # 4 classes: 4*3/2 = 6
+        plt.scatter(glilist, avhglist, marker='o')
+        plt.show()
+        return
 

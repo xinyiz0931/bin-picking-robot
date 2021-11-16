@@ -94,7 +94,7 @@ def main():
 
     # root_dir = "./vision/tmp/tangle_example_1"
     root_dir = "D:\\code\\dataset\\tangle_in_sim\\example_1"
-    shape = "omega"
+    shape = "s"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
@@ -117,8 +117,14 @@ def main():
 
     graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
     num_obj = len(graph)
-    writhe_collection = tc6d.compute_tangleship(root_dir, graph, pose)
+    writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
+    result_print(f"Writhe: {writhe_collection}")
+    result_print(f"Height: {height_collection}")
 
+    plt.scatter(writhe_collection, height_collection, marker='o')
+    plt.show()
+
+    tc6d.find_writhe_thre(writhe_collection, height_collection)
     """visualize all objects and tangleship"""
     fig = plt.figure(figsize=(15, 6), )
     ax = fig.add_subplot(121, projection='3d')
@@ -147,7 +153,7 @@ def main():
     ax1.imshow(rot90, cmap='gray')
 
     # plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
