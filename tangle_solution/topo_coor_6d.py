@@ -327,7 +327,6 @@ class TopoCoor6D(object):
         clf.fit(X, Y)
         dec = clf.decision_function([[1]])
         num_class = dec.shape[1] # 4 classes: 4*3/2 = 6
-        plt.scatter(glilist, avhglist, marker='o')
-        plt.show()
+
         return
 

@@ -232,6 +232,7 @@ def rgba2rgb(rgba):
     g_ = int(g * a * 255)
     b_ = int(b * a* 255 )
     return(r_,g_,b_)
+    
 
 def rgb2hex(rgb):
     """(r,g,b) ===> hex
@@ -257,10 +258,14 @@ if __name__ == "__main__":
     for i in range(16):
         xs = i*50
         print(xs, 0)
+        
         color = rgba2rgb(cmap(i))
+        
         draw = cv2.rectangle(colorbar, (xs, 0), (xs+50,50), color, -1)
-    cv2.imwrite("./vision/res/colorbar.png", colorbar)
+    # cv2.imwrite("./vision/res/colorbar.png", colorbar)
     cv2.imshow("windows", draw)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
+    

@@ -93,15 +93,15 @@ def main():
     """Configurations defined by users"""
 
     # root_dir = "./vision/tmp/tangle_example_1"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\example_1"
-    shape = "s"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211117105909"
+    shape = "scylinder"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
     im_path = os.path.join(root_dir, "depth.png")
     pose_path = os.path.join(root_dir, "pose.txt")
-    sk_path = f"./objmodel/skeleton_{shape}shape.txt"
-    cd_path = f"./objmodel/vhacd_{shape}shape.txt"
+    sk_path = f"./objmodel/skeleton_{shape}.txt"
+    cd_path = f"./objmodel/collision_{shape}.txt"
 
     with open(cd_path) as file:
         vhacd = file.readlines()
@@ -112,9 +112,7 @@ def main():
     pose = np.loadtxt(pose_path)
     template = np.loadtxt(sk_path, delimiter=',')
 
-
     """compute tangleship"""
-
     graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
     num_obj = len(graph)
     writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
@@ -125,6 +123,7 @@ def main():
     plt.show()
 
     tc6d.find_writhe_thre(writhe_collection, height_collection)
+
     """visualize all objects and tangleship"""
     fig = plt.figure(figsize=(15, 6), )
     ax = fig.add_subplot(121, projection='3d')
@@ -152,8 +151,8 @@ def main():
     rot90 = cv2.rotate(im, cv2.ROTATE_90_COUNTERCLOCKWISE)
     ax1.imshow(rot90, cmap='gray')
 
-    # plt.tight_layout()
-    # plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
