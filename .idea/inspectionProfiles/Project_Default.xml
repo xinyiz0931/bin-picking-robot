@@ -1,0 +1,27 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="14">
+            <item index="0" class="java.lang.String" itemvalue="opencv-contrib-python" />
+            <item index="1" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="2" class="java.lang.String" itemvalue="panda3d" />
+            <item index="3" class="java.lang.String" itemvalue="pycollada" />
+            <item index="4" class="java.lang.String" itemvalue="pandas" />
+            <item index="5" class="java.lang.String" itemvalue="scikit-image" />
+            <item index="6" class="java.lang.String" itemvalue="seaborn" />
+            <item index="7" class="java.lang.String" itemvalue="tensorflow-probability" />
+            <item index="8" class="java.lang.String" itemvalue="open3d" />
+            <item index="9" class="java.lang.String" itemvalue="grpcio" />
+            <item index="10" class="java.lang.String" itemvalue="plotly" />
+            <item index="11" class="java.lang.String" itemvalue="grpcio-tools" />
+            <item index="12" class="java.lang.String" itemvalue="pybind11" />
+            <item index="13" class="java.lang.String" itemvalue="tensorflow-gpu" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

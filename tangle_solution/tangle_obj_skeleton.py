@@ -61,22 +61,26 @@ class TangleObjSke(object):
         """
         node = np.array(graph["node"])
         edge = graph["edge"]
+
+        fp = open(de_obj_path, 'wt')
+
         if graph["section"]["shape"] == "circle":
             radius = graph["section"]["size"] 
             cx = radius
             cz = radius
-
+        elif graph["section"]["shape"] == "rectangle":
+            cx, cz = graph["section"]["size"] 
         # fit cube to each edge
         cube_num = len(edge)
         # center of mass
         com = self.calc_center_of_mass(graph)
         result_print(com)
         
-        fp = open(de_obj_path, 'wt')
+        
         print(" ".join(str(c_) for c_ in com), file=fp)
         print(f"{cube_num}",file=fp)
         cube_primitive = [0,1,0]
-        cube_quat_primitive = [0, 0.383, 0, 0.924]
+        cube_quat_primitive = [0,0,0,1]
 
         for (i,j) in edge:
             # 1. pre cube size
@@ -89,9 +93,7 @@ class TangleObjSke(object):
                 cq = cube_quat_primitive # y-axis rotate 45
                 c_rot_mat = quat2mat(cube_quat_primitive)
             else:
-                c_rot_mat_ = calc_2vectors_rot_mat(cube_primitive, (node[j] - node[i]))
-                # c_rot_mat = np.dot(quat2mat(cube_quat_primitive), c_rot_mat_)
-                c_rot_mat = c_rot_mat_
+                c_rot_mat = calc_2vectors_rot_mat(cube_primitive, (node[j] - node[i]))
                 cq = mat2quat(c_rot_mat)
 
             result_print(f"{angle_}, {cq}")
@@ -102,14 +104,18 @@ class TangleObjSke(object):
             print(" ".join(str(r_) for r_ in c_rot_mat[0]), file=fp)
             print(" ".join(str(r_) for r_ in c_rot_mat[1]), file=fp)
             print(" ".join(str(r_) for r_ in c_rot_mat[2]), file=fp)
+
         fp.close()
-        main_proc_print("Wrote collision file ... ")
+        main_proc_print("Wrote collision file... ")
         
 
 def main():
-    shape = "c"
-    write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
-    collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
+    shape = "e"
+
+    # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
+    # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
+    write_path = f"./objmodel\\skeleton_{shape}.json"
+    collision_path = f"./objmodel\\collision_{shape}.txt"
 
     tok = TangleObjSke()
     obj_ske = tok.load_obj(write_path)
@@ -118,17 +124,7 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
     tok.draw_obj_skeleton(obj_ske, ax, "green")
     center = tok.calc_center_of_mass(obj_ske)
-    # ax.scatter(6.851385, 44.217125, 0.049613, color='yellow')
-    # ax.scatter(-14.215794, 38.544395, -0.398793, color='blue')
-    
-    # ax.scatter(18.991620, 27.768131, -0.217553, color='orange')
-    # ax.scatter(8.993156, 9.271059, -0.126416, color='red')
-
-    # ax.scatter(-12.407321, -14.762445, -0.605640, color='red')
-    # ax.scatter(-18.287871, -33.620076 -0.006043, color='red')
-    
-    # ax.scatter(13.911091, -41.262149, -0.176262, color='red')
-    # ax.scatter(-5.997198, -47.407928, -0.262695, color='red')
+    ax.scatter(center[0], center[1], center[2], color='red')
     plt.show()
 
     tok.decompose_obj(obj_ske, collision_path)
