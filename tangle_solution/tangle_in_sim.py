@@ -8,12 +8,14 @@ from scipy import ndimage
 import cv2
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.cluster import KMeans
 from scipy.spatial.transform import Rotation as R
 import itertools
 import glob
 from utils.plot_utils import plot_subfigures, get_cmap
 from utils.base_utils import *
 from tangle_solution.topo_coor_6d import TopoCoor6D
+from tangle_obj_skeleton import TangleObjSke
 
 def read_model():
     objmodel_dir = "./objmodel"
@@ -93,14 +95,14 @@ def main():
     """Configurations defined by users"""
 
     # root_dir = "./vision/tmp/tangle_example_1"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211117105909"
-    shape = "scylinder"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119130946"
+    shape = "u"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
     im_path = os.path.join(root_dir, "depth.png")
     pose_path = os.path.join(root_dir, "pose.txt")
-    sk_path = f"./objmodel/skeleton_{shape}.txt"
+    sk_path = f"./objmodel/skeleton_{shape}.json"
     cd_path = f"./objmodel/collision_{shape}.txt"
 
     with open(cd_path) as file:
@@ -110,46 +112,67 @@ def main():
     cube1_pos = np.array([float(p) for p in vhacd[3].split(' ')])
 
     pose = np.loadtxt(pose_path)
-    template = np.loadtxt(sk_path, delimiter=',')
+
+    tok = TangleObjSke()
+    obj_ske = tok.load_obj(sk_path)
+    
+    template = np.array(obj_ske["node"])
 
     """compute tangleship"""
     graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
     num_obj = len(graph)
     writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
+
     result_print(f"Writhe: {writhe_collection}")
     result_print(f"Height: {height_collection}")
 
-    plt.scatter(writhe_collection, height_collection, marker='o')
+    """clustering algorithm"""
+
+    clustering_array = np.concatenate([writhe_collection, height_collection])
+    clustering_array = (np.reshape(clustering_array, (2,num_obj))).T
+
+    kmeans = KMeans(n_clusters=4, random_state=0).fit(clustering_array)
+    result_print(f"Clustering result: {kmeans.labels_}")
+
     plt.show()
 
     tc6d.find_writhe_thre(writhe_collection, height_collection)
 
     """visualize all objects and tangleship"""
-    fig = plt.figure(figsize=(15, 6), )
-    ax = fig.add_subplot(121, projection='3d')
-    ax.view_init(167, -87)
+    fig = plt.figure(figsize=(15, 6))
+    ax3d = fig.add_subplot(132, projection='3d')
+    ax3d.view_init(167, -87)
+
+    ax1 = fig.add_subplot(131)
 
     sorted_index = list(range(num_obj))
     cmap = get_cmap(len(sorted_index))
     for i, j in zip(sorted_index, range(num_obj)):
         node = graph[i]
         node_cmap = cmap(j)
-        ax = tc6d.draw_node(node, ax, alpha=1, color=node_cmap)
+        ax1.scatter(clustering_array[j][0],clustering_array[j][1], marker='o', color=node_cmap)
+        ax1.text(clustering_array[j][0],clustering_array[j][1]+2, str(kmeans.labels_[j]), bbox=dict(boxstyle="round",ec=(1., 0.5, 0.5),fc=(1., 0.8, 0.8),))
+        ax = tc6d.draw_node(node, ax3d, alpha=1, color=node_cmap)
 
-    ax.plot([0, 10], [0, 0], [0, 0], color='red')
-    ax.plot([0, 0], [0, 10], [0, 0], color='green')
-    ax.plot([0, 1], [0, 0], [0, 10], color='blue')
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    ax.set_xlim3d(-100, 100)
-    ax.set_ylim3d(-100, 100)
-    ax.set_zlim3d(-100, 100)
+    plt.xlabel("writhe")
+    plt.ylabel("height")
 
-    ax1 = fig.add_subplot(122)
+    ax3d.plot([0, 10], [0, 0], [0, 0], color='red')
+    ax3d.plot([0, 0], [0, 10], [0, 0], color='green')
+    ax3d.plot([0, 1], [0, 0], [0, 10], color='blue')
+    ax3d.set_xlabel('X Label')
+    ax3d.set_ylabel('Y Label')
+    ax3d.set_zlabel('Z Label')
+    ax3d.set_xlim3d(-100, 100)
+    ax3d.set_ylim3d(-100, 100)
+    ax3d.set_zlim3d(-100, 100)
+
+
+
+    ax2 = fig.add_subplot(133)
     im = cv2.imread(im_path)
     rot90 = cv2.rotate(im, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    ax1.imshow(rot90, cmap='gray')
+    ax2.imshow(rot90, cmap='gray')
 
     plt.tight_layout()
     plt.show()

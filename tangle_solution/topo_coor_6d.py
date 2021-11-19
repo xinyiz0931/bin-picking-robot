@@ -56,7 +56,7 @@ class TopoCoor6D(object):
 
         w = np.arcsin(np.dot(n_a, n_b)) + np.arcsin(np.dot(n_b, n_c)) + np.arcsin(np.dot(n_c, n_d)) + np.arcsin(
             np.dot(n_d, n_a))
-        return np.nan_to_num(w)
+        return np.nan_to_num(w)/(4*math.pi)
     
     def node2edge(self, node):
         """
@@ -173,7 +173,7 @@ class TopoCoor6D(object):
 
     def transfer_sim_pos(self, node, p, q, center, cube1_pos):
         trans = center - cube1_pos
-        m = quaternion2mat(q)
+        m = quat2mat(q)
         trans_ = np.array([np.dot(trans, m[0]), np.dot(trans, m[1]), np.dot(trans, m[2])])
         p += trans_
         return rotate_3d(node, m) + p
@@ -186,7 +186,7 @@ class TopoCoor6D(object):
             pos = v[0:3]
             qua = v[3:7]
             # translation P, rotation R
-            rot = quaternion2mat(qua)
+            rot = quat2mat(qua)
             P = pos - cube1_pos
             rot_ori = pos
             node = self.transfer_sim_pos(node, pos, qua, center, cube1_pos)
@@ -312,7 +312,7 @@ class TopoCoor6D(object):
         else:
             """one obj has no negative voting, picking it up"""
             pick_obj = vrow[voting == 0][0]
-            print(f"Pick obj.{pick_obj}")
+            result_print(f"Pick obj.{pick_obj}")
 
         # for (i,j) in itertools.combinations(range(n_obj),2):
         #     print(i,j)
