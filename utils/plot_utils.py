@@ -9,7 +9,6 @@ import matplotlib.colors as colors
 import cv2
 # from utils.image_proc_utils import adjust_array_range, adjust_grayscale
 
-
 def plot_values(V):
     # reshape value function
     V_sq = np.reshape(V, (4, 4))

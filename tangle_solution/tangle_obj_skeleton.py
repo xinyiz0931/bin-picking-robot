@@ -1,4 +1,3 @@
-
 import os
 import sys
 sys.path.append("./")
@@ -73,7 +72,6 @@ class TangleObjSke(object):
         cube_num = len(edge)
         # center of mass
         com = self.calc_center_of_mass(graph)
-        result_print(com)
         
         
         print(" ".join(str(c_) for c_ in com), file=fp)
@@ -94,8 +92,6 @@ class TangleObjSke(object):
             else:
                 c_rot_mat = calc_2vectors_rot_mat(cube_primitive, (node[j] - node[i]))
                 cq = mat2quat(c_rot_mat)
-
-            result_print(f"{angle_}, {cq}")
             # write to file
             print(f"{cx/2} {cy/2} {cz/2}",file=fp)
             print(" ".join(str(p_) for p_ in cp), file=fp)
@@ -113,7 +109,7 @@ def main():
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
-    
+
     write_path = f"./objmodel\\skeleton_{shape}.json"
     collision_path = f"./objmodel\\collision_{shape}.txt"
 

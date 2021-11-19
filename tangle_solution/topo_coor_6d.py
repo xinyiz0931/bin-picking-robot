@@ -15,7 +15,7 @@ np.seterr(divide='ignore', invalid='ignore')
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from utils.base_utils import *
-from utils.image_proc_utils import *
+from utils.vision_utils import *
 from utils.plot_utils import *
             
 class TopoCoor6D(object):
@@ -227,7 +227,7 @@ class TopoCoor6D(object):
         graph = np.array(graph)
         n_obj = graph.shape[0]
         n_seg = graph.shape[1]
-        result_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
+        main_proc_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
         obj_collection = []
 
         gli_mat = np.zeros((n_obj, n_obj))
@@ -252,67 +252,68 @@ class TopoCoor6D(object):
                 # gli_mat[j][i] = gli_sum
                 distance = np.linalg.norm(pose[j] - pose[i])
                 diff_h = np.abs(avhglist[i] - avhglist[j])
-                singulated = self.check_overlap(root_dir, i, j)
+                # singulated = self.check_overlap(root_dir, i, j)
                 # print("obj {}&{}: writhe={:.3f}, singulated?: {}, height=({:.3f}, {:.3f})".format(i, j, gli_sum, singulated, avhglist[i], avhglist[j]))
-
-        """start voting"""
-        voting = np.zeros(n_obj)
-        eliminate_mat = gli_mat
-        vrow = np.array(range(n_obj))
-        pair_list = list(itertools.combinations(range(n_obj), 2))
-        gli_thre = 0.5
-
-        random.shuffle(pair_list)
-        for p in pair_list:
-            i, j = p
-            main_proc_print("Analyzing obj ({}, {}): gli = {:.3f} ...".format(i, j, gli_mat[i][j]))
-            overlapped = self.check_overlap(root_dir, i, j)  # true for overlap
-            if gli_mat[i][j] >= gli_thre:
-                if overlapped == True:
-                    voting[i] -= 1
-                    voting[j] -= 1
-                else:
-                    if avhglist[i] > avhglist[j]:
-                        voting[j] -= 1
-                    else:
-                        voting[i] -= 1
-            else:
-                if overlapped == True:
-                    if avhglist[i] > avhglist[j]:
-                        voting[j] -= 1
-                    else:
-                        voting[i] -= 1
-                # else:
-                #     if avhglist[i] > avhglist[j]:
-                #         voting[j] -= 1
-                #     else:
-                #         voting[i] -= 1
-        result_print(f"Current voting list: {voting}")
         glilist = (gli_mat + gli_mat.T).sum(axis=1)
-        if (voting < 0).all():
-            """all < 0 -> select from writhe list, including dragging/sliding"""
-            pick_obj = np.argmin(glilist)
-            main_proc_print(f"Check obj.{pick_obj} tangleship...")
-            pair_list_move = []
-            wmat_list = []
-            wval_list = []
-            for i in vrow:
-                if i != pick_obj: pair_list_move.append((pick_obj, i))
+        """start voting"""
+        # abandoned voting algorithm
+        # voting = np.zeros(n_obj)
+        # eliminate_mat = gli_mat
+        # vrow = np.array(range(n_obj))
+        # pair_list = list(itertools.combinations(range(n_obj), 2))
+        # gli_thre = 0.5
 
-            for p in pair_list_move:
-                (i, j) = p
-                wmat = self.compute_writhe_matrix(graph, i, j)
-                wmat_list.append(wmat)
-                wval_list.append(np.sum(wmat))
+        # random.shuffle(pair_list)
+        # for p in pair_list:
+        #     i, j = p
+        #     main_proc_print("Analyzing obj ({}, {}): gli = {:.3f} ...".format(i, j, gli_mat[i][j]))
+        #     overlapped = self.check_overlap(root_dir, i, j)  # true for overlap
+        #     if gli_mat[i][j] >= gli_thre:
+        #         if overlapped == True:
+        #             voting[i] -= 1
+        #             voting[j] -= 1
+        #         else:
+        #             if avhglist[i] > avhglist[j]:
+        #                 voting[j] -= 1
+        #             else:
+        #                 voting[i] -= 1
+        #     else:
+        #         if overlapped == True:
+        #             if avhglist[i] > avhglist[j]:
+        #                 voting[j] -= 1
+        #             else:
+        #                 voting[i] -= 1
+        #         # else:
+        #         #     if avhglist[i] > avhglist[j]:
+        #         #         voting[j] -= 1
+        #         #     else:
+        #         #         voting[i] -= 1
+        # result_print(f"Current voting list: {voting}")
+        
+        # if (voting < 0).all():
+        #     """all < 0 -> select from writhe list, including dragging/sliding"""
+        #     pick_obj = np.argmin(glilist)
+        #     main_proc_print(f"Check obj.{pick_obj} tangleship...")
+        #     pair_list_move = []
+        #     wmat_list = []
+        #     wval_list = []
+        #     for i in vrow:
+        #         if i != pick_obj: pair_list_move.append((pick_obj, i))
 
-            # visualize all writhe matrix of obj i
-            fig2 = plot_subfigures(wmat_list, max_ncol=5)
-            (_, avoid_obj) = pair_list_move[wval_list.index(max(wval_list))]
-            result_print(f"Drag obj.{pick_obj} far away from obj.{avoid_obj}...")
-        else:
-            """one obj has no negative voting, picking it up"""
-            pick_obj = vrow[voting == 0][0]
-            result_print(f"Pick obj.{pick_obj}")
+        #     for p in pair_list_move:
+        #         (i, j) = p
+        #         wmat = self.compute_writhe_matrix(graph, i, j)
+        #         wmat_list.append(wmat)
+        #         wval_list.append(np.sum(wmat))
+
+        #     # visualize all writhe matrix of obj i
+        #     fig2 = plot_subfigures(wmat_list, max_ncol=5)
+        #     (_, avoid_obj) = pair_list_move[wval_list.index(max(wval_list))]
+        #     result_print(f"Drag obj.{pick_obj} far away from obj.{avoid_obj}...")
+        # else:
+        #     """one obj has no negative voting, picking it up"""
+        #     pick_obj = vrow[voting == 0][0]
+        #     result_print(f"Pick obj.{pick_obj}")
 
         # for (i,j) in itertools.combinations(range(n_obj),2):
         #     print(i,j)

@@ -228,6 +228,55 @@ def xyz2depth(gray_array, max_distance, min_distance, img_width, img_height):
     # cv2.destroyAllWindows()
     return img_adjusted
 
+def process_raw_pc(pcd_path):
+    pcd = o3d.io.read_point_cloud(pcd_path)
+    # o3d.visualization.draw_geometries([pcd])
+
+    xyz = np.asarray(pcd.points)
+    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+
+    pc_path = "./vision/tmp/reform.ply"
+    o3d.io.write_point_cloud(pc_path, pcd)
+    re_pcd = o3d.io.read_point_cloud(pc_path)
+    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
+
+    re_xyz = np.asarray(down_pcd.points)
+    return (re_xyz)
+
+
+def process_raw_xyz(xyz_path):
+    xyz = np.loadtxt(xyz_path)
+    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+
+    pc_path = "./vision/tmp/reform.ply"
+    o3d.io.write_point_cloud(pc_path, pcd)
+    re_pcd = o3d.io.read_point_cloud(pc_path)
+    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
+
+    re_xyz = np.asarray(down_pcd.points)
+    return (re_xyz)
+
+def reform_xyz(xyz):
+    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+
+    pc_path = "./vision/tmp/reform.ply"
+    o3d.io.write_point_cloud(pc_path, pcd)
+    re_pcd = o3d.io.read_point_cloud(pc_path)
+    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
+
+    re_xyz = np.asarray(down_pcd.points)
+    return (re_xyz)
+
+
 
 if __name__ == "__main__":
 

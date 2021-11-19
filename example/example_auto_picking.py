@@ -23,7 +23,7 @@ from motion.motion_generator import Motion
 import learning.predictor.predict_client as pdclt
 from utils.base_utils import *
 from utils.calib_utils import *
-from utils.image_proc_utils import *
+from utils.vision_utils import *
 
 def main():
     main_proc_print("Start! ")

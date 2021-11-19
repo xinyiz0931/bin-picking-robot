@@ -12,7 +12,7 @@ from sklearn.cluster import KMeans
 from scipy.spatial.transform import Rotation as R
 import itertools
 import glob
-from utils.plot_utils import plot_subfigures, get_cmap
+from utils.plot_utils import *
 from utils.base_utils import *
 from tangle_solution.topo_coor_6d import TopoCoor6D
 from tangle_obj_skeleton import TangleObjSke
@@ -40,62 +40,13 @@ def read_model():
 
     result_print("w: {:.5}, d: {:.5}".format(w,d))
 
-def process_raw_pc(pcd_path):
-    pcd = o3d.io.read_point_cloud(pcd_path)
-    # o3d.visualization.draw_geometries([pcd])
-
-    xyz = np.asarray(pcd.points)
-    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
-
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(xyz)
-
-    pc_path = "./vision/tmp/reform.ply"
-    o3d.io.write_point_cloud(pc_path, pcd)
-    re_pcd = o3d.io.read_point_cloud(pc_path)
-    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
-
-    re_xyz = np.asarray(down_pcd.points)
-    return (re_xyz)
-
-
-def process_raw_xyz(xyz_path):
-    xyz = np.loadtxt(xyz_path)
-    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
-
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(xyz)
-
-    pc_path = "./vision/tmp/reform.ply"
-    o3d.io.write_point_cloud(pc_path, pcd)
-    re_pcd = o3d.io.read_point_cloud(pc_path)
-    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
-
-    re_xyz = np.asarray(down_pcd.points)
-    return (re_xyz)
-
-def reform_xyz(xyz):
-    xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
-
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(xyz)
-
-    pc_path = "./vision/tmp/reform.ply"
-    o3d.io.write_point_cloud(pc_path, pcd)
-    re_pcd = o3d.io.read_point_cloud(pc_path)
-    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
-
-    re_xyz = np.asarray(down_pcd.points)
-    return (re_xyz)
-
 def main():
     
     tc6d = TopoCoor6D()
 
     """Configurations defined by users"""
 
-    # root_dir = "./vision/tmp/tangle_example_1"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119130946"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211119180424"
     shape = "u"
     graph = []
 
@@ -123,27 +74,40 @@ def main():
     num_obj = len(graph)
     writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
 
-    result_print(f"Writhe: {writhe_collection}")
-    result_print(f"Height: {height_collection}")
+    result_print(f"Writhe: {np.round(writhe_collection, 3)}")
+    result_print(f"Height: {np.round(height_collection, 3)}")
 
     """clustering algorithm"""
 
     clustering_array = np.concatenate([writhe_collection, height_collection])
     clustering_array = (np.reshape(clustering_array, (2,num_obj))).T
 
-    kmeans = KMeans(n_clusters=4, random_state=0).fit(clustering_array)
+    kmeans = KMeans(n_clusters=2, random_state=0).fit(clustering_array)
     result_print(f"Clustering result: {kmeans.labels_}")
 
     plt.show()
 
-    tc6d.find_writhe_thre(writhe_collection, height_collection)
+    # tc6d.find_writhe_thre(writhe_collection, height_collection)
 
     """visualize all objects and tangleship"""
-    fig = plt.figure(figsize=(15, 6))
+    fig = plt.figure(figsize=(15, 5))
     ax3d = fig.add_subplot(132, projection='3d')
     ax3d.view_init(167, -87)
+    # plot axis
+    ax3d.plot([0, 10], [0, 0], [0, 0], color='red')
+    ax3d.plot([0, 0], [0, 10], [0, 0], color='green')
+    ax3d.plot([0, 1], [0, 0], [0, 10], color='blue')
+    ax3d.set_xlim3d(-100, 100)
+    ax3d.set_ylim3d(-100, 100)
+    ax3d.set_zlim3d(-100, 100)
+    ax3d.set_xticklabels([])
+    ax3d.set_yticklabels([])
+    ax3d.set_zticklabels([])
+    plt.title("3D coordinate")
+    
 
     ax1 = fig.add_subplot(131)
+    plt.title("Writhe-height relationship")
 
     sorted_index = list(range(num_obj))
     cmap = get_cmap(len(sorted_index))
@@ -157,22 +121,11 @@ def main():
     plt.xlabel("writhe")
     plt.ylabel("height")
 
-    ax3d.plot([0, 10], [0, 0], [0, 0], color='red')
-    ax3d.plot([0, 0], [0, 10], [0, 0], color='green')
-    ax3d.plot([0, 1], [0, 0], [0, 10], color='blue')
-    ax3d.set_xlabel('X Label')
-    ax3d.set_ylabel('Y Label')
-    ax3d.set_zlabel('Z Label')
-    ax3d.set_xlim3d(-100, 100)
-    ax3d.set_ylim3d(-100, 100)
-    ax3d.set_zlim3d(-100, 100)
-
-
-
     ax2 = fig.add_subplot(133)
     im = cv2.imread(im_path)
     rot90 = cv2.rotate(im, cv2.ROTATE_90_COUNTERCLOCKWISE)
     ax2.imshow(rot90, cmap='gray')
+    plt.title("Depth image")
 
     plt.tight_layout()
     plt.show()
