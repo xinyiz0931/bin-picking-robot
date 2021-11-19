@@ -5,7 +5,6 @@ sys.path.append("./")
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-
 from utils.plot_utils import plot_subfigures, get_cmap
 from utils.base_utils import *
 
@@ -114,6 +113,7 @@ def main():
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
+    
     write_path = f"./objmodel\\skeleton_{shape}.json"
     collision_path = f"./objmodel\\collision_{shape}.txt"
 

@@ -1,3 +1,5 @@
+import colorama
+colorama.init()
 from termcolor import colored, cprint
 import numpy as np
 import math
