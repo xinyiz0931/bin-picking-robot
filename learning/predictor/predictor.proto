@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+service Predictor {
+    rpc predict (Grasp) returns (Action) {}
+}
+
+message Grasp {
+    string imgpath = 1;
+    bytes grasps = 2;
+}
+message Action {
+    int32 action = 1;
+    int32 graspno = 2;
+}

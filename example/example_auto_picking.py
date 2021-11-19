@@ -2,10 +2,6 @@ import os
 import sys
 import math
 import random
-from numpy.core.numeric import full
-
-from numpy.lib.type_check import _imag_dispatcher
-
 # execute the script from the root directory etc. ~/src/myrobot
 sys.path.append("./")
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
@@ -22,7 +18,7 @@ from grasp.graspability import Gripper, Graspability
 from motion.motion_generator import Motion
 import learning.predictor.predict_client as pdclt
 from utils.base_utils import *
-from utils.calib_utils import *
+from utils.transform_util import *
 from utils.vision_utils import *
 
 def main():

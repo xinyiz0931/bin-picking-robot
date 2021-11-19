@@ -11,7 +11,7 @@ import timeit
 sys.path.append("./")
 import motion.motion_generator as mg
 from utils.base_utils import warning_print
-from utils.image_proc_utils import *
+from utils.vision_utils import *
 
 import cv2
 import numpy as np
@@ -266,7 +266,7 @@ class Graspability(object):
         
         return candidates
 
-    def grasp_detection(self, candidates, w, h, n, _dismiss=50, _distance=100):
+    def grasp_detection(self, candidates, w, h, n=10, _dismiss=50, _distance=50):
         """Detect grasp with graspability
 
         Arguments:
@@ -282,40 +282,35 @@ class Graspability(object):
             [list] -- a list of executable including [g,x,y,z,a,rot_step, depth_step]
         """
 
-        candidates.sort(key=self.takefirst, reverse=True)
+        # candidates.sort(key=self.takefirst, reverse=True)
         i = 0
+        k = 0
         grasps = []
         # print("Computing grasps! ")
         if len(candidates) < n:
             n = len(candidates)
         # while (len(candidates) and i <= n):
-        while (len(candidates) and i <=n):
-
+        while (len(candidates) and i < n):
             x = candidates[i][1]
             y = candidates[i][2]
             ## consider dismiss/distance to rank grasp candidates
             if (_dismiss < x) and (x < w-_dismiss) and (_dismiss < y) and (y < h-_dismiss):
+            # if (x < w-_dismiss) and (y < h-_dismiss):
                 if grasps == []:
                     grasps.append(candidates[i])
+                    k += 1
                 else:
                     # check the distance of this candidate and all others 
                     g_array = np.array(grasps)
                     x_array = (np.ones(len(grasps)))*x
                     y_array = (np.ones(len(grasps)))*y
-                    _d_array = (np.ones(len(grasps)))*_dismiss
+                    _d_array = (np.ones(len(grasps)))*_distance
                     if ((x_array - g_array[:,1])**2+(y_array - g_array[:,2])**2 > _d_array**2).all():
                         grasps.append(candidates[i])
-
+                        k += 1
             i += 1
-            if len(grasps)>5:
+            if k > n:
                 break
-
-        if grasps == []:
-            # print("Grasp detection failed! Only select grasps ranked with graspability!")
-            grasps = candidates[:n]
-        if candidates == []:
-            # print("Grasp detection failed! No grasps!")
-            grasps = []
         return grasps
 
 if __name__ == "__main__":
