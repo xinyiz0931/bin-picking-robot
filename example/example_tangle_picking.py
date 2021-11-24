@@ -17,10 +17,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
 from example.bin_picking import *
-from grasp.graspability import Gripper, Graspability
+from grasping.graspability import Gripper, Graspability
 from tangle_solution.topo_coor import LineDetection
 from tangle_solution.entanglement_map import EntanglementMap
-
 
 from utils.base_utils import *
 from utils.transform_util import *

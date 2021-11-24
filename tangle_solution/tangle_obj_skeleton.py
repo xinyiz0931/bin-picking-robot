@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils.plot_utils import plot_subfigures, get_cmap
 from utils.base_utils import *
+from utils.transform_utils import *
 
 class TangleObjSke(object):
     def __init__(self):
@@ -105,7 +106,7 @@ class TangleObjSke(object):
         
 
 def main():
-    shape = "e"
+    shape = "scylindertwist"
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"

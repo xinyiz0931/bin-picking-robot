@@ -9,7 +9,7 @@ import math
 import random
 import numpy as np
 import itertools
-from sklearn import svm
+
 np.set_printoptions(suppress=True)
 np.seterr(divide='ignore', invalid='ignore')
 import matplotlib.pyplot as plt
@@ -17,6 +17,7 @@ from scipy import ndimage
 from utils.base_utils import *
 from utils.vision_utils import *
 from utils.plot_utils import *
+from utils.transform_utils import *
             
 class TopoCoor6D(object):
     def __init__(self, this=0):
@@ -29,7 +30,7 @@ class TopoCoor6D(object):
 
     def gli_original(self, line1, line2):
         """
-        Calculate Gaussian link integral in a simple way
+        Calculate Gaussian link integral in a geometrical way
         Input: two line segment line = [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z]
         output: w [float]
         """
@@ -39,10 +40,13 @@ class TopoCoor6D(object):
         c = np.array([line2[0], line2[1], line2[2]])
         d = np.array([line2[3], line2[4], line2[5]])
 
+        r_ab = b - a
+        r_cd = d - c
         r_ac = c - a
         r_ad = d - a
         r_bc = c - b
         r_bd = d - b
+        
 
         c_ac_ad = self.cross_product(r_ac, r_ad)
         c_ad_bd = self.cross_product(r_ad, r_bd)
@@ -54,9 +58,27 @@ class TopoCoor6D(object):
         n_c = c_bd_bc / np.linalg.norm(c_bd_bc)
         n_d = c_bc_ac / np.linalg.norm(c_bc_ac)
 
-        w = np.arcsin(np.dot(n_a, n_b)) + np.arcsin(np.dot(n_b, n_c)) + np.arcsin(np.dot(n_c, n_d)) + np.arcsin(
-            np.dot(n_d, n_a))
-        return np.nan_to_num(w)/(4*math.pi)
+        w = (np.arcsin(np.dot(n_a, n_b)) + np.arcsin(np.dot(n_b, n_c)) + np.arcsin(np.dot(n_c, n_d)) + np.arcsin(
+            np.dot(n_d, n_a)))/(4*math.pi)
+
+        return np.nan_to_num(w)
+    
+    def gli_sign(self, line1, line2):
+        """
+        Calculate the sign of Gaussian link integral in a geometrical way
+        Input: two line segment line = [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z]
+        output: s[bool]
+        """
+        a = np.array([line1[0], line1[1], line1[2]])
+        b = np.array([line1[3], line1[4], line1[5]])
+
+        c = np.array([line2[0], line2[1], line2[2]])
+        d = np.array([line2[3], line2[4], line2[5]])
+
+        r_ab = b - a
+        r_cd = d - c
+        r_ac = c - a
+        return np.sign(np.dot(self.cross_product(r_cd, r_ab), r_ac))
     
     def node2edge(self, node):
         """
@@ -70,12 +92,64 @@ class TopoCoor6D(object):
         for i in range(num - 1):
             edge_collection = np.append(edge_collection, [node[i], node[i + 1]])
         return edge_collection.reshape(num - 1, 6)
-    def draw_node(self, node, draw_ax, color, alpha=1, ):
+
+    def draw_node(self, node, draw_ax, color, alpha=1):
         # color = tuple([x / 255 for x in color])
-        draw_ax.scatter(node[:, 0], node[:, 1], node[:, 2], color=color, alpha=alpha)
+        draw_ax.scatter(node[1:, 0], node[1:, 1], node[1:, 2], color=color, alpha=alpha)
         for i in range(node.shape[0] - 1):
             draw_ax.plot([node[i][0], node[i + 1][0]], [node[i][1], node[i + 1][1]], [node[i][2], node[i + 1][2]],
                         color=color, alpha=alpha)
+        # additional: drawing the first node
+        draw_ax.scatter(node[0][0], node[0][1], node[0][2], color=color, alpha=alpha)
+        return draw_ax
+
+
+    def draw_projection_node(self, node, draw_ax, color, alpha=1):
+        node[:,1]=0
+        draw_ax.scatter(node[1:, 0], node[1:, 1], node[1:, 2], color=color, alpha=alpha)
+        for i in range(node.shape[0] - 1):
+            draw_ax.plot([node[i][0], node[i + 1][0]], [node[i][1], node[i + 1][1]], [node[i][2], node[i + 1][2]],
+                        color=color, alpha=alpha)
+        # additional: drawing the first node
+        draw_ax.scatter(node[0][0], node[0][1], node[0][2], color='red', alpha=alpha)
+        # draw_ax.plot([0,0], [100,0],[0,0], alpha=0.3, color='yellow', marker='^')
+        return draw_ax
+
+    def draw_projection_node_2d(self, node, euler_angle, draw_ax, color, alpha=1):
+        """
+        1. rotate along x-axis for some degrees
+        2. project on a 2d planar
+        Arguments:
+            node {array} - shape=(N,3)
+            eular_angle {list} - [r,p,y]
+        """
+        projection_mat = rpy2mat(euler_angle)
+        node_proj = (np.dot(projection_mat, node.T)).T
+        node_proj[:,1]=0
+        draw_ax.scatter(node_proj[1:, 0], node_proj[1:, 2], color=color, alpha=alpha)
+        for i in range(node_proj.shape[0] - 1):
+            draw_ax.plot([node_proj[i][0], node_proj[i + 1][0]], [node_proj[i][2], node_proj[i + 1][2]],
+                        color=color, alpha=alpha)
+        # additional: drawing the first node
+        draw_ax.scatter(node_proj[0][0], node_proj[0][2], color='red', alpha=alpha)
+        return draw_ax
+
+
+    def draw_projection_node_new(self, node, euler_angle, draw_ax, color, alpha=0.4):
+        # 1. projection on x-z plane
+        # node[:,1]=0
+        # 2. rotate along x-axis for some degrees
+        projection_mat = rpy2mat(euler_angle)
+        # 3. start drawing
+        node_proj = (np.dot(projection_mat, node.T)).T
+        node_proj[:,1]=0
+        draw_ax.scatter(node_proj[1:, 0], node_proj[1:, 1], node_proj[1:, 2], color=color, alpha=alpha)
+        for i in range(node_proj.shape[0] - 1):
+            draw_ax.plot([node_proj[i][0], node_proj[i + 1][0]], [node_proj[i][1], node_proj[i + 1][1]], [node_proj[i][2], node_proj[i + 1][2]],
+                        color=color, alpha=alpha)
+        # additional: drawing the first node
+        draw_ax.scatter(node_proj[0][0], node_proj[0][1], node_proj[0][2], color='red', alpha=alpha)
+        # draw_ax.plot([0,0], [100,0],[0,0], alpha=0.3, color='yellow', marker='^')
         return draw_ax
 
     def compute_writhe(self, graph):
@@ -91,20 +165,19 @@ class TopoCoor6D(object):
         # segments of both graphs
         graph = np.array(graph)
         n_obj = graph.shape[0]
-        obj_collection = []
+        objs = []
         obj_wmat = np.zeros((n_obj, n_obj))
 
         for nodes in graph:
             # obj number
-            obj_collection.append(self.node2edge(nodes))
-        obj_collection = np.array(obj_collection)
-
+            objs.append(self.node2edge(nodes))
+        print(objs)
         for i in range(n_obj):
-            obj1 = obj_collection[i]
+            obj1 = objs[i]
             for j in range(i + 1, n_obj):
                 gli_sum = 0
                 # obj #i & obj #j
-                obj2 = obj_collection[j]
+                obj2 = objs[j]
                 for (seg1, seg2) in list(itertools.product(obj1, obj2)):
                     gli_sum += gli_original(seg1, seg2)
                 obj_wmat[i][j] = gli_sum
@@ -153,18 +226,18 @@ class TopoCoor6D(object):
     def compute_writhe_matrix(self, graph, i, j):
         """graph: shape=(2(only 2 objs) x M(template nodes) x 3)"""
         graph = np.array(graph)
-        obj_collection = []
+        objs = []
         for nodes in graph:
             # obj number
-            obj_collection.append(self.node2edge(nodes))
+            objs.append(self.node2edge(nodes))
 
-        obj_collection = np.array(obj_collection)
+        objs = np.array(objs)
 
-        n_seg = obj_collection.shape[1]
+        n_seg = objs.shape[1]
 
         gli_mat = np.zeros((n_seg, n_seg))
-        obj1 = obj_collection[i]
-        obj2 = obj_collection[j]
+        obj1 = objs[i]
+        obj2 = objs[j]
         for k in range(n_seg):
             for t in range(n_seg):
                 gli = self.gli_original(obj1[k], obj2[t])
@@ -215,6 +288,50 @@ class TopoCoor6D(object):
         return bool(np.count_nonzero(mask_i & mask_j))
         # return (mask_i & mask_j == 0).all()
 
+    def compute_tangleship_old(self, root_dir, graph, pose):
+        """compute height among multiple same objects
+        Arguments:
+            graph {array} -- shape=(N x M x 3)
+                            -- N: number of objs
+                            -- M: number of template nodes
+            pose {array}  -- shape=(N x 6)
+        """
+        # segments of both graphs
+        graph = np.array(graph)
+        n_obj = graph.shape[0]
+        n_seg = graph.shape[1]-1
+        main_proc_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
+        objs = []
+
+        gli_mat = np.zeros((n_obj, n_obj))
+        for nodes in graph:
+            # obj number
+            objs.append(self.node2edge(nodes))
+        objs = np.array(objs)
+
+        # get their heights
+        avhglist = self.compute_avg_height(graph)
+
+        # get their writhe & twist
+        for i in range(n_obj):
+            obj1 = objs[i]
+            for j in range(i + 1, n_obj):
+                gli_sum = 0
+                # obj #i & obj #j
+                obj2 = objs[j]
+                for (seg1, seg2) in list(itertools.product(obj1, obj2)):
+                    gli_sum += self.gli_original(seg1, seg2)
+                # gli_sum = gli_sum / n_seg
+                gli_sum = gli_sum * 2
+                if gli_sum >= 2:
+                    result_print(f"Obj {i} & obj {j}: {gli_sum}")
+                gli_mat[i][j] = gli_sum
+                gli_mat[j][i] = gli_sum
+        return gli_mat
+        # glilist = (gli_mat + gli_mat.T).sum(axis=1)
+        
+        # return glilist, avhglist
+
     def compute_tangleship(self, root_dir, graph, pose):
         """compute height among multiple same objects
         Arguments:
@@ -226,108 +343,167 @@ class TopoCoor6D(object):
         # segments of both graphs
         graph = np.array(graph)
         n_obj = graph.shape[0]
-        n_seg = graph.shape[1]
+        n_other_obj = graph.shape[0] - 1
+        n_seg = graph.shape[1]-1
         main_proc_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
-        obj_collection = []
+        objs = []
+        objs_proj = []
+        voting = [0] * n_obj
 
         gli_mat = np.zeros((n_obj, n_obj))
 
         for nodes in graph:
-            # obj number
-            obj_collection.append(self.node2edge(nodes))
-        obj_collection = np.array(obj_collection)
+            objs.append(self.node2edge(nodes))
+            # nodes[:,1] = 0
+            # projection using euler angle
+            projection_mat = rpy2mat([0,0,45])
+            # nodes = (np.dot(projection_mat, nodes.T)).T
+            nodes[:,1]=0
+            objs_proj.append(self.node2edge(nodes)) # projection on 2d planar
 
-        # get their heights
-        avhglist = self.compute_avg_height(graph)
+        objs = np.array(objs)
+        objs_proj = np.array(objs_proj)
+        # get their writhe
         for i in range(n_obj):
-            obj1 = obj_collection[i]
-            for j in range(i + 1, n_obj):
-                gli_sum = 0
-                # obj #i & obj #j
-                obj2 = obj_collection[j]
-                for (seg1, seg2) in list(itertools.product(obj1, obj2)):
-                    gli_sum += self.gli_original(seg1, seg2)
-                gli_sum = gli_sum / n_seg
-                gli_mat[i][j] = gli_sum
-                # gli_mat[j][i] = gli_sum
-                distance = np.linalg.norm(pose[j] - pose[i])
-                diff_h = np.abs(avhglist[i] - avhglist[j])
-                # singulated = self.check_overlap(root_dir, i, j)
-                # print("obj {}&{}: writhe={:.3f}, singulated?: {}, height=({:.3f}, {:.3f})".format(i, j, gli_sum, singulated, avhglist[i], avhglist[j]))
-        glilist = (gli_mat + gli_mat.T).sum(axis=1)
-        """start voting"""
-        # abandoned voting algorithm
-        # voting = np.zeros(n_obj)
-        # eliminate_mat = gli_mat
-        # vrow = np.array(range(n_obj))
-        # pair_list = list(itertools.combinations(range(n_obj), 2))
-        # gli_thre = 0.5
+            obj1 = objs_proj[i]
+            other_obj_proj = np.delete(objs_proj, i, axis=0)
+            other_obj = np.delete(objs, i ,axis=0)
+            gli_sum =0
+            for j in range(other_obj_proj.shape[0]):
+                obj2 = other_obj_proj[j]
+                for (k, t) in list(itertools.product(range(n_seg), range(n_seg))):
+                    seg1_proj, seg2_proj = obj1[k], obj2[t]
+                    seg1, seg2 = objs[i][k], other_obj[j][t]
 
-        # random.shuffle(pair_list)
-        # for p in pair_list:
-        #     i, j = p
-        #     main_proc_print("Analyzing obj ({}, {}): gli = {:.3f} ...".format(i, j, gli_mat[i][j]))
-        #     overlapped = self.check_overlap(root_dir, i, j)  # true for overlap
-        #     if gli_mat[i][j] >= gli_thre:
-        #         if overlapped == True:
-        #             voting[i] -= 1
-        #             voting[j] -= 1
-        #         else:
-        #             if avhglist[i] > avhglist[j]:
-        #                 voting[j] -= 1
-        #             else:
-        #                 voting[i] -= 1
-        #     else:
-        #         if overlapped == True:
-        #             if avhglist[i] > avhglist[j]:
-        #                 voting[j] -= 1
-        #             else:
-        #                 voting[i] -= 1
-        #         # else:
-        #         #     if avhglist[i] > avhglist[j]:
-        #         #         voting[j] -= 1
-        #         #     else:
-        #         #         voting[i] -= 1
-        # result_print(f"Current voting list: {voting}")
+                    gli = self.gli_original(seg1_proj, seg2_proj)
+                    gli_sum += gli
+
+                    gli_sign = self.gli_sign(seg1, seg2)
+                    if gli*2>=1:
+                        warning_print(f"Obj {i} crossing attention! gli={gli}, sign={gli_sign}")
+                        # print(calc_intersection((seg1[0], seg1[2]), (seg1[3], seg1[5]), (seg2[0], seg2[2]), (seg2[3], seg2[5])))
+                        # if objs[i][k][1] > objs[j][t][1]:
+                        #     voting[j] += 1
+            gli_sum = gli_sum * 2
+            result_print(f"Obj {i} has {gli_sum} crossings with others! ")
+            if gli_sum ==0:
+                important_print(f"Obj {i} can be picked! ")
+                voting[i] = 1
+        result_print(voting)
+        return voting
+    def compute_tangleship_with_projection(self, root_dir, graph, pose, proj_angle):
+        """compute height among multiple same objects
+        Arguments:
+            graph {array} -- shape=(N x M x 3)
+                            -- N: number of objs
+                            -- M: number of template nodes
+            pose {array}  -- shape=(N x 6)
+        """
+        # segments of both graphs
+        graph = np.array(graph)
+        n_obj = graph.shape[0]
+        n_other_obj = graph.shape[0] - 1
+        n_seg = graph.shape[1]-1
+        main_proc_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
+        objs = []
+        objs_proj = []
+        voting = [0] * n_obj
+
+        gli_mat = np.zeros((n_obj, n_obj))
+
+        for nodes in graph:
+            objs.append(self.node2edge(nodes))
+            # nodes[:,1] = 0
+            # projection using euler angle
+            projection_mat = rpy2mat(proj_angle)
+            nodes = (np.dot(projection_mat, nodes.T)).T
+            nodes[:,1]=0
+            objs_proj.append(self.node2edge(nodes)) # projection on 2d planar
+
+        objs = np.array(objs)
+        objs_proj = np.array(objs_proj)
+        # get their writhe
+        for i in range(n_obj):
+            obj1 = objs_proj[i]
+            other_obj_proj = np.delete(objs_proj, i, axis=0)
+            other_obj = np.delete(objs, i ,axis=0)
+            gli_sum =0
+            for j in range(other_obj_proj.shape[0]):
+                obj2 = other_obj_proj[j]
+                for (k, t) in list(itertools.product(range(n_seg), range(n_seg))):
+                    seg1_proj, seg2_proj = obj1[k], obj2[t]
+                    seg1, seg2 = objs[i][k], other_obj[j][t]
+
+                    gli = self.gli_original(seg1_proj, seg2_proj)
+                    gli_sum += gli
+
+                    gli_sign = self.gli_sign(seg1, seg2)
+                    # if gli*2>=1:
+                    #     warning_print(f"Obj {i} crossing attention! gli={gli}, sign={gli_sign}")
+                        # print(calc_intersection((seg1[0], seg1[2]), (seg1[3], seg1[5]), (seg2[0], seg2[2]), (seg2[3], seg2[5])))
+                        # if objs[i][k][1] > objs[j][t][1]:
+                        #     voting[j] += 1
+            gli_sum = gli_sum * 2
+            result_print(f"Obj {i} has {gli_sum} crossings with others! ")
+            if gli_sum <= 1:
+                # important_print(f"Solved! Drag pick obj {i} along {-np.array(proj_angle)}")
+                important_print(f"Pick obj {i}! ")
+                voting[i] = 1
+        result_print(voting)
+        return voting
+        # # get their writhe & twist
+        # for i in range(n_obj):
+        #     obj1 = objs[i]
+        #     for j in range(i + 1, n_obj):
+        #         gli_sum = 0
+        #         # obj #i & obj #j
+        #         obj2 = objs[j]
+        #         for (seg1, seg2) in list(itertools.product(obj1, obj2)):
+        #             gli_sum += self.gli_original(seg1, seg2)
+        #         # gli_sum = gli_sum / n_seg
+        #         gli_sum = gli_sum * 2
+        #         if gli_sum >= 2:
+        #             result_print(f"Obj {i} & obj {j}: {gli_sum}")
+        #         gli_mat[i][j] = gli_sum
+        #         gli_mat[j][i] = gli_sum
+        # return gli_mat
+        # glilist = (gli_mat + gli_mat.T).sum(axis=1)
         
-        # if (voting < 0).all():
-        #     """all < 0 -> select from writhe list, including dragging/sliding"""
-        #     pick_obj = np.argmin(glilist)
-        #     main_proc_print(f"Check obj.{pick_obj} tangleship...")
-        #     pair_list_move = []
-        #     wmat_list = []
-        #     wval_list = []
-        #     for i in vrow:
-        #         if i != pick_obj: pair_list_move.append((pick_obj, i))
+        # return glilist, avhglist
 
-        #     for p in pair_list_move:
-        #         (i, j) = p
-        #         wmat = self.compute_writhe_matrix(graph, i, j)
-        #         wmat_list.append(wmat)
-        #         wval_list.append(np.sum(wmat))
 
-        #     # visualize all writhe matrix of obj i
-        #     fig2 = plot_subfigures(wmat_list, max_ncol=5)
-        #     (_, avoid_obj) = pair_list_move[wval_list.index(max(wval_list))]
-        #     result_print(f"Drag obj.{pick_obj} far away from obj.{avoid_obj}...")
-        # else:
-        #     """one obj has no negative voting, picking it up"""
-        #     pick_obj = vrow[voting == 0][0]
-        #     result_print(f"Pick obj.{pick_obj}")
+# if __name__ == "__main__":
 
-        # for (i,j) in itertools.combinations(range(n_obj),2):
-        #     print(i,j)
+# # l1 = [1,0,0,1,3,0]
+# # l2 = [0,1,0,3,1,0]
 
-        return glilist, avhglist
-    
-    def find_writhe_thre(self, glilist, avhglist):
-        X = glilist.reshape(-1,1)
-        Y = [int(h) for h in avhglist]
-    
-        clf = svm.SVC(decision_function_shape='ovo')
-        clf.fit(X, Y)
-        dec = clf.decision_function([[1]])
-        num_class = dec.shape[1] # 4 classes: 4*3/2 = 6
+# # tp6d = TopoCoor6D()
+# # writhe = tp6d.gli_original(l1, l2)
+# # print(writhe)
 
-        return
+#     l1 = [1,0,0,1,2,0]
+#     l2 = [1,0,1,1,2,-1]
+#     # l2 = [0,1,0,2,1,0]
+
+#     tp6d = TopoCoor6D()
+#     solid_angle = tp6d.gli_original(l1, l2)
+#     print(solid_angle)
+#     print(solid_angle*2)
+
+#     fig = plt.figure()
+#     ax3d = fig.add_subplot(111, projection='3d')
+#     ax3d.set_xticklabels([])
+#     ax3d.set_yticklabels([])
+#     ax3d.set_zticklabels([])
+
+#     ax3d.set_zlim3d(0, 1)
+
+#     cmap = get_cmap(2)
+#     # plot axis
+#     ax3d.plot([l1[0],l1[3]], [l1[1],l1[4]], [l1[2],l1[5]], color=cmap(0))
+#     ax3d.plot([l2[0],l2[3]], [l2[1],l2[4]], [l2[2],l2[5]], color=cmap(1)) 
+
+#     # plt.plot([l1[0],l1[3]], [l1[1],l1[4]])
+#     # plt.plot([l2[0],l2[3]], [l2[1],l2[4]], color='orange')
+#     plt.show()
 

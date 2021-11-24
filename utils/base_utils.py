@@ -18,5 +18,3 @@ def result_print(result_str):
 
 def important_print(result_str):
     (lambda x: cprint(x, 'white',  'on_green'))("[    NOTICE    ] "+str(result_str))
-
-

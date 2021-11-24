@@ -17,18 +17,17 @@ import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
 from driver.phoxi import phoxi_client as pclt
-from grasp.graspability import Gripper, Graspability
+from grasping.graspability import Gripper, Graspability
 from motion.motion_generator import Motion
 # import learning.predictor.predict_client as pdclt
 from utils.base_utils import *
-from utils.transform_util import *
+from utils.transform_utils import *
 from utils.vision_utils import *
 
 def get_point_cloud(save_dir):
     """
     1. capture point cloud and get numpy array
     2. pose processing and convert to depth map
-    3. save depth image
     return: point array, raw image, smoothed image
     """
     
@@ -39,17 +38,7 @@ def get_point_cloud(save_dir):
     pxc.triggerframe()
     pc = pxc.getpcd()
 
-    # pcd = o3d.io.read_point_cloud(pc_path)
-    # pc = np.asarray(pcd.points)
-
-    '''2. pose processing and convert to depth map'''
-
-    # test if `pc` is empty
-    # if pc[:, 2].all() == 0:
-    #     warning_print("Point cloud is empty ... capture again ... ")
-    #     pxc.triggerframe()
-    #     pc = pxc.getpcd()
-        
+    '''2. pose processing and convert to depth map'''  
     main_proc_print("Convert point cloud to depth map ... ")
 
     rotated_pc = rotate_point_cloud(pc)
@@ -59,12 +48,6 @@ def get_point_cloud(save_dir):
     img_blur = cv2.medianBlur(img,5)
     result_print("Depth map : shape=({}, {})".format(width, height))
 
-    # cv2.imshow("windows", img_blur)    
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # cv2.imwrite(os.path.join(save_dir, "depth_raw.png"), img)
-    # cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
-    # cv2.imwrite('./exp/draw/{}'.format(input_name), cimg)
     return pc
 
 def detect_nontangle_grasp_point(gripper, n_grasp, img_path, margins, emap):
@@ -103,14 +86,14 @@ def detect_nontangle_grasp_point(gripper, n_grasp, img_path, margins, emap):
         candidates, n=n_grasp, h=cropped_height, w=cropped_width)
 
     if grasps != []:
-        main_proc_print("Success! ... ")
+        important_print(f"Success! Detect {len(grasps)} grasps! ")
         return grasps, im_adj, img
     else:
         warning_print("Grasp detection failed! No grasps!")
         return None, im_adj,img
 
 
-def detect_grasp_point(gripper, n_grasp, img_path, margins):
+def detect_grasp_point(gripper, n_grasp, img_path, margins, g_params):
     """Detect grasp point using graspability
 
     Arguments:
@@ -121,8 +104,6 @@ def detect_grasp_point(gripper, n_grasp, img_path, margins):
     """
     (top_margin,left_margin,bottom_margin,right_margin) = margins
     img = cv2.imread(img_path)
-    # img = adjust_grayscale(img)
-    
 
     # cropped the necessary region (inside the bin)
     height, width, _ = img.shape
@@ -133,7 +114,8 @@ def detect_grasp_point(gripper, n_grasp, img_path, margins):
     im_adj = adjust_grayscale(im_cut)
     hand_open_mask, hand_close_mask = gripper.hand_model()
 
-    method = Graspability(rotation_step=45, depth_step=50, handdepth=50)
+    (rstep, dstep, hand_depth) = g_params
+    method = Graspability(rotation_step=rstep, depth_step=dstep, hand_depth=hand_depth)
 
     # generate graspability map
     main_proc_print("Generate graspability map  ... ")
@@ -146,61 +128,13 @@ def detect_grasp_point(gripper, n_grasp, img_path, margins):
         candidates, n=n_grasp, h=cropped_height, w=cropped_width)
 
     if grasps != []:
-        main_proc_print("Success! ... ")
+        important_print(f"Success! Detect {len(grasps)} grasps! ")
         return grasps, im_adj, img
     else:
         warning_print("Grasp detection failed! No grasps!")
         return None, im_adj,img
 
-# def draw_grasps(gripper, img_path, grasps, best_grasp, margins):
-#     # draw grasps
-#     # drawc, _ = gripper.draw_grasps(
-#     #     grasps, img.copy(), im_cut.copy(), left_margin, top_margin, all=False)
-#     # _, drawf = gripper.draw_grasps(
-#     #     grasps, img.copy(), im_cut.copy(), left_margin, top_margin, all=True)
-#     (top_margin,left_margin,bottom_margin,right_margin) = margins
-#     img = cv2.imread(img_path)
-#     # cropped the necessary region (inside the bin)
-
-#     im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
-#     drawc, drawf = gripper.draw_uniform_grasps(
-#         grasps, img, im_cut, left_margin, top_margin)
-#     drawc, drawf = gripper.draw_grasp(
-#         best_grasp, drawf, drawc, left_margin, top_margin)
-#     return drawc
-
-# important! do not delete! 
-# def draw_all_grasp(gripper, img_path, grasps, margins):
-#     (top_margin,left_margin,bottom_margin,right_margin) = margins
-
-#     img = cv2.imread(img_path)
-#     # cropped the necessary region (inside the bin)
-
-#     im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
-#     drawc = gripper.draw_grasp(grasps, im_cut)
-#     grasps= np.array(grasps, dtype=np.uint8)
-#     grasps[:,1] += left_margin
-#     grasps[:,2] += top_margin
-#     drawf = gripper.draw_grasp(grasps, img)
-
-#     return drawc, drawf
-
-def draw_all_grasp(gripper, img_path, grasps, margins):
-    (top_margin,left_margin,bottom_margin,right_margin) = margins
-
-    img = cv2.imread(img_path)
-    # cropped the necessary region (inside the bin)
-
-    im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
-    drawc = gripper.draw_grasp(grasps, im_cut)
-    # grasps= np.array(grasps, dtype=np.uint8)
-    # grasps[:,1] += left_margin
-    # grasps[:,2] += top_margin
-    # drawf = gripper.draw_grasp(grasps, img)
-
-    return drawc
-
-def convert_coordinates(grasp_point, pc, img_path, calib_path):
+def transform_coordinates(grasp_point, pc, img_path, calib_path):
     """
     1. replace bad point to adjust height
     2. image (x,y) -> camera (x,y,z)

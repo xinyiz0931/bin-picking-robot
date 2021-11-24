@@ -11,7 +11,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class Gripper(object):
     def __init__(self, handwidth=34, model_ratio=250 / 112.5):
         self.handwidth = handwidth

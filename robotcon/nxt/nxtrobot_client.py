@@ -231,8 +231,7 @@ class NxtRobot(object):
 
 if __name__ == "__main__":
     
-
-    parser = argparse.ArgumentParser(description='motion file path')
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument('movement',type=str, 
                         help='movement you want')
     args = parser.parse_args()

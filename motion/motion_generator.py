@@ -52,9 +52,6 @@ class Motion(object):
         print(self.initialpose,file=fp)
         fp.close()
 
-
-
-
     def motion_generator_half(self, rx,ry,rz,ra):
         """full Circle-like motion"""
         fp = open(self.filepath, 'wt')

@@ -304,3 +304,19 @@ if __name__ == "__main__":
 
     # print(get_neighbor_pixel(gray,[x,y], bounding_size=3))
 
+# important! do not delete! 
+# just another way to draw grasp poses
+# def draw_all_grasp(gripper, img_path, grasps, margins):
+#     (top_margin,left_margin,bottom_margin,right_margin) = margins
+
+#     img = cv2.imread(img_path)
+#     # cropped the necessary region (inside the bin)
+
+#     im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
+#     drawc = gripper.draw_grasp(grasps, im_cut)
+#     grasps= np.array(grasps, dtype=np.uint8)
+#     grasps[:,1] += left_margin
+#     grasps[:,2] += top_margin
+#     drawf = gripper.draw_grasp(grasps, img)
+
+#     return drawc, drawf

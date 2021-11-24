@@ -9,9 +9,9 @@ from utils.base_utils import *
 if __name__ == "__main__":
     # absolute path needed
     mfik_path =  "/home/xinyi/Workspace/myrobot/motion/motion_ik.dat"
-    parser = argparse.ArgumentParser(description='motion file path')
+    parser = argparse.ArgumentParser(description='ik file path')
     parser.add_argument('--filepath','-f', type=str, 
-                        help='motion file path', default=mfik_path)
+                        help='ik file path', default=mfik_path)
     args = parser.parse_args()
 
     motion_seq = np.loadtxt(args.filepath)

@@ -11,11 +11,13 @@ If you want re-draw the rectangle, hit `r` to refresh.
 import sys
 # execute the script from the root directory etc. ~/src/myrobot
 sys.path.append("./")
-sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
+    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import os
 import cv2
 import argparse
 import configparser
+from utils.base_utils import *
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables
@@ -62,22 +64,26 @@ while True:
         image = clone.copy()
 
     elif key == ord("q"):
+        flag = 0
         break
     elif key==13: #enter
+        flag = 1
         break
 
 cv2.destroyAllWindows()
 
 # record the info into cfg file
 # set absolute directory for config.yaml
+if flag:
+    config = configparser.ConfigParser()
+    config.read(config_path)
 
-config = configparser.ConfigParser()
-config.read(config_path)
+    config.set('IMAGE', 'left_margin', str(ref_point[0][0]))
+    config.set('IMAGE', 'top_margin', str(ref_point[0][1]))
+    config.set('IMAGE', 'right_margin', str(ref_point[1][0]))
+    config.set('IMAGE', 'bottom_margin', str(ref_point[1][1]))
 
-config.set('GRASP', 'left_margin', str(ref_point[0][0]))
-config.set('GRASP', 'top_margin', str(ref_point[0][1]))
-config.set('GRASP', 'right_margin', str(ref_point[1][0]))
-config.set('GRASP', 'bottom_margin', str(ref_point[1][1]))
-
-config.write(open(config_path, "w"))
-print("Successfully defined the workspace size! ")
+    config.write(open(config_path, "w"))
+    main_proc_print("Successfully defined the workspace size! ")
+else:
+    warning_print("Failed to define the workspace size! ")
