@@ -75,6 +75,34 @@ def calc_2vectors_rot_mat(v1, v2):
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
 
+def calc_lineseg_dist(p, l):
+    """Function calculates the distance from point p to line segment [a,b]. 
+
+    Arguments:
+        p {list} -- [x,y,z] a point
+        l {list} -- [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z] a line
+
+    Returns:
+        {float} -- distance between p and l
+    """
+    p, l = np.array(p), np.array(l)
+    a, b = l[0:3], l[3:6]
+
+    # normalized tangent vector
+    d = np.divide(b - a, np.linalg.norm(b - a))
+
+    # signed parallel distance components
+    s = np.dot(a - p, d)
+    t = np.dot(p - b, d)
+
+    # clamped parallel distance
+    h = np.maximum.reduce([s, t, 0])
+
+    # perpendicular distance component
+    c = np.cross(p - a, d)
+
+    return np.hypot(h, np.linalg.norm(c))
+
 def calc_intersection(a1, a2, b1, b2):
     """ 
     Returns the point of intersection of the lines passing through a2,a1 and b2,b1.
@@ -84,6 +112,7 @@ def calc_intersection(a1, a2, b1, b2):
     b1: [x, y] a point on the second line
     b2: [x, y] another point on the second line
     """
+
     s = np.vstack([a1,a2,b1,b2])        # s for stacked
     h = np.hstack((s, np.ones((4, 1)))) # h for homogeneous
     l1 = np.cross(h[0], h[1])           # get first line
@@ -91,7 +120,7 @@ def calc_intersection(a1, a2, b1, b2):
     x, y, z = np.cross(l1, l2)          # point of intersection
     if z == 0:                          # lines are parallel
         return (float('inf'), float('inf'))
-    return (x/z, y/z)
+    return [x/z, y/z]
 
 def replace_bad_point(imgpath, loc, bounding_size=10):
     """    
@@ -168,12 +197,12 @@ def image_to_robot(img_x, img_y, img_z, angle):
     robot_z = 0.005 + 0.00045*(img_z - 50) - 0.01
 
     if(0.67 <= robot_x):
-        print("Error: X座標が範囲外です")
+        print("Error: x is too large! ")
     if(0.67 <= robot_y):
-        print("Error: Y座標が範囲外です")
+        print("Error: y is too large! ")
     # if(0.005152941176470586 >= robot_z):
     if(0.005 >= robot_z):
-        print("Error: Y座標が範囲外です")
+        print("Error: z is too small! ")
         robot_z = 0.005
 
     robot_angle = 180.0 * angle / math.pi

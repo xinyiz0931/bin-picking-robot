@@ -46,9 +46,9 @@ def main():
     tc6d = TopoCoor6D()
 
     """Configurations defined by users"""
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119131131"
     # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211119180424"
-    shape = "scylindertwist"
+    shape = "c"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
@@ -158,14 +158,18 @@ def main():
 
     # normal testing
     # proj_euler_angle = [0, 0, 45]
-    proj_euler_angle = [0, 0, 0]
-    voting = tc6d.compute_tangleship_with_projection(root_dir, graph, pose, proj_euler_angle)
+    proj_euler_angle = [0, 0, 0] # n_0
+    labels = tc6d.compute_tangleship_with_projection(root_dir, graph, pose, proj_euler_angle)
+    result_print(f"Labels: {labels}")
     for i, j in zip(sorted_index, range(num_obj)):
         node = graph[i]
         node_cmap = cmap(j)
         tc6d.draw_node(node, ax3d, alpha=1, color=node_cmap)
         # tc6d.draw_projection_node_new(node, proj_euler_angle , ax3d, alpha=0.4, color=node_cmap)
         tc6d.draw_projection_node_2d(node, proj_euler_angle , ax2, alpha=1, color=node_cmap)
+
+    # for c in crossings:
+    #     ax3d.scatter(c[0], 0, c[1], color='black')
 
     legend_elements = []
     for i in range(num_obj):
@@ -179,18 +183,35 @@ def main():
     # ax2.imshow(rot90, cmap='gray')
     # plt.title("Depth image")
 
-    # visualize all graspable objects
+    # visualize all graspable objects using depth image
     im = cv2.imread(im_path, 0)
     fig = plt.figure()
-    for i in range(num_obj):
-        if voting[i] == 1:
-            mask_path = os.path.join(root_dir, f"mask_{i}.png")
-            plt.imshow(im, cmap='gray')
-            plt.imshow(cv2.imread(mask_path, 0), cmap='jet', alpha=0.4)
-            plt.axis('off')
-            plt.show()
+    # for i in range(num_obj):
+    #     if labels[i]==[]:
+    #         # singulated
+    #         mask_path = os.path.join(root_dir, f"mask_{i}.png")
+    #         plt.imshow(im, cmap='gray')
+    #         plt.imshow(cv2.imread(mask_path, 0), cmap='jet', alpha=0.4)
+    #         plt.axis('off')
+    #         plt.show()
+    #     if labels[i].count(1) == len(labels[i]):
+    #         # top
+    #         mask_path = os.path.join(root_dir, f"mask_{i}.png")
+    #         plt.imshow(im, cmap='gray')
+    #         plt.imshow(cv2.imread(mask_path, 0), cmap='jet', alpha=0.4)
+    #         plt.axis('off')
+    #         plt.show()
+
+    mask_path = os.path.join(root_dir, "mask_3.png")
+    mask_path2 = os.path.join(root_dir, "mask_5.png")
+    plt.imshow(im, cmap='gray')
+    plt.imshow(cv2.imread(mask_path, 0) + cv2.imread(mask_path2, 0), cmap='jet', alpha=0.4)
+    # plt.imshow(cv2.imread(mask_path2, 0), cmap='jet', alpha=0.1)
+    plt.axis('off')
+    plt.show()
 
 
+    
 
 
 if __name__ == "__main__":

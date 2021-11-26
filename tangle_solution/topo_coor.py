@@ -287,9 +287,6 @@ class TopoCoor(object):
                 gli_mat[i][j] = gli
         return gli_mat
 
-
-
-
 def main():
 
     # tunable parameter

@@ -66,8 +66,10 @@ class TopoCoor6D(object):
     def gli_sign(self, line1, line2):
         """
         Calculate the sign of Gaussian link integral in a geometrical way
+        Check if the tanlge is right-handed or not
+
         Input: two line segment line = [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z]
-        output: s[bool]
+        output: s {int} - +1 or -1
         """
         a = np.array([line1[0], line1[1], line1[2]])
         b = np.array([line1[3], line1[4], line1[5]])
@@ -391,15 +393,17 @@ class TopoCoor6D(object):
                 voting[i] = 1
         result_print(voting)
         return voting
-    def compute_tangleship_with_projection(self, root_dir, graph, pose, proj_angle):
+
+    def compute_tangleship_with_projection(self, root_dir, graph, pose, proj_angle=[0,0,0]):
         """compute height among multiple same objects
         Arguments:
             graph {array} -- shape=(N x M x 3)
                             -- N: number of objs
                             -- M: number of template nodes
             pose {array}  -- shape=(N x 6)
+            proj_angle {list} -- [roll, pitch, yaw]
         """
-        # segments of both graphs
+
         graph = np.array(graph)
         n_obj = graph.shape[0]
         n_other_obj = graph.shape[0] - 1
@@ -409,101 +413,193 @@ class TopoCoor6D(object):
         objs_proj = []
         voting = [0] * n_obj
 
+        labels = {} 
+
+
         gli_mat = np.zeros((n_obj, n_obj))
 
+        # check if projection neede
+        if proj_angle != [0,0,0]:
+            warning_print(f"Start projecting along {proj_angle} ...")
+
         for nodes in graph:
-            objs.append(self.node2edge(nodes))
-            # nodes[:,1] = 0
-            # projection using euler angle
-            projection_mat = rpy2mat(proj_angle)
-            nodes = (np.dot(projection_mat, nodes.T)).T
-            nodes[:,1]=0
-            objs_proj.append(self.node2edge(nodes)) # projection on 2d planar
+            # projecting nodes using euler angle
+            new_nodes = (np.dot(rpy2mat(proj_angle), nodes.T)).T
+            new_nodes[:,1]=0
+
+            objs_proj.append(self.node2edge(new_nodes)) # 2d
+            objs.append(self.node2edge(nodes)) # 3d
 
         objs = np.array(objs)
         objs_proj = np.array(objs_proj)
-        # get their writhe
+
+        # get their writhe (number of crossings)
         for i in range(n_obj):
-            obj1 = objs_proj[i]
+            # calculate writhe between objs[i] nad other_obj[j]
             other_obj_proj = np.delete(objs_proj, i, axis=0)
-            other_obj = np.delete(objs, i ,axis=0)
-            gli_sum =0
+            other_obj = np.delete(objs, i ,axis=0)\
+            
+            writhe =0
+            labels[i] = []
+
             for j in range(other_obj_proj.shape[0]):
-                obj2 = other_obj_proj[j]
                 for (k, t) in list(itertools.product(range(n_seg), range(n_seg))):
-                    seg1_proj, seg2_proj = obj1[k], obj2[t]
+                    seg1_proj, seg2_proj = objs_proj[i][k], other_obj_proj[j][t]
                     seg1, seg2 = objs[i][k], other_obj[j][t]
-
                     gli = self.gli_original(seg1_proj, seg2_proj)
-                    gli_sum += gli
+                    if gli*2 == 1:
+                        crossing = calc_intersection([seg1_proj[0], seg1_proj[2]], [seg1_proj[3], seg1_proj[5]], 
+                                                [seg2_proj[0], seg2_proj[2]], [seg2_proj[3], seg2_proj[5]])
+                        # label the crossings for obj i - seg1, seg2, crossing 
+                        d1 = calc_lineseg_dist([crossing[0],0,crossing[1]], seg1)
+                        d2 = calc_lineseg_dist([crossing[0],0,crossing[1]], seg2)
+                        if d1> d2:
+                            labels[i].append(1)
+                        else:
+                            labels[i].append(-1)
+                    writhe += gli
+            writhe *= 2
+            # if writhe == 0:
+            #     # important_print(f"Pick obj {i}: singulated! ")
+            #     voting[i] = 1
 
-                    gli_sign = self.gli_sign(seg1, seg2)
+        return labels
+            # ip = calc_intersection([l1_proj[0], l1_proj[1]], [l1_proj[3], l1_proj[4]],
+                        #   [l2_proj[0], l2_proj[1]], [l2_proj[3], l2_proj[4]])
                     # if gli*2>=1:
                     #     warning_print(f"Obj {i} crossing attention! gli={gli}, sign={gli_sign}")
                         # print(calc_intersection((seg1[0], seg1[2]), (seg1[3], seg1[5]), (seg2[0], seg2[2]), (seg2[3], seg2[5])))
                         # if objs[i][k][1] > objs[j][t][1]:
                         #     voting[j] += 1
-            gli_sum = gli_sum * 2
-            result_print(f"Obj {i} has {gli_sum} crossings with others! ")
-            if gli_sum <= 1:
-                # important_print(f"Solved! Drag pick obj {i} along {-np.array(proj_angle)}")
-                important_print(f"Pick obj {i}! ")
-                voting[i] = 1
-        result_print(voting)
-        return voting
-        # # get their writhe & twist
-        # for i in range(n_obj):
-        #     obj1 = objs[i]
-        #     for j in range(i + 1, n_obj):
-        #         gli_sum = 0
-        #         # obj #i & obj #j
-        #         obj2 = objs[j]
-        #         for (seg1, seg2) in list(itertools.product(obj1, obj2)):
-        #             gli_sum += self.gli_original(seg1, seg2)
-        #         # gli_sum = gli_sum / n_seg
-        #         gli_sum = gli_sum * 2
-        #         if gli_sum >= 2:
-        #             result_print(f"Obj {i} & obj {j}: {gli_sum}")
-        #         gli_mat[i][j] = gli_sum
-        #         gli_mat[j][i] = gli_sum
-        # return gli_mat
-        # glilist = (gli_mat + gli_mat.T).sum(axis=1)
-        
-        # return glilist, avhglist
+
+if __name__ == "__main__":
+
+# l1 = [1,0,0,1,3,0]
+# l2 = [0,1,0,3,1,0]
+
+# tp6d = TopoCoor6D()
+# writhe = tp6d.gli_original(l1, l2)
+# print(writhe)
+    tp6d = TopoCoor6D()
+
+    l1 = [1,0,1,1,2,1]
+    # l2 = [1,0,1,0,2,0]
+    # l2 = [0,1,0.5,2,1,0.5]
+    l2 = [0,1,0.2,2,1,0.5] # same plane
+
+    l1_proj = [1,0,-0.5,1,2,-0.5]
+    # l2 = [1,0,1,0,2,0]
+    # l2 = [0,1,0.5,2,1,0.5]
+    l2_proj = [0,1,-0.5,2,1,-0.5] # same plane
+
+    cp = calc_intersection([l1_proj[0], l1_proj[1]], [l1_proj[3], l1_proj[4]],
+                          [l2_proj[0], l2_proj[1]], [l2_proj[3], l2_proj[4]])
+    print(cp)
+
+    
+
+    d1 = calc_lineseg_dist([cp[0],cp[1], 0], l1)
+    print("Found it! ", d1)
+    d2 = calc_lineseg_dist([cp[0],cp[1], 0], l2)
+    print("Found it! ", d2)
+
+    
+
+    # s = np.vstack([a1,a2,b1,b2])        # s for stacked
+    # h = np.hstack((s, np.ones((4, 1)))) # h for homogeneous
+    # l1 = np.cross(h[0], h[1])           # get first line
+    # l2 = np.cross(h[2], h[3])           # get second line
+
+    lc1 = np.cross(l1[0:3], l1[3:6])
+    lc2 = np.cross(l2[0:3], l2[3:6])
+    print("line function: ", lc1, lc2)
+
+    a = np.array([l1[0], l1[1], l1[2]])
+    b = np.array([l1[3], l1[4], l1[5]])
+    c = np.array([l2[0], l2[1], l2[2]])
+    d = np.array([l2[3], l2[4], l2[5]])
+
+    r_ab = b - a
+    r_cd = d - c
+    r_ac = c - a
+    r_ad = d - a
+    r_bc = c - b
+    r_bd = d - b
+    
+
+    c_ac_ad = tp6d.cross_product(r_ac, r_ad)
+    c_ad_bd = tp6d.cross_product(r_ad, r_bd)
+    c_bd_bc = tp6d.cross_product(r_bd, r_bc)
+    c_bc_ac = tp6d.cross_product(r_bc, r_ac)
+
+    n_a = c_ac_ad / np.linalg.norm(c_ac_ad)
+    n_b = c_ad_bd / np.linalg.norm(c_ad_bd)
+    n_c = c_bd_bc / np.linalg.norm(c_bd_bc)
+    n_d = c_bc_ac / np.linalg.norm(c_bc_ac)
+
+    normal = tp6d.cross_product(r_cd, r_ab)
+    normal = normal / np.linalg.norm(normal)
+
+    print(normal)
+
+    w = (np.arcsin(np.dot(n_a, n_b)) + np.arcsin(np.dot(n_b, n_c)) + np.arcsin(np.dot(n_c, n_d)) + np.arcsin(
+        np.dot(n_d, n_a)))/(4*math.pi)
+    w = np.nan_to_num(w)
+
+    n = [0,0,-1]
+
+    
+    print(w*2)
+
+    fig = plt.figure()
+    ax3d = fig.add_subplot(111, projection='3d')
+    ax3d.set_xticklabels([])
+    ax3d.set_yticklabels([])
+    ax3d.set_zticklabels([])
+
+    ax3d.set_zlim3d(-1, 1)
+
+    cmap = get_cmap(2)
+
+    # plot start and end point
+    ax3d.scatter(a[0],a[1],a[2],color='red')
+    ax3d.scatter(c[0],c[1],c[2],color='red')
+
+    ax3d.plot([l1[0],l1[3]], [l1[1],l1[4]], [l1[2],l1[5]], color=cmap(0))
+    ax3d.plot([l2[0],l2[3]], [l2[1],l2[4]], [l2[2],l2[5]], color=cmap(1)) 
+
+    ax3d.plot([l1_proj[0],l1_proj[3]], [l1_proj[1],l1_proj[4]], [l1_proj[2],l1_proj[5]], color=cmap(0), alpha=0.3)
+    ax3d.plot([l2_proj[0],l2_proj[3]], [l2_proj[1],l2_proj[4]], [l2_proj[2],l2_proj[5]], color=cmap(1), alpha=0.3) 
+
+    # plot view direction
+    # ax3d.scatter(0,0,0,color='red')
+    # ax3d.plot([0, n[0]], [0, n[1]], [0, n[2]], color='red', alpha=0.3)
 
 
-# if __name__ == "__main__":
+    # c_ac_ad = tp6d.cross_product(r_ac, r_ad)
+    # c_ad_bd = tp6d.cross_product(r_ad, r_bd)
+    # c_bd_bc = tp6d.cross_product(r_bd, r_bc)
+    # c_bc_ac = tp6d.cross_product(r_bc, r_ac)
 
-# # l1 = [1,0,0,1,3,0]
-# # l2 = [0,1,0,3,1,0]
+    # # plot n_a, ..., n_d
+    # ax3d.plot([a[0], n_a[0]+a[0]], [a[1], n_a[1]+a[1]], [a[2], n_a[2]+a[2]], color='purple', alpha=0.3)
+    # ax3d.plot([d[0], n_b[0]+d[0]], [d[1], n_b[1]+d[1]], [d[2], n_b[2]+d[2]], color='purple', alpha=0.3)
+    # ax3d.plot([b[0], n_c[0]+b[0]], [b[1], n_c[1]+b[1]], [b[2], n_c[2]+b[2]], color='purple', alpha=0.3)
+    # ax3d.plot([c[0], n_d[0]+c[0]], [c[1], n_d[1]+c[1]], [c[2], n_d[2]+c[2]], color='purple', alpha=0.3)
 
-# # tp6d = TopoCoor6D()
-# # writhe = tp6d.gli_original(l1, l2)
-# # print(writhe)
+    # ax3d.plot([a[0], c[0]], [a[1], c[1]], [a[2], c[2]], color='green', alpha=0.3)
+    # ax3d.plot([b[0], c[0]], [b[1], c[1]], [b[2], c[2]], color='green', alpha=0.3)
+    # ax3d.plot([a[0], d[0]], [a[1], d[1]], [a[2], d[2]], color='green', alpha=0.3)
+    # ax3d.plot([b[0], d[0]], [b[1], d[1]], [b[2], d[2]], color='green', alpha=0.3)
 
-#     l1 = [1,0,0,1,2,0]
-#     l2 = [1,0,1,1,2,-1]
-#     # l2 = [0,1,0,2,1,0]
+    # ax3d.plot([a[0], normal[0]+a[0]], [a[1], normal[1]+a[1]], [a[2], normal[2]+a[2]], color='red', alpha=0.3)
+    # ax3d.plot([c[0], normal[0]+c[0]], [c[1], normal[1]+c[1]], [c[2], normal[2]+c[2]], color='red', alpha=0.3)
+    # plt.plot([l1[0],l1[3]], [l1[1],l1[4]])
+    # plt.plot([l2[0],l2[3]], [l2[1],l2[4]], color='orange')
 
-#     tp6d = TopoCoor6D()
-#     solid_angle = tp6d.gli_original(l1, l2)
-#     print(solid_angle)
-#     print(solid_angle*2)
-
-#     fig = plt.figure()
-#     ax3d = fig.add_subplot(111, projection='3d')
-#     ax3d.set_xticklabels([])
-#     ax3d.set_yticklabels([])
-#     ax3d.set_zticklabels([])
-
-#     ax3d.set_zlim3d(0, 1)
-
-#     cmap = get_cmap(2)
-#     # plot axis
-#     ax3d.plot([l1[0],l1[3]], [l1[1],l1[4]], [l1[2],l1[5]], color=cmap(0))
-#     ax3d.plot([l2[0],l2[3]], [l2[1],l2[4]], [l2[2],l2[5]], color=cmap(1)) 
-
-#     # plt.plot([l1[0],l1[3]], [l1[1],l1[4]])
-#     # plt.plot([l2[0],l2[3]], [l2[1],l2[4]], color='orange')
-#     plt.show()
+    ax3d.scatter(cp[0], cp[1], -0.5, color='orange')
+    
+    # plt.axis('off')
+    ax3d.set_box_aspect(aspect = (1,1,1))
+    plt.show()
 
