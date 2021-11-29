@@ -47,7 +47,7 @@ class Gripper(object):
         right_y = int(y + (self.gripper_width/3)*self.model_ratio*math.sin(angle))
         return left_x, left_y, right_x, right_y
 
-    def draw_grasp(self, grasps, img, top_color=(0,0,255)):
+    def draw_grasp(self, grasps, img, top_color=(255,0,0)):
         """Use one line and an small empty circle representing grasp pose"""
         for i in range(len(grasps)-1,-1,-1):
             # [_,x,y,_,angle, ca, cb] = grasps[i]
@@ -181,6 +181,82 @@ class Graspability(object):
                     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
                     candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
         candidates.sort(key=self.takefirst, reverse=True)
+        return candidates
+
+    def target_oriented_graspability_map(self, img, hand_open_mask, hand_close_mask, Wc, Wt):
+        """ generate graspability map and obtain all grasp candidates
+        with known target object
+        Parameters
+        ----------
+        img : 3-channel image
+        hand_open_mask : 1-channel image
+        hand_close_mask : 1-channel image
+
+        Returns
+        -------
+        candidates : list  
+            a list containing all possible grasp candidates, every candidate -> [g,x,y,z]
+        """
+
+        candidates = []
+        count_a = 0
+        count_b = 0
+        start_rotation = 0
+        stop_rotation = 180
+        start_depth = 0
+        stop_depth = 201
+       
+        # prepare rotated hand model
+        ht_rot, hc_rot = [], []
+        from PIL import Image
+        hand_open_mask = Image.fromarray(np.uint8(hand_open_mask))
+        hand_close_mask = Image.fromarray(np.uint8(hand_close_mask))
+
+        for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
+            ht_= hand_close_mask.rotate(r)
+            hc_ = hand_open_mask.rotate(r)
+            ht_rot.append(np.array(ht_.convert('L')))
+            hc_rot.append(np.array(hc_.convert('L')))
+
+        # print("Computing graspability map... ")
+        # img = cv2.GaussianBlur(img,(3,3),0)
+
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        
+
+        count_b = 0
+        for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
+            Hc = hc_rot[count_b]
+            Ht = ht_rot[count_b]
+            
+            C = cv2.filter2D(Wc, -1, Hc) #Hc
+            T = cv2.filter2D(Wt, -1, Ht) #Ht
+            count_b += 1
+
+            C_ = 255-C
+            comb = T & C_
+            G = self.get_gaussian_blur(comb)
+
+            ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
+            ccwt = cv2.connectedComponentsWithStats(thresh)
+            
+            res = np.delete(ccwt[3], 0, 0)
+
+            for i in range(res[:,0].shape[0]):
+                y = int(res[:,1][i])
+                x = int(res[:,0][i])
+                z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
+
+            # cv2.imwrite(f"./vision/tmp/G_{count_b}.png", G)
+            # cv2.imwrite(f"./vision/tmp/C_{count_b}.png", C)
+            # cv2.imwrite(f"./vision/tmp/CBar_{count_b}.png", C_)
+            # cv2.imwrite(f"./vision/tmp/T_{count_b}.png", T)
+            # cv2.imwrite(f"./vision/tmp/comb_{count_b}.png", comb)
+
+        candidates.sort(key=self.takefirst, reverse=True)
+        print(candidates[0])
         return candidates
 
     def combined_graspability_map(self, img, hand_open_mask, hand_close_mask, merge_mask):

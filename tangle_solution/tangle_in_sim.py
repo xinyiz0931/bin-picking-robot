@@ -46,7 +46,7 @@ def main():
     tc6d = TopoCoor6D()
 
     """Configurations defined by users"""
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119131131"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
     # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211119180424"
     shape = "c"
     graph = []
@@ -135,7 +135,7 @@ def main():
     """visualize all objects and tangleship"""
     fig = plt.figure(figsize=(15, 9))
     ax3d = fig.add_subplot(121, projection='3d')
-    ax3d.view_init(167, -87)
+    # ax3d.view_init(167, -87)
     # ax3d.view_init(180,270)
 
     # plot axis
@@ -202,13 +202,13 @@ def main():
     #         plt.axis('off')
     #         plt.show()
 
-    mask_path = os.path.join(root_dir, "mask_3.png")
-    mask_path2 = os.path.join(root_dir, "mask_5.png")
-    plt.imshow(im, cmap='gray')
-    plt.imshow(cv2.imread(mask_path, 0) + cv2.imread(mask_path2, 0), cmap='jet', alpha=0.4)
-    # plt.imshow(cv2.imread(mask_path2, 0), cmap='jet', alpha=0.1)
-    plt.axis('off')
-    plt.show()
+    # mask_path = os.path.join(root_dir, "mask_3.png")
+    # mask_path2 = os.path.join(root_dir, "mask_5.png")
+    # plt.imshow(im, cmap='gray')
+    # plt.imshow(cv2.imread(mask_path, 0) + cv2.imread(mask_path2, 0), cmap='jet', alpha=0.4)
+    # # plt.imshow(cv2.imread(mask_path2, 0), cmap='jet', alpha=0.1)
+    # plt.axis('off')
+    # plt.show()
 
 
     

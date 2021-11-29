@@ -16,7 +16,7 @@ import configparser
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
-from example.bin_picking import *
+from example.binpicking import *
 from grasping.graspability import Gripper, Graspability
 from tangle_solution.topo_coor import LineDetection
 from tangle_solution.entanglement_map import EntanglementMap
@@ -55,6 +55,7 @@ def main():
     # grasp detection A
     # gripper = Gripper(finger_w=7,finger_h=12,gripper_width=30)
     gripper = Gripper(finger_w=5,finger_h=15,gripper_width=50)
+    
     grasps, input_img, full_image = detect_grasp_point(gripper,5,img_path, (0,0,img.shape[0],img.shape[1]))
     drawn_gmap = gripper.draw_grasp(grasps[:5], img.copy())
     
