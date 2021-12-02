@@ -100,7 +100,6 @@ def calc_lineseg_dist(p, l):
 
     # perpendicular distance component
     c = np.cross(p - a, d)
-
     return np.hypot(h, np.linalg.norm(c))
 
 def calc_intersection(a1, a2, b1, b2):

@@ -46,9 +46,9 @@ def main():
     tc6d = TopoCoor6D()
 
     """Configurations defined by users"""
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
-    # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211119180424"
-    shape = "c"
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211201232220"
+    shape = "srect"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
@@ -73,6 +73,7 @@ def main():
     """compute tangleship"""
     graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
     num_obj = len(graph)
+
     # writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
     # result_print(f"Writhe: {np.round(writhe_collection, 3)}")
     # result_print(f"Height: {np.round(height_collection, 3)}")
@@ -135,7 +136,7 @@ def main():
     """visualize all objects and tangleship"""
     fig = plt.figure(figsize=(15, 9))
     ax3d = fig.add_subplot(121, projection='3d')
-    # ax3d.view_init(167, -87)
+    ax3d.view_init(167, -87)
     # ax3d.view_init(180,270)
 
     # plot axis
@@ -160,7 +161,14 @@ def main():
     # proj_euler_angle = [0, 0, 45]
     proj_euler_angle = [0, 0, 0] # n_0
     labels = tc6d.compute_tangleship_with_projection(root_dir, graph, pose, proj_euler_angle)
+
     result_print(f"Labels: {labels}")
+    # revised to clearly see writhe
+    # writhe = []
+    # for l in labels:
+    #     writhe.append(len(labels.get(l)))
+    # result_print(f"Writhe: {writhe}")
+
     for i, j in zip(sorted_index, range(num_obj)):
         node = graph[i]
         node_cmap = cmap(j)
@@ -177,15 +185,16 @@ def main():
     # ax1 = fig.add_subplot(132)
     ax3d.legend(handles=legend_elements, loc='center left')
     # plt.axis('off')
-    plt.show()
-    
-    # rot90 = cv2.rotate(im, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    # ax2.imshow(rot90, cmap='gray')
-    # plt.title("Depth image")
 
     # visualize all graspable objects using depth image
     im = cv2.imread(im_path, 0)
-    fig = plt.figure()
+
+    # ax3 = fig.add_subplot(133)
+    # rot90 = cv2.rotate(im, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    # ax3.imshow(rot90, cmap='gray')
+    # plt.title("Depth image")
+    plt.show()
+    # fig = plt.figure()
     # for i in range(num_obj):
     #     if labels[i]==[]:
     #         # singulated

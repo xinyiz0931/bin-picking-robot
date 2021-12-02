@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import itertools
 from scipy.spatial.transform import Rotation as R
-from utils.plot_utils import WireframeSphere
+
 from utils.transform_utils import *
 
 def unique_rows(a):
@@ -21,6 +21,7 @@ if __name__ == '__main__':
     # phi = np.pi/2
 
     phi=60
+    theta = 45
     # start = -90
     # end=90 + 0.1*phi
 

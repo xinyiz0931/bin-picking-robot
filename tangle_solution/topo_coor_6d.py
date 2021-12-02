@@ -173,7 +173,6 @@ class TopoCoor6D(object):
         for nodes in graph:
             # obj number
             objs.append(self.node2edge(nodes))
-        print(objs)
         for i in range(n_obj):
             obj1 = objs[i]
             for j in range(i + 1, n_obj):
@@ -246,8 +245,14 @@ class TopoCoor6D(object):
                 gli_mat[k][t] = gli
         return gli_mat
 
+    # def transfer_sim_pos(self, node, p, q, center, cube1_pos):
+    #     trans = center - cube1_pos
+    #     m = quat2mat(q)
+    #     trans_ = np.array([np.dot(trans, m[0]), np.dot(trans, m[1]), np.dot(trans, m[2])])
+    #     p += trans_
+    #     return rotate_3d(node, m) + p
     def transfer_sim_pos(self, node, p, q, center, cube1_pos):
-        trans = center - cube1_pos
+        trans = -cube1_pos
         m = quat2mat(q)
         trans_ = np.array([np.dot(trans, m[0]), np.dot(trans, m[1]), np.dot(trans, m[2])])
         p += trans_
@@ -437,10 +442,11 @@ class TopoCoor6D(object):
         for i in range(n_obj):
             # calculate writhe between objs[i] nad other_obj[j]
             other_obj_proj = np.delete(objs_proj, i, axis=0)
-            other_obj = np.delete(objs, i ,axis=0)\
+            other_obj = np.delete(objs, i ,axis=0)
             
             writhe =0
             labels[i] = []
+            cross_num= 0
 
             for j in range(other_obj_proj.shape[0]):
                 for (k, t) in list(itertools.product(range(n_seg), range(n_seg))):
@@ -457,6 +463,7 @@ class TopoCoor6D(object):
                             labels[i].append(1)
                         else:
                             labels[i].append(-1)
+                        cross_num += 1
                     writhe += gli
             writhe *= 2
             # if writhe == 0:
@@ -600,6 +607,6 @@ if __name__ == "__main__":
     ax3d.scatter(cp[0], cp[1], -0.5, color='orange')
     
     # plt.axis('off')
-    ax3d.set_box_aspect(aspect = (1,1,1))
+    # ax3d.set_box_aspect(aspect = (1,1,1))
     plt.show()
 
