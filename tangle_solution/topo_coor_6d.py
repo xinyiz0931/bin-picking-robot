@@ -251,14 +251,14 @@ class TopoCoor6D(object):
     #     trans_ = np.array([np.dot(trans, m[0]), np.dot(trans, m[1]), np.dot(trans, m[2])])
     #     p += trans_
     #     return rotate_3d(node, m) + p
-    def transfer_sim_pos(self, node, p, q, center, cube1_pos):
+    def transfer_sim_pos(self, node, p, q, cube1_pos):
         trans = -cube1_pos
         m = quat2mat(q)
         trans_ = np.array([np.dot(trans, m[0]), np.dot(trans, m[1]), np.dot(trans, m[2])])
         p += trans_
         return rotate_3d(node, m) + p
 
-    def make_sim_graph(self, template, pose, center, cube1_pos):
+    def make_sim_graph(self, template, pose, cube1_pos):
         graph = []
         for v in pose:
             # make a new template
@@ -269,7 +269,7 @@ class TopoCoor6D(object):
             rot = quat2mat(qua)
             P = pos - cube1_pos
             rot_ori = pos
-            node = self.transfer_sim_pos(node, pos, qua, center, cube1_pos)
+            node = self.transfer_sim_pos(node, pos, qua, cube1_pos)
             # node = rotate_3d(node + P, rot, origin=(rot_ori[0], rot_ori[1], rot_ori[2]))
             graph.append(node)
         return graph
@@ -406,7 +406,7 @@ class TopoCoor6D(object):
                             -- N: number of objs
                             -- M: number of template nodes
             pose {array}  -- shape=(N x 6)
-            proj_angle {list} -- [roll, pitch, yaw]
+            proj_angle {list} -- [roll, pitch, yaw] with degrees
         """
 
         graph = np.array(graph)
@@ -425,7 +425,7 @@ class TopoCoor6D(object):
 
         # check if projection neede
         if proj_angle != [0,0,0]:
-            warning_print(f"Start projecting along {proj_angle} ...")
+            main_proc_print(f"Start projecting along {proj_angle} ...")
 
         for nodes in graph:
             # projecting nodes using euler angle

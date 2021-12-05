@@ -6,6 +6,7 @@ import random
 import numpy as np
 from scipy import ndimage
 import cv2
+import open3d as o3d
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
@@ -15,45 +16,20 @@ import glob
 from utils.plot_utils import *
 from utils.base_utils import *
 from utils.transform_utils import *
+from utils.vision_utils import *
 from tangle_solution.topo_coor_6d import TopoCoor6D
 from tangle_obj_skeleton import TangleObjSke
 
-def read_model():
-    objmodel_dir = "./objmodel"
+def check_multi_view(root_dir, shape, proj_euler_angle = [0, 0, 0]):
 
-    obj1_path = os.path.join(objmodel_dir, "skeleton_ushape.txt")
-    obj2_path = os.path.join(objmodel_dir, "skeleton_sshape.txt")
-
-    node1 = np.loadtxt(obj1_path, delimiter=',')
-    node2 = np.loadtxt(obj2_path, delimiter=',')
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    plot_skeleton(node1, ax, (255,0,0))
-    plot_skeleton(node2, ax, (0,255,0))
-    plt.show()
-
-    tc = TopoCoor()
-
-    line1 = np.array([node2edge(node1)])
-    line2 = np.array([node2edge(node2)])
-    wmat, w, d = tc.topo_coor_from_two_edges(line1, line2)
-
-    result_print("w: {:.5}, d: {:.5}".format(w,d))
-
-def main():
-    
+    main_proc_print("-----------------------------------------------")
     tc6d = TopoCoor6D()
-
-    """Configurations defined by users"""
-    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
-    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211201232220"
-    shape = "srect"
     graph = []
 
     pc_path = os.path.join(root_dir, "point.ply")
     im_path = os.path.join(root_dir, "depth.png")
     pose_path = os.path.join(root_dir, "pose.txt")
+
     sk_path = f"./objmodel/skeleton_{shape}.json"
     cd_path = f"./objmodel/collision_{shape}.txt"
 
@@ -62,17 +38,141 @@ def main():
 
     center = np.array([float(p) for p in vhacd[0].split(' ')])
     cube1_pos = np.array([float(p) for p in vhacd[3].split(' ')])
-
     pose = np.loadtxt(pose_path)
-
     tok = TangleObjSke()
     obj_ske = tok.load_obj(sk_path)
-    
     template = np.array(obj_ske["node"])
 
     """compute tangleship"""
-    graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
+    graph = tc6d.make_sim_graph(template, pose, cube1_pos)
     num_obj = len(graph)
+
+    """visualize all objects and tangleship"""
+    fig = plt.figure(figsize=(15, 9))
+    ax3d = fig.add_subplot(121, projection='3d')
+    ax3d.view_init(167, -87)
+
+    # plot axis
+    ax3d.plot([0, 10], [0, 0], [0, 0], color='red') # x
+    ax3d.plot([0, 0], [0, 10], [0, 0], color='green') # y
+    ax3d.plot([0, 1], [0, 0], [0, 10], color='blue') # z
+    ax3d.set_xlim3d(-100, 100)
+    ax3d.set_ylim3d(-100, 100)
+    ax3d.set_zlim3d(-100, 100)
+    ax3d.set_xticklabels([])
+    ax3d.set_yticklabels([])
+    ax3d.set_zticklabels([])
+    plt.title("3D coordinate")
+
+    sorted_index = list(range(num_obj))
+    cmap = get_cmap(len(sorted_index))
+    ax2 = fig.add_subplot(122)
+    plt.xlim(-120, 120)
+    plt.ylim(120, -120)
+
+    labels = tc6d.compute_tangleship_with_projection(root_dir, graph, pose, proj_euler_angle)
+
+    """read and display point cloud """
+    # xyz = process_raw_pc(pc_path)
+    # for p in xyz:
+    #     ax3d.scatter(p[0], p[1], p[2], marker='^', alpha=0.3)
+
+    for i, j in zip(sorted_index, range(num_obj)):
+        node = graph[i]
+        node_cmap = cmap(j)
+        tc6d.draw_node(node, ax3d, alpha=1, color=node_cmap)
+        # tc6d.draw_projection_node_new(node, proj_euler_angle , ax3d, alpha=0.4, color=node_cmap)
+        tc6d.draw_projection_node_2d(node, proj_euler_angle , ax2, alpha=1, color=node_cmap)
+
+    # for c in crossings:
+    #     ax3d.scatter(c[0], 0, c[1], color='black')
+    
+    legend_elements = []
+    for i in range(num_obj):
+        legend_elements.append(Line2D([0], [0], color=cmap(i), lw=4, label=f'Object {i}'))
+    ax3d.legend(handles=legend_elements, loc='center left')
+
+    return labels
+
+def check_result(labels):
+
+    writhe = []
+    pick_idx = -1
+    for l in labels:
+        writhe.append(len(labels.get(l)))
+        if len(labels.get(l)) == 0:
+            pick_idx = l
+            result_print(f"Obj {pick_idx}: singulated -> {labels.get(l)}")
+        elif all(c > 0 for c in labels.get(l)): 
+            
+            pick_idx = l
+            result_print(f"Obj {pick_idx}: untangled -> {labels.get(l)}")
+
+    # result_print(f"Labels: {labels}")
+    result_print(f"Writhe: {writhe}")
+
+    return pick_idx
+
+def main():
+
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
+    shape = "scylinder"
+
+    phi_xy = 60
+    phi_z = 45
+
+
+    labels = check_multi_view(root_dir, shape)
+    pick_idx = check_result(labels)
+    if pick_idx == -1:
+        warning_print("Oops! No graspable object! ")
+        for x in np.arange(0,91,phi_xy):
+            for z in np.arange(0,360,phi_z):
+                if x != 0:
+                    view_direction = [x,0,z] # euler angle 
+                    labels = check_multi_view(root_dir, shape, proj_euler_angle=view_direction)
+                    check_result(labels)
+                    # plt.show()
+
+def main2():
+    
+    tc6d = TopoCoor6D()
+
+    """Configurations defined by users"""
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
+    shape = "scylinder"
+
+    # graph = []
+
+    # pc_path = os.path.join(root_dir, "point.ply")
+    # im_path = os.path.join(root_dir, "depth.png")
+    # pose_path = os.path.join(root_dir, "pose.txt")
+
+    # sk_path = f"./objmodel/skeleton_{shape}.json"
+    # cd_path = f"./objmodel/collision_{shape}.txt"
+
+    # # pcd = o3d.io.read_point_cloud(pc_path)
+    # # o3d.visualization.draw_geometries([pcd])
+
+
+
+    # with open(cd_path) as file:
+    #     vhacd = file.readlines()
+
+    # center = np.array([float(p) for p in vhacd[0].split(' ')])
+    # cube1_pos = np.array([float(p) for p in vhacd[3].split(' ')])
+
+    # pose = np.loadtxt(pose_path)
+
+    # tok = TangleObjSke()
+    # obj_ske = tok.load_obj(sk_path)
+    
+    # template = np.array(obj_ske["node"])
+
+    # """compute tangleship"""
+    # graph = tc6d.make_sim_graph(template, pose, center, cube1_pos)
+    # num_obj = len(graph)
 
     # writhe_collection, height_collection = tc6d.compute_tangleship(root_dir, graph, pose)
     # result_print(f"Writhe: {np.round(writhe_collection, 3)}")
@@ -81,6 +181,8 @@ def main():
     # writhe_mat = tc6d.compute_tangleship(root_dir, graph, pose)
     # voting = tc6d.compute_tangleship(root_dir, graph, pose)
 
+
+    """initial coding for view directions sampling"""
 
 
     # view directions sampling
@@ -162,12 +264,44 @@ def main():
     proj_euler_angle = [0, 0, 0] # n_0
     labels = tc6d.compute_tangleship_with_projection(root_dir, graph, pose, proj_euler_angle)
 
-    result_print(f"Labels: {labels}")
+    
     # revised to clearly see writhe
-    # writhe = []
-    # for l in labels:
-    #     writhe.append(len(labels.get(l)))
-    # result_print(f"Writhe: {writhe}")
+    writhe = []
+        
+    pick_idx = -1
+
+    for l in labels:
+        writhe.append(len(labels.get(l)))
+        if len(labels.get(l)) == 0:
+            pick_idx = l
+            result_print(f"Obj {pick_idx}: singulated -> {labels.get(l)}")
+        elif all(c > 0 for c in labels.get(l)): 
+            
+            pick_idx = l
+            result_print(f"Obj {pick_idx}: untangled -> {labels.get(l)}")
+    if pick_idx == -1:
+        warning_print("Oops! No graspable object! ")
+
+    result_print(f"Labels: {labels}")
+    result_print(f"Writhe: {writhe}")
+
+    """Solve for drag-picking"""
+    phi_xy=90
+    phi_z = 45
+
+    for x in np.arange(0,91,phi_xy):
+        for z in np.arange(0,360,phi_z):
+            if x != 0:
+                # euler angle
+                print([x,0,z])
+                # rot = np.dot(rpy2mat([x,0,z]), init_view)
+                # rot =  rot / np.linalg.norm(rot)
+                # print(np.degrees(rot))
+                
+    """read and display point cloud """
+    # xyz = process_raw_pc(pc_path)
+    # for p in xyz:
+    #     ax3d.scatter(p[0], p[1], p[2], marker='^', alpha=0.3)
 
     for i, j in zip(sorted_index, range(num_obj)):
         node = graph[i]
@@ -178,7 +312,7 @@ def main():
 
     # for c in crossings:
     #     ax3d.scatter(c[0], 0, c[1], color='black')
-
+    
     legend_elements = []
     for i in range(num_obj):
         legend_elements.append(Line2D([0], [0], color=cmap(i), lw=4, label=f'Object {i}'))
@@ -229,6 +363,7 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     main()
+    
 
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))

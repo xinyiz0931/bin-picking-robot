@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-# import open3d as o3d
+import open3d as o3d
 def rotate_img(img, angle, center=None, scale=1.0):
     (h,w) = img.shape[:2]
 
@@ -238,10 +238,17 @@ def process_raw_pc(pcd_path):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
 
-    pc_path = "./vision/tmp/reform.ply"
-    o3d.io.write_point_cloud(pc_path, pcd)
-    re_pcd = o3d.io.read_point_cloud(pc_path)
-    down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
+    # pc_path = "./vision/tmp/reform.ply"
+    # o3d.io.write_point_cloud(pc_path, pcd)
+    # re_pcd = o3d.io.read_point_cloud(pc_path)
+    # down_pcd = re_pcd.voxel_down_sample(voxel_size=8)
+
+    # re_xyz = np.asarray(down_pcd.points)
+    # return (re_xyz)
+    # pc_path = "./vision/tmp/reform.ply"
+    # o3d.io.write_point_cloud(pc_path, pcd)
+    # re_pcd = o3d.io.read_point_cloud(pc_path)
+    down_pcd = pcd.voxel_down_sample(voxel_size=8)
 
     re_xyz = np.asarray(down_pcd.points)
     return (re_xyz)

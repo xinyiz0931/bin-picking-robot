@@ -15,7 +15,7 @@ from grasping.graspability import Gripper, Graspability
 from utils.base_utils import *
 from utils.transform_utils import *
 from utils.vision_utils import *
-from example.binpicking import *
+
 
 def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
     """Detect grasp point using graspability
@@ -62,7 +62,8 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
 if __name__ == '__main__':
 
     """Configurations defined by users"""
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119131126"
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119131126"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211202151420"
     img_path = os.path.join(root_dir, "depth.png")
 
     # conflict = np.zeros((500,500))
@@ -78,8 +79,8 @@ if __name__ == '__main__':
     # prepare hand model
     gripper = Gripper(finger_w=5, finger_h=5, gripper_width=46)
     # margins = (top_margin,left_margin,bottom_margin,right_margin)
-    Wc = cv2.imread(os.path.join(root_dir, "conflict.png"),0)
-    Wt = cv2.imread(os.path.join(root_dir, "mask_3.png"),0)
+    Wc = cv2.imread(os.path.join(root_dir, "mask_3.png"),0)
+    Wt = cv2.imread(os.path.join(root_dir, "mask.png"),0)
     margins = (0,0,500,500)
     g_params = (10, 50, 50, Wc, Wt)
     grasps, input_img, full_image = detect_tangle_grasp(gripper=gripper, n_grasp=1, img_path=img_path, margins=margins, g_params=g_params)

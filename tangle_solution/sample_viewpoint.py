@@ -16,11 +16,7 @@ def unique_rows(a):
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
 
 if __name__ == '__main__':
-    # start = -np.pi/2
-    # end = np.pi/2
-    # phi = np.pi/2
-
-    phi=60
+    phi=45
     theta = 45
     # start = -90
     # end=90 + 0.1*phi
@@ -51,7 +47,7 @@ if __name__ == '__main__':
     init_view = [0,0,1]
     ax.quiver(0, 0, 0, init_view[0], init_view[1], init_view[2], length = 2, color='black', alpha=0.75)
     for x in np.arange(0,91,phi):
-        for z in np.arange(0,360,phi):
+        for z in np.arange(0,360,theta):
             if x != 0:
                 # print(x,0,z) # euler angle
                 rot = np.dot(rpy2mat([x,0,z]), init_view)
@@ -61,7 +57,6 @@ if __name__ == '__main__':
         # for v in views:
         #     if (q!=v).any():
         #         views.append(q)
-
 
     ax.set_xlim3d(-2, 2)
     ax.set_ylim3d(-2, 2)
