@@ -16,8 +16,7 @@ def unique_rows(a):
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
 
 if __name__ == '__main__':
-    phi=45
-    theta = 45
+
     # start = -90
     # end=90 + 0.1*phi
 
@@ -43,15 +42,19 @@ if __name__ == '__main__':
     #     angle = r.as_euler('xyz', degrees=True)
     #     if (angle != [0,0,0]).any() :
     #         views.append(angle)
-    
-    init_view = [0,0,1]
+    phi_xy=60
+    phi_z = 45
+    init_view = [0,1,0]
+    # stay same as the simulator: first phi_xz, then y
     ax.quiver(0, 0, 0, init_view[0], init_view[1], init_view[2], length = 2, color='black', alpha=0.75)
-    for x in np.arange(0,91,phi):
-        for z in np.arange(0,360,theta):
+    for x in np.arange(0,91,phi_xy):
+        for y in np.arange(0,360,phi_z):
             if x != 0:
                 # print(x,0,z) # euler angle
-                rot = np.dot(rpy2mat([x,0,z]), init_view)
+                rot = np.dot(rpy2mat([x,y,0]), init_view)
                 rot =  rot / np.linalg.norm(rot)
+                # print([x,y,0], " ===> ", rpy2quat([x,y,0]))
+                print([x,y,0], " ===> ", rot)
                 ax.quiver(0, 0, 0, rot[0], rot[1], rot[2], length = 2, color='black', alpha=0.25,lw=2)
 
         # for v in views:
