@@ -15,33 +15,12 @@ def unique_rows(a):
     unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
     return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
 
-if __name__ == '__main__':
-
-    # start = -90
-    # end=90 + 0.1*phi
-
-
-
-
+def sample_view():
+    
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 
     views = []
-    # for x in np.arange(start, end, phi):
-    #     r = R.from_euler('x', x, degrees=True)
-    #     angle = r.as_euler('xyz', degrees=True)
-    #     if (angle != [0,0,0]).any():
-    #         views.append(angle)
-    # for y in np.arange(start, end, phi):
-    #     r = R.from_euler('y', y, degrees=True)
-    #     angle = r.as_euler('xyz', degrees=True)
-    #     if (angle != [0,0,0]).any() :
-    #         views.append(angle)
-    # for z in np.arange(start, end, phi):
-    #     r = R.from_euler('z', z, degrees=True)
-    #     angle = r.as_euler('xyz', degrees=True)
-    #     if (angle != [0,0,0]).any() :
-    #         views.append(angle)
     phi_xy=60
     phi_z = 45
     init_view = [0,1,0]
@@ -75,3 +54,13 @@ if __name__ == '__main__':
 
     ax.view_init(27,28)
     plt.show()
+
+
+def main():
+    img = cv2.imread("./vision/depth/depth0.png",0)
+    _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
+    plt.imshow(img, cmap='gray')
+    plt.imshow(mask*0.5, cmap='jet', alpha=0.3)
+    plt.show()
+if __name__ == '__main__':
+    main()
