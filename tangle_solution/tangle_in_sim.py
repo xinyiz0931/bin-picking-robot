@@ -52,6 +52,10 @@ def check_multi_view(root_dir, shape, proj_euler_angle = [0, 0, 0]):
     ax3d = fig.add_subplot(121, projection='3d')
     ax3d.view_init(167, -87)
 
+    rot = np.dot(rpy2mat(proj_euler_angle), [0,1,0])
+    rot =  rot / np.linalg.norm(rot)*100
+    ax3d.quiver(0, 0, 0, rot[0], rot[1], rot[2], length = 2, color='black', alpha=0.25,lw=2)
+
     # plot axis
     ax3d.plot([0, 10], [0, 0], [0, 0], color='red') # x
     ax3d.plot([0, 0], [0, 10], [0, 0], color='green') # y
@@ -91,7 +95,6 @@ def check_multi_view(root_dir, shape, proj_euler_angle = [0, 0, 0]):
     for i in range(num_obj):
         legend_elements.append(Line2D([0], [0], color=cmap(i), lw=4, label=f'Object {i}'))
     ax3d.legend(handles=legend_elements, loc='center left')
-
     return labels
 
 def check_result(labels):
@@ -115,25 +118,28 @@ def check_result(labels):
 
 def main():
 
-    # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
-    shape = "c"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
+    shape = "scylinder"
 
     phi_xy = 60
     phi_z = 45
 
 
     labels = check_multi_view(root_dir, shape)
+        
     pick_idx = check_result(labels)
-    # if pick_idx == -1:
-    #     warning_print("Oops! No graspable object! ")
-    #     for x in np.arange(0,91,phi_xy):
-    #         for z in np.arange(0,360,phi_z):
-    #             if x != 0:
-    #                 view_direction = [x,0,z] # euler angle 
-    #                 labels = check_multi_view(root_dir, shape, proj_euler_angle=view_direction)
-    #                 check_result(labels)
-                    # plt.show()
+    if pick_idx == -1:
+        warning_print("Oops! No graspable object! ")
+        for x in np.arange(0,91,phi_xy):
+            for z in np.arange(0,360,phi_z):
+                if x != 0:
+                    view_direction = [x,0,z] # euler angle 
+
+                    labels = check_multi_view(root_dir, shape, proj_euler_angle=view_direction)
+                    check_result(labels)
+                    plt.show()
+
 
 def main2():
     
