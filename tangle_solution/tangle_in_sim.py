@@ -115,8 +115,9 @@ def check_result(labels):
 
 def main():
 
-    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
-    shape = "scylinder"
+    # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211203223808"
+    root_dir = "D:\\code\\dataset\\tangle_in_sim\\twist"
+    shape = "c"
 
     phi_xy = 60
     phi_z = 45
@@ -124,14 +125,14 @@ def main():
 
     labels = check_multi_view(root_dir, shape)
     pick_idx = check_result(labels)
-    if pick_idx == -1:
-        warning_print("Oops! No graspable object! ")
-        for x in np.arange(0,91,phi_xy):
-            for z in np.arange(0,360,phi_z):
-                if x != 0:
-                    view_direction = [x,0,z] # euler angle 
-                    labels = check_multi_view(root_dir, shape, proj_euler_angle=view_direction)
-                    check_result(labels)
+    # if pick_idx == -1:
+    #     warning_print("Oops! No graspable object! ")
+    #     for x in np.arange(0,91,phi_xy):
+    #         for z in np.arange(0,360,phi_z):
+    #             if x != 0:
+    #                 view_direction = [x,0,z] # euler angle 
+    #                 labels = check_multi_view(root_dir, shape, proj_euler_angle=view_direction)
+    #                 check_result(labels)
                     # plt.show()
 
 def main2():
@@ -363,6 +364,7 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     main()
+    plt.show()
     
 
     end = timeit.default_timer()
