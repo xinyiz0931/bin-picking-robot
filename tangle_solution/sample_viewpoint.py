@@ -21,16 +21,16 @@ def sample_view():
     ax = fig.add_subplot(projection='3d')
 
     views = []
-    phi_xy=60
-    phi_z = 45
-    init_view = [0,1,0]
+    phi_xz = 60
+    phi_y = 45
+    init_view = [0,0,1]
     # stay same as the simulator: first phi_xz, then y
     ax.quiver(0, 0, 0, init_view[0], init_view[1], init_view[2], length = 2, color='black', alpha=0.75)
-    for x in np.arange(0,91,phi_xy):
-        for y in np.arange(0,360,phi_z):
+    for x in np.arange(0,91,phi_xz):
+        for y in np.arange(0,360,phi_y):
             if x != 0:
                 # print(x,0,z) # euler angle
-                rot = np.dot(rpy2mat([x,y,0]), init_view)
+                rot = np.dot(rpy2mat([x,0, y]), init_view)
                 rot =  rot / np.linalg.norm(rot)
                 # print([x,y,0], " ===> ", rpy2quat([x,y,0]))
                 print([x,y,0], " ===> ", rot)
@@ -45,9 +45,9 @@ def sample_view():
     ax.set_zlim3d(0, 2)
     ax.set_box_aspect(aspect = (2,2,1))     
     # plt.axis('off')
-    ax.plot([0, 0.5], [0, 0], [0, 0], color='red') # x
-    ax.plot([0, 0], [0, 0.5], [0, 0], color='green') # y
-    ax.plot([0, 0], [0, 0], [0, 0.5], color='blue') # z
+    ax.plot([0, 0.5], [0, 0], [0, 0], color='blue') # x
+    ax.plot([0, 0], [0, 0.5], [0, 0], color='red') # y
+    ax.plot([0, 0], [0, 0], [0, 0.5], color='green') # z
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_zticklabels([])
@@ -93,7 +93,7 @@ def test_view():
 
     plt.show()
 def main():
-    test_view()
+    sample_view()
     # img = cv2.imread("./vision/depth/depth0.png",0)
     # _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
     # plt.imshow(img, cmap='gray')

@@ -136,23 +136,9 @@ class TopoCoor6D(object):
         for i in range(node.shape[0] - 1):
             draw_ax.plot([node[i][0], node[i + 1][0]], [node[i][1], node[i + 1][1]], [node[i][2], node[i + 1][2]],
                         color=color, alpha=alpha)
-        # additional: drawing the first node
-        draw_ax.scatter(node[0][0], node[0][1], node[0][2], color='red', alpha=alpha)
-        draw_ax.scatter(node[-1][0], node[-1][1], node[-1][2], color='yellow', alpha=alpha)
-        return draw_ax
-
-
-    def draw_projection_node(self, node, draw_ax, color, alpha=1):
-
-        node[:,1]=0
-        draw_ax.scatter(node[1:, 0], node[1:, 1], node[1:, 2], color=color, alpha=alpha)
-        for i in range(node.shape[0] - 1):
-            draw_ax.plot([node[i][0], node[i + 1][0]], [node[i][1], node[i + 1][1]], [node[i][2], node[i + 1][2]],
-                        color=color, alpha=alpha)
-        # additional: drawing the first node
-        draw_ax.scatter(node[0][0], node[0][1], node[0][2], color='red', alpha=alpha)
-        
-        # draw_ax.plot([0,0], [100,0],[0,0], alpha=0.3, color='yellow', marker='^')
+        # additional: drawing the start(red)/end(yellow) node
+        # draw_ax.scatter(node[0][0], node[0][1], node[0][2], color='red', alpha=alpha)
+        # draw_ax.scatter(node[-1][0], node[-1][1], node[-1][2], color='yellow', alpha=alpha)
         return draw_ax
 
     def draw_projection_node_2d(self, node, euler_angle, draw_ax, color, alpha=1):
@@ -165,15 +151,14 @@ class TopoCoor6D(object):
         """
         projection_mat = simrpy2mat(euler_angle)
         node_proj = (np.dot(projection_mat, node.T)).T
-        # node_proj = rotate_in_sim(node, xz, y)
         node_proj[:,1]=0
         draw_ax.scatter(node_proj[1:, 0], node_proj[1:, 2], color=color, alpha=alpha)
         for i in range(node_proj.shape[0] - 1):
             draw_ax.plot([node_proj[i][0], node_proj[i + 1][0]], [node_proj[i][2], node_proj[i + 1][2]],
                         color=color, alpha=alpha)
-        # additional: drawing the first node
-        draw_ax.scatter(node_proj[0][0], node_proj[0][2], color='red', alpha=alpha)
-        draw_ax.scatter(node_proj[-1][0], node_proj[-1][2], color='yellow', alpha=alpha)
+        # additional: drawing the start(red)/end(yellow) node
+        # draw_ax.scatter(node_proj[0][0], node_proj[0][2], color='red', alpha=alpha)
+        # draw_ax.scatter(node_proj[-1][0], node_proj[-1][2], color='yellow', alpha=alpha)
         return draw_ax
 
     def draw_projection_node_3d(self, node, euler_angle, draw_ax, color, alpha=1):
