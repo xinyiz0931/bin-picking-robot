@@ -36,6 +36,13 @@ def rpy2quat(Re):
 def rpy2mat(Re):
     r = R.from_euler('xyz', Re, degrees=True)
     return r.as_matrix()
+
+def simrpy2quat(Re):
+    r = R.from_euler('yxz', Re, degrees=True)
+    return r.as_quat()
+def simrpy2mat(Re):
+    r = R.from_euler('yxz', Re, degrees=True)
+    return r.as_matrix()
     
 def rotate_3d(p, R, origin=(0, 0, 0)):
     o = np.atleast_2d(origin)
@@ -75,13 +82,37 @@ def calc_2vectors_rot_mat(v1, v2):
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
 
+
 def calc_lineseg_dist(p, l):
     """Function calculates the distance from point p to line segment [a,b]. 
-
+    This function cannot calculate the shortest/perpendicular distance!!
+    Use `calc_shortest_dist(p,l)`
     Arguments:
         p {list} -- [x,y,z] a point
         l {list} -- [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z] a line
 
+    Returns:
+        {float} -- distance between p and l
+    """
+    p, l = np.array(p), np.array(l)
+    a, b = l[0:3], l[3:6]
+
+    a_ = np.array([a[0],0,a[2]])
+    b_ = np.array([b[0],0,b[2]])
+
+    da = a[1]
+    db = b[1]
+    
+    ratio = np.linalg.norm(p - a_)/np.linalg.norm(b_ - a_)
+    d = da + ratio*(db-da)
+    return(d)
+
+
+def calc_shortest_dist(p, l):
+    """Function calculates the distance from point p to line segment [a,b]. 
+    Arguments:
+        p {list} -- [x,y,z] a point
+        l {list} -- [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z] a line
     Returns:
         {float} -- distance between p and l
     """
@@ -228,5 +259,24 @@ def rotate_point_cloud(pc, angle=-11.75):
     ])
     return np.dot(H, pc.T).T
 
+def print_quaternion(q):
+    q = np.round(q, 3)
+    print(f"w: {q[3]}, x: {q[0]}, y: {q[1]}, z: {q[2]}")
 
-# print(rpy2quat([0,180,90]))
+def rotate_in_sim(p, xz, y):
+    """first rotate along positive Y-axis, then minus xz-axis"""
+    y_rot_p = (np.dot(rpy2mat([0,y,0]), p.T)).T
+    xz_rot_p = (np.dot(rpy2mat([-xz,0,0]), y_rot_p.T)).T
+    return xz_rot_p
+
+
+# # default: xyz
+# # sim: yzx
+# x = 90
+# y = 90
+# z = 0
+# print_quaternion(rpy2quat([x,y,z]))
+# print_quaternion(simrpy2quat([y,z,x]))
+# # print(quat2rpy([0.5,0.5,0.5,0.5]))
+
+

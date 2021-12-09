@@ -55,12 +55,49 @@ def sample_view():
     ax.view_init(27,28)
     plt.show()
 
+def test_view():
+    fig = plt.figure(figsize=(15, 7))
+    ax3d = fig.add_subplot(121, projection='3d')
+    ax3d.view_init(167, -87)
 
-def main():
-    img = cv2.imread("./vision/depth/depth0.png",0)
-    _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
-    plt.imshow(img, cmap='gray')
-    plt.imshow(mask*0.5, cmap='jet', alpha=0.3)
+    # plot axis
+    ax3d.plot([0, 10], [0, 0], [0, 0], color='red') # x
+    ax3d.plot([0, 0], [0, 10], [0, 0], color='green') # y
+    ax3d.plot([0, 0], [0, 0], [0, 10], color='blue') # z
+    ax3d.set_xlim3d(-100, 100)
+    ax3d.set_ylim3d(-100, 100)
+    ax3d.set_zlim3d(-100, 100)
+    ax3d.set_xticklabels([])
+    ax3d.set_yticklabels([])
+    ax3d.set_zticklabels([])
+    ax3d.set_box_aspect(aspect = (1,1,1))
+    plt.title("3D coordinate")
+
+    p = np.array([[20,30,40],[20,40,0]])
+    p2 = np.array([[-20,0,-40],[-20,-10,0]])
+    from tangle_solution.topo_coor_6d import TopoCoor6D
+
+    tp = TopoCoor6D()
+    tp.draw_node(p, ax3d, "black")
+    tp.draw_node(p2, ax3d, "purple")
+    ax2 = fig.add_subplot(122)
+    ax2.plot([0, 10], [0, 0], color='red') # x
+    ax2.plot([0, 0], [0, 10], color='blue') # z
+    plt.xlim(-120, 120)
+    plt.ylim(120, -120)
+
+    # tp.draw_projection_node_2d(p, [0,0,0], ax2, 'black', alpha=0.5)
+    tp.draw_projection_node_2d(p, [180,-90,0], ax2, 'black', alpha=1)
+
+    tp.draw_projection_node_2d(p2, [180,-90,0], ax2, 'purple', alpha=1)
+
     plt.show()
+def main():
+    test_view()
+    # img = cv2.imread("./vision/depth/depth0.png",0)
+    # _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
+    # plt.imshow(img, cmap='gray')
+    # plt.imshow(mask*0.5, cmap='jet', alpha=0.3)
+    # plt.show()
 if __name__ == '__main__':
     main()
