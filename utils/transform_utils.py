@@ -40,6 +40,7 @@ def rpy2mat(Re):
 def simrpy2quat(Re):
     r = R.from_euler('yxz', Re, degrees=True)
     return r.as_quat()
+
 def simrpy2mat(Re):
     r = R.from_euler('yxz', Re, degrees=True)
     return r.as_matrix()
@@ -272,11 +273,10 @@ def rotate_in_sim(p, xz, y):
 
 # # default: xyz
 # # sim: yzx
-# x = 90
-# y = 90
-# z = 0
-# print_quaternion(rpy2quat([x,y,z]))
-# print_quaternion(simrpy2quat([y,z,x]))
-# # print(quat2rpy([0.5,0.5,0.5,0.5]))
+x = 90
+y = 90
+z = 0
+print_quaternion(simrpy2quat([y,x,z]))
+# print(quat2rpy([0.5,0.5,0.5,0.5]))
 
 

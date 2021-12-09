@@ -152,8 +152,8 @@ def check_multi_view(root_dir, shape, euler_angle = [0, 0, 0]):
         tc6d.draw_projection_node_2d(graph[pick_idx], proj_obj_ea , ax2, alpha=1, color=cmap(pick_idx))
         ax3d.quiver(graph[pick_idx][0][0], graph[pick_idx][0][1], graph[pick_idx][0][2], rot[0], rot[1], rot[2], length = 2, color='black', alpha=0.5,lw=2)
     
-    plt.savefig(f"./vision/tmp/{pick_idx}_{euler_angle[0]}_{euler_angle[1]}_{euler_angle[2]}.png")
-    # plt.show()
+    # plt.savefig(f"./vision/tmp/{pick_idx}_{euler_angle[0]}_{euler_angle[1]}_{euler_angle[2]}.png")
+    plt.show()
     return pick_idx
     # return labels
 
@@ -179,14 +179,12 @@ def check_result(labels):
 
 def main():
 
-    # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211205114225"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211205114225"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211206210027"
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211205114225"
     shape = "scylinder"
 
-    # phi_xy = 60
-    # phi_z = 45
-    phi_xz = 22.5
-    phi_y = 45
+    phi_xz = 60
+    phi_y = 90
 
     tc6d = TopoCoor6D()
     pick_idx = check_multi_view(root_dir, shape)
@@ -197,7 +195,9 @@ def main():
                 if xz != 0:
                     # euler angle in 'xyz' seq
                     view_direction = [xz,y,0] 
-                    labels = check_multi_view(root_dir, shape, euler_angle=view_direction)
+                    proj_use = [y,-xz,0] # 'yxz' seq
+                    print(f"------------ {view_direction} ==> {proj_use}--------------")
+                    # labels = check_multi_view(root_dir, shape, euler_angle=view_direction)
 
 if __name__ == "__main__":
     
