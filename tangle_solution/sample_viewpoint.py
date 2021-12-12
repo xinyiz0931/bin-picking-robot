@@ -92,8 +92,29 @@ def test_view():
     tp.draw_projection_node_2d(p2, [180,-90,0], ax2, 'purple', alpha=1)
 
     plt.show()
+
+def show_mesh_model():
+    import open3d as o3d
+    mesh = o3d.io.read_triangle_mesh("./objmodel/model_u.ply")
+    print("Testing mesh in Open3D...")
+    print(mesh)
+    print('Vertices:')
+    print(np.asarray(mesh.vertices))
+    print('Triangles:')
+    print(np.asarray(mesh.triangles))
+    print("Computing normal and rendering it.")
+    mesh.compute_vertex_normals()
+    print(np.asarray(mesh.triangle_normals))
+    o3d.visualization.draw_geometries([mesh])
+
+def create_img():
+    img = cv2.imread("C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211212161104\\grasp.png")
+    drawn = cv2.circle(img, (159,272), 7, (0,192,255), -1)
+    cv2.imwrite("C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211212161104\\result.png", drawn)
+    plt.imshow(img)
+    plt.show()
 def main():
-    sample_view()
+    create_img()
     # img = cv2.imread("./vision/depth/depth0.png",0)
     # _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
     # plt.imshow(img, cmap='gray')

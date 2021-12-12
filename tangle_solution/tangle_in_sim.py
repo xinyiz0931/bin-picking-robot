@@ -179,12 +179,12 @@ def check_result(labels):
 
 def main():
 
-    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211206210027"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211206205744"
     # root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211205114225"
     shape = "scylinder"
 
-    phi_xz = 60
-    phi_y = 90
+    phi_xz = 90
+    phi_y = 45
 
     tc6d = TopoCoor6D()
     pick_idx = check_multi_view(root_dir, shape)
@@ -196,8 +196,14 @@ def main():
                     # euler angle in 'xyz' seq
                     view_direction = [xz,y,0] 
                     proj_use = [y,-xz,0] # 'yxz' seq
-                    print(f"------------ {view_direction} ==> {proj_use}--------------")
-                    # labels = check_multi_view(root_dir, shape, euler_angle=view_direction)
+                    dragv_use = [xz,-y,0] # 'xyz' seq
+
+                    # print(f"------------ {view_direction} ==> {dragv_use}--------------")
+                    # rot = np.dot(rpy2mat(dragv_use), [0,1,0])
+                    # rot =  rot / np.linalg.norm(rot)
+                    # print(rot)
+
+                    labels = check_multi_view(root_dir, shape, euler_angle=view_direction)
 
 if __name__ == "__main__":
     
@@ -205,7 +211,6 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     main()
-    
 
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))
