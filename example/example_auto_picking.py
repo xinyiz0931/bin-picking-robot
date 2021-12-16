@@ -104,7 +104,7 @@ def main():
     # # =======================  generate motion ===========================
     # success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 
   
-    # ======================= Record the data ============================
+    # ======================= Record the data ===================s=========
     main_proc_print("Save the results! ")
     cv2.imwrite(crop_path, input_img)
     cv2.imwrite(draw_path, drawn_input_img)

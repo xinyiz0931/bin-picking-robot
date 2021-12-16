@@ -271,12 +271,4 @@ def rotate_in_sim(p, xz, y):
     return xz_rot_p
 
 
-# # default: xyz
-# # sim: yzx
-x = 90
-y = 90
-z = 0
-print_quaternion(simrpy2quat([y,x,z]))
-# print(quat2rpy([0.5,0.5,0.5,0.5]))
-
 
