@@ -1,25 +1,14 @@
 import os
 import sys
-import math
-import random
-# execute the script from the root directory etc. ~/src/myrobot
-sys.path.append("./")
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-import cv2
-import numpy as np
-import configparser
-import matplotlib.pyplot as plt
-from datetime import datetime as dt
 
+
+sys.path.append("./")
 from example.binpicking import *
-from driver.phoxi import phoxi_client as pclt
-from grasping.graspability import Gripper, Graspability
-from motion.motion_generator import Motion
-import learning.predictor.predict_client as pdclt
-from utils.base_utils import *
-from utils.transform_utils import *
-from utils.vision_utils import *
+
+from grasping.graspability import Gripper
+# from utils.base_utils import *
+# from utils.transform_utils import *
+# from utils.vision_utils import *
 
 def main():
 
@@ -28,9 +17,11 @@ def main():
 
     gripper = Gripper()
 
-    rotation_step = 45
+    rotation_step = 22.5
     depth_step = 50
     hand_depth = 50
+    main_proc_print("Rotation step: {}".format(rotation_step))
+    main_proc_print("Depth step: {}".format(depth_step))
 
     margins = (0,0,500,500)
     g_params = (rotation_step, depth_step, hand_depth)
