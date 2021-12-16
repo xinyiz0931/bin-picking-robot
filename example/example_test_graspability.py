@@ -6,10 +6,6 @@ sys.path.append("./")
 from example.binpicking import *
 
 from grasping.graspability import Gripper
-# from utils.base_utils import *
-# from utils.transform_utils import *
-# from utils.vision_utils import *
-
 def main():
 
     ROOT_DIR = os.path.abspath("./")
@@ -26,7 +22,6 @@ def main():
     margins = (0,0,500,500)
     g_params = (rotation_step, depth_step, hand_depth)
     grasps, input_img, full_image = detect_grasp_point(gripper=gripper, n_grasp=10, img_path=img_path, margins=margins, g_params=g_params)
-
 
 if __name__ == "__main__":
 
