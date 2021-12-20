@@ -5,23 +5,44 @@ import sys
 sys.path.append("./")
 from example.binpicking import *
 
-from grasping.graspability import Gripper
 def main():
 
     ROOT_DIR = os.path.abspath("./")
-    img_path = os.path.join(ROOT_DIR, "vision/depth/depth0.png")
+    img_path = os.path.join(ROOT_DIR, "vision/depth/depth4.png")
+    img_path = "/media/xinyi/Files/code/dataset/labeled_pool/20210616045533_360_333_4_1_0.png"
 
-    gripper = Gripper()
+    # ============== REAL WORLD SETUP ==============
+    # finger_w=6.5
+    # finger_h=20
+    # open_w = 48
+    # gripper_size = 250
+    # ============== DEPTH SETUP (500x500)==============
+    finger_w=13
+    finger_h=40
+    open_w = 40
+    gripper_size = 500
+    # ============== SIMBIM SETUP (225x225)==============
+    # finger_w=5.85
+    # finger_h=18
+    # open_w = 43.2
+    # gripper_size = 225
 
-    rotation_step = 22.5
+    rotation_step = 45
     depth_step = 50
     hand_depth = 50
+
     main_proc_print("Rotation step: {}".format(rotation_step))
     main_proc_print("Depth step: {}".format(depth_step))
 
     margins = (0,0,500,500)
     g_params = (rotation_step, depth_step, hand_depth)
-    grasps, input_img, full_image = detect_grasp_point(gripper=gripper, n_grasp=10, img_path=img_path, margins=margins, g_params=g_params)
+    h_params = (finger_h, finger_w, open_w, gripper_size)
+
+    # grasps, input_img, full_image = detect_grasp_point(gripper=gripper, n_grasp=10, img_path=img_path, margins=margins, g_params=g_params)
+    grasps, input_img, full_image = detect_grasp_point2(n_grasp=10, img_path=img_path, margins=margins, g_params=g_params, h_params=h_params)
+    result_print(f"Top grasp: pixel location=({grasps[0][1]},{grasps[0][2]}), angle={grasps[0][4]*180/math.pi}, width={grasps[0][-1]}")
+    
+
 
 if __name__ == "__main__":
 

@@ -1,240 +1,364 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import math
-
+import time
 sys.path.append("./")
-from utils.base_utils import *
-from utils.image_proc_utils import rotate_img
 
+import math
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
+
+from utils.base_utils import *
+from utils.vision_utils import *
 
 class Gripper(object):
-    def __init__(self, handwidth=34, model_ratio=250 / 112.5):
-        self.handwidth = handwidth
-        self.model_ratio = model_ratio
+    def __init__(self, finger_w, finger_h, open_w, gripper_size):
+        self.open_w = open_w
+        self.gripper_size = gripper_size
+        self.finger_w = finger_w
+        self.finger_h = finger_h
+    
+    # a series of transformations: sim <-> image <-> real world
+    def image2real(self):
+        ratio = 500/250
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio
+        
+    def image2sim(self):
+        ratio = 500/225
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio
 
-    def hand_model(self, finger_w, finger_h, model_size=250):
+    def sim2image(self):
+        ratio = 225/500
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio    
 
-        c = int(model_size / 2)
-        how = int(self.handwidth / 2 * self.model_ratio)
-        hft = int(finger_h / 2 * self.model_ratio)
-        fw = int(finger_w * self.model_ratio)
+    def sim2real(self):
+        ratio = 225/250
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio    
 
-        ho = np.zeros((model_size, model_size), dtype="uint8")  # open
-        hc = np.zeros((model_size, model_size), dtype="uint8")  # close
+    def real2image(self):
+        ratio = 250/500
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio
 
-        ho[(c - hft):(c + hft), (c - how - fw):(c - how)] = 255
-        ho[(c - hft):(c + hft), (c + how):(c + how + fw)] = 255
-        hc[(c - hft):(c + hft), (c - how):(c + how)] = 255
+    def real2sim(self):
+        ratio = 250/225
+        self.open_w /= ratio
+        self.gripper_size /= ratio
+        self.finger_w /= ratio
+        self.finger_h /= ratio
+    
+    def print_gripper(self):
+        result_print(f"Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.gripper_size}")
+
+    def create_hand_model(self):
+        
+        c = int(self.gripper_size/2)
+        how = int(self.open_w/2)
+        hfh = int(self.finger_h/2)
+        fw = int(self.finger_w)
+
+        ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
+        hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
+        
+        ho[(c-hfh):(c+hfh), (c-how-fw):(c-how)]=255
+        ho[(c-hfh):(c+hfh), (c+how):(c+how+fw)]=255
+        hc[(c-hfh):(c+hfh), (c-how):(c+how)]=255
 
         return ho, hc
+    
+    def get_hand_model(self, model_size, open_width, x=None, y=None,angle=None):
+        
+        how = int(open_width/2)
+        hfh = int(self.finger_h/2)
 
-    def draw_model(self, finger_w, finger_h, close_width, model_size):
+        fw = int(self.finger_w)
 
-        c = int(model_size / 2)
-        how = int(close_width / 2 * self.model_ratio)
-        hft = int(finger_h / 2 * self.model_ratio)
-        fw = int(finger_w * self.model_ratio)
+        ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
+        hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
+                
+        if x is None and y is None:
+            x, y = int(model_size/2), int(model_size/2)
 
-        hand = np.zeros((model_size, model_size), dtype="uint8")  # open
+        ho[(y-hfh):(y+hfh), (x-how-fw):(x-how)]=255
+        ho[(y-hfh):(y+hfh), (x+how):(x+how+fw)]=255
+        ho[(y-1):(y+1), (x-how):(x+how)]=255
 
-        hand[(c - hft):(c + hft), (c - how - fw):(c - how)] = 255
-        hand[(c - hft):(c + hft), (c + how):(c + how + fw)] = 255
-        hand[(c - 1):(c + 1), (c - how):(c + how)] = 255
-        return hand
+        # hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
 
-    def grasp_model(self, x, y, angle):
-        left_x = int(x + (self.handwidth / 2) * self.model_ratio * math.cos(angle))
-        left_y = int(y - (self.handwidth / 2) * self.model_ratio * math.sin(angle))
-        right_x = int(x - (self.handwidth / 2) * self.model_ratio * math.cos(angle))
-        right_y = int(y + (self.handwidth / 2) * self.model_ratio * math.sin(angle))
-        return left_x, left_y, right_x, right_y
+        if angle is None:
+            return ho, hc
 
-    def draw_grasp(self, grasp, drawf, drawc, lm, tm):
-        """Draw grasp on both cropped and full images
+        else:
+            # hc = Image.fromarray(np.uint8(hc))
+            ho = Image.fromarray(np.uint8(ho))
+            angle = angle * 180/math.pi
+            # hc_ = hc.rotate(angle, center=(x,y))
+            ho_ = ho.rotate(angle, center=(x,y))
 
-        Arguments:
-            grasp {list} -- [graspability_score, x,y,z,angle]
-            drawf {image} -- full image
-            drawc {image} -- cropped image
-            lm {int} -- left margin
-            tm {int} -- top margin
+            return np.array(ho_.convert('L'))
+    
+    def draw_grasp(self, grasps, img, color=(255,0,0)):
+        for i in range(len(grasps)-1,-1,-1):
+            x = int(grasps[i][1])
+            y = int(grasps[i][2])
+            angle = grasps[i][4]
+            open_w = grasps[i][7]
+            mask = self.get_hand_model(self.gripper_size, open_w, x = x, y = y, angle=angle)
 
-        Returns:
-            Drawn images
-        """
-        [_, x, y, _, angle] = grasp
-        # fully information
-        xf, yf, anglef = x + lm, y + tm, angle
+            h,w,_ = img.shape
+            if i == 0:
+                (r,g,b) = (0,255,0)
+            else:
+                (r,g,b) = color
 
-        lx, ly, rx, ry = self.grasp_model(x, y, angle)  # on drawc
-        lxf, lyf, rxf, ryf = self.grasp_model(xf, yf, anglef)  # on drawf
-
-        cv2.circle(drawc, (lx, ly), 7, (0, 0, 255), -1)
-        cv2.circle(drawc, (rx, ry), 7, (0, 0, 255), -1)
-        cv2.circle(drawc, (x, y), 5, (0, 0, 255), -1)
-        cv2.line(drawc, (lx, ly), (rx, ry), (0, 0, 255), 4)
-        # draw full
-        cv2.circle(drawf, (lxf, lyf), 7, (0, 0, 255), -1)
-        cv2.circle(drawf, (rxf, ryf), 7, (0, 0, 255), -1)
-        cv2.circle(drawf, (xf, yf), 5, (0, 0, 255), -1)
-        cv2.line(drawf, (lxf, lyf), (rxf, ryf), (0, 0, 255), 4)
-        return drawc, drawf
-
-    def draw_uniform_grasps(self, grasps, drawf, drawc, lm, tm):
-        """Draw grasp on a single image
-
-        Arguments:
-            grasps {list} -- [grasp1, grasp2,...], grasp1 = [g,x,y,z,a]
-            draw {image} -- input image
-
-        Returns:
-            drawn image
-        """
-        for i in range(len(grasps)):
-            # cropped information
-            [_, x, y, _, angle] = grasps[i]
-            # fully information
-            xf, yf, anglef = x + lm, y + tm, angle
-
-            lx, ly, rx, ry = self.grasp_model(x, y, angle)  # on drawc
-            lxf, lyf, rxf, ryf = self.grasp_model(xf, yf, anglef)  # on drawf
-            # draw cropped
-            cv2.circle(drawc, (lx, ly), 7, (0, 255, 255), -1)
-            cv2.circle(drawc, (rx, ry), 7, (0, 255, 255), -1)
-            cv2.circle(drawc, (x, y), 5, (0, 255, 255), -1)
-            cv2.line(drawc, (lx, ly), (rx, ry), (0, 255, 255), 4)
-            # draw full
-            cv2.circle(drawf, (lxf, lyf), 7, (0, 255, 255), -1)
-            cv2.circle(drawf, (rxf, ryf), 7, (0, 255, 255), -1)
-            cv2.circle(drawf, (xf, yf), 5, (0, 255, 255), -1)
-            cv2.line(drawf, (lxf, lyf), (rxf, ryf), (0, 255, 255), 4)
-
-        cv2.imwrite("./vision/depth/candidate_f.png", drawf)
-        cv2.imwrite("./vision/depth/candidate_c.png", drawc)
-        return drawc, drawf
-
-    def draw_grasp_single_image(self, grasps, img, r, g, b):
-        mask_size = 120
-        h, w, _ = img.shape
-        bgmask = np.zeros((h, w), dtype="uint8")
-        bggrasp = np.ones((h, w), dtype="uint8")
-        bggrasp = np.dstack((np.array(bggrasp * b, 'uint8'), np.array(bggrasp * g, 'uint8'),
-                             np.array(bggrasp * r, 'uint8')))
-
-        for i in range(len(grasps)):
-            [_, x, y, _, angle] = grasps[i]
-            hand_mask = self.draw_model(finger_w=5, finger_h=13, close_width=28, model_size=120)
-            mask = rotate_img(hand_mask, angle)
-
-            offset = mask_size / 2
-            bgmask[int(y - offset):int(y + offset), int(x - offset):int(x + offset)] = mask
-            # use the color you want in rgb channel
-        img[:] = np.where(bgmask[:h, :w, np.newaxis] == 0, img, bggrasp)
-        # draw point
-        for i in range(len(grasps)):
-            [_, x, y, _, angle] = grasps[i]
-            cv2.circle(img, (x, y), 5, (b, g, r), -1)
+            rgbmask = np.ones((h, w), dtype="uint8")
+            rgbmask = np.dstack((np.array(rgbmask * b, 'uint8'), np.array(rgbmask * g, 'uint8'),
+                            np.array(rgbmask * r, 'uint8')))
+            img[:] = np.where(mask[:h, :w, np.newaxis] == 0, img, rgbmask)
+        
 
         return img
+       
+    def create_grasp_model(self, x, y, angle, width):
+        left_x = int(x + (width/2)*math.cos(angle))
+        left_y = int(y - (width/2)*math.sin(angle))
+        right_x = int(x - (width/2)*math.cos(angle))
+        right_y = int(y + (width/2)*math.sin(angle))
+        return left_x, left_y, right_x, right_y
 
-    def draw_grasps(self, grasps, drawf, drawc, lm, tm, all=True):
+    def draw_grasp_ver2(self, grasps, img, top_color=(255,0,0)):
         """Use one line and an small empty circle representing grasp pose"""
-        for i in range(len(grasps)):
-            # cropped information
-            [_, x, y, _, angle] = grasps[i]
-            # fully information
-            xf, yf, anglef = x + lm, y + tm, angle
-            if all == True:
-                lx, ly, rx, ry = self.grasp_model(x, y, angle)  # on drawc
-                lxf, lyf, rxf, ryf = self.grasp_model(xf, yf, anglef)  # on drawf
-                if i == 0:
-                    # draw cropped
-                    cv2.circle(drawc, (lx, ly), 7, (0, 0, 255), -1)
-                    cv2.circle(drawc, (rx, ry), 7, (0, 0, 255), -1)
-                    cv2.circle(drawc, (x, y), 5, (0, 0, 255), -1)
-                    cv2.line(drawc, (lx, ly), (rx, ry), (0, 0, 255), 4)
-                    # draw full
-                    cv2.circle(drawf, (lxf, lyf), 7, (0, 0, 255), -1)
-                    cv2.circle(drawf, (rxf, ryf), 7, (0, 0, 255), -1)
-                    cv2.circle(drawf, (xf, yf), 5, (0, 0, 255), -1)
-                    cv2.line(drawf, (lxf, lyf), (rxf, ryf), (0, 0, 255), 4)
-                else:
-                    color = 255 - 15 * (i - 1)
-                    # draw cropped
-                    cv2.circle(drawc, (lx, ly), 7, (0, color, color), -1)
-                    cv2.circle(drawc, (rx, ry), 7, (0, color, color), -1)
-                    cv2.circle(drawc, (x, y), 5, (0, color, color), -1)
-                    cv2.line(drawc, (lx, ly), (rx, ry), (0, color, color), 2)
-                    # draw full
-                    cv2.circle(drawf, (lxf, lyf), 7, (0, color, color), -1)
-                    cv2.circle(drawf, (rxf, ryf), 7, (0, color, color), -1)
-                    cv2.circle(drawf, (xf, yf), 5, (0, color, color), -1)
-                    cv2.line(drawf, (lxf, lyf), (rxf, ryf), (0, color, color), 2)
+
+        for i in range(len(grasps)-1,-1,-1):
+            # [_,x,y,_,angle, ca, cb] = grasps[i]
+            x = int(grasps[i][1])
+            y = int(grasps[i][2])
+            angle = grasps[i][4]
+            ca = grasps[i][5]
+            cb = grasps[i][6]
+            ow = grasps[i][7]
+            lx, ly, rx, ry = self.create_grasp_model(x,y,angle, ow) # on drawc
+            if i == 0:
+                (r,g,b) = top_color
+                cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
+                cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
+                cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
             else:
-                lx, ly, rx, ry = self.grasp_model(x, y, angle)  # on drawc
-                lxf, lyf, rxf, ryf = self.grasp_model(xf, yf, anglef)  # on drawf
-                # draw cropped
-                cv2.circle(drawc, (lx, ly), 7, (0, 0, 255), -1)
-                cv2.circle(drawc, (rx, ry), 7, (0, 0, 255), -1)
-                cv2.circle(drawc, (x, y), 5, (0, 0, 255), -1)
-                cv2.line(drawc, (lx, ly), (rx, ry), (0, 0, 255), 4)
-                # draw full
-                cv2.circle(drawf, (lx, ly), 7, (0, 0, 255), -1)
-                cv2.circle(drawf, (rx, ry), 7, (0, 0, 255), -1)
-                cv2.circle(drawf, (x, y), 5, (0, 0, 255), -1)
-                cv2.line(drawf, (lx, ly), (rx, ry), (0, 0, 255), 4)
-                break
-        cv2.imwrite("./vision/depth/grasp_f.png", drawf)
-        cv2.imwrite("./vision/depth/grasp_c.png", drawc)
-        # from utils.image_proc_utils import rotate_img
-        # cv2.imwrite("./testmyview.png", rotate_img(drawc,180))
-        return drawc, drawf
+                color = 255-15*(i-1)
+                cv2.circle(img, (lx, ly), 7, (0, color,color), -1)
+                cv2.circle(img, (rx, ry), 7, (0, color,color), -1)
+                cv2.line(img, (lx, ly), (rx, ry), (0, color,color), 2)
 
+    def draw_single_grasp(self, x,y,angle, img, color):
+        """Use one line and an small empty circle representing grasp pose"""
+        lx, ly, rx, ry = self.grasp_model(x,y,angle) # on drawc
+        (r,g,b) = color
+        cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
+        cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
+        cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
+        return img
 
-if __name__ == '__main__':
-    # img = cv2.imread("../vision/depth/final_result.png")
-    # grasps = [[6, 500, 392, 2, -45], [1, 300, 450, 3, 150]]
-    # mask_size = 120
-    # gripper = Gripper(handwidth=28)
-    # draw = gripper.draw_grasp_single_image(grasps, img, 255, 255, 0)
-    # draw = gripper.draw_grasp_single_image([grasps[0]], img, 255, 0, 0)
-
-    # cv2.imshow("windows", draw)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+# TODO: abandon
+# class Gripper(object):
+#     def __init__(self, finger_w, finger_h, open_w, gripper_size):
+#         self.open_w = open_w
+#         self.gripper_size = gripper_size
+#         self.finger_w = finger_w
+#         self.finger_h = finger_h
     
-    gray = cv2.imread("D:\\code\\myrobot\\vision\\test\\test.png", 0)
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)
-    dot = np.multiply(gray, binary)
-    plt.imshow(gray)
-    plt.show()
-    plt.imshow(dot)
-    plt.show()
+#     # a series of transformations: sim <-> image <-> real world
+#     def image2real(self):
+#         ratio = 500/250
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio
+        
+#     def image2sim(self):
+#         ratio = 500/225
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio
+
+#     def sim2image(self):
+#         ratio = 225/500
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio    
+
+#     def sim2real(self):
+#         ratio = 225/250
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio    
+
+#     def real2image(self):
+#         ratio = 250/500
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio
+
+#     def real2sim(self):
+#         ratio = 250/225
+#         self.open_w /= ratio
+#         self.gripper_size /= ratio
+#         self.finger_w /= ratio
+#         self.finger_h /= ratio
+    
+#     def print_gripper(self):
+#         result_print(f"Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.gripper_size}")
+
+#     def hand_model(self, model_size=250):
+
+#         c = int(model_size/2)
+#         how = int(self.open_w/2*self.bin2img)
+#         hfh = int(self.finger_h/2*self.bin2img)
+#         fw = int(self.finger_w*self.bin2img)
+
+#         ho = np.zeros((model_size, model_size), dtype = "uint8") # open
+#         hc = np.zeros((model_size, model_size), dtype = "uint8") # close
+        
+#         ho[(c-hfh):(c+hfh), (c-how-fw):(c-how)]=255
+#         ho[(c-hfh):(c+hfh), (c+how):(c+how+fw)]=255
+#         hc[(c-hfh):(c+hfh), (c-how):(c+how)]=255
+
+#         return ho, hc
+
+#     def create_hand_model(self):
+        
+
+#         c = int(self.gripper_size/2)
+#         how = int(self.open_w/2)
+#         hfh = int(self.finger_h/2)
+#         fw = int(self.finger_w)
+
+#         ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
+#         hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
+        
+#         ho[(c-hfh):(c+hfh), (c-how-fw):(c-how)]=255
+#         ho[(c-hfh):(c+hfh), (c+how):(c+how+fw)]=255
+#         hc[(c-hfh):(c+hfh), (c-how):(c+how)]=255
+
+#         return ho, hc
+    
+#     def get_hand_model(self, model_size, open_width, x=None, y=None,angle=None):
+        
+#         how = int(open_width/2)
+#         hfh = int(self.finger_h/2)
+
+#         fw = int(self.finger_w)
+
+#         ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
+#         hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
+                
+#         if x is None and y is None:
+#             x, y = int(model_size/2), int(model_size/2)
+
+#         ho[(y-hfh):(y+hfh), (x-how-fw):(x-how)]=255
+#         ho[(y-hfh):(y+hfh), (x+how):(x+how+fw)]=255
+#         ho[(y-1):(y+1), (x-how):(x+how)]=255
+
+#         # hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
+
+#         if angle is None:
+#             return ho, hc
+
+#         else:
+#             # hc = Image.fromarray(np.uint8(hc))
+#             ho = Image.fromarray(np.uint8(ho))
+#             angle = angle * 180/math.pi
+#             # hc_ = hc.rotate(angle, center=(x,y))
+#             ho_ = ho.rotate(angle, center=(x,y))
+
+#             return np.array(ho_.convert('L'))
+            
+#     def create_grasp_model(self, x, y, angle, width):
+#         left_x = int(x + (width/2)*math.cos(angle))
+#         left_y = int(y - (width/2)*math.sin(angle))
+#         right_x = int(x - (width/2)*math.cos(angle))
+#         right_y = int(y + (width/2)*math.sin(angle))
+#         return left_x, left_y, right_x, right_y
+
+#     def grasp_model(self, x, y, angle):
+#         left_x = int(x + (self.open_w/3)*self.bin2img*math.cos(angle))
+#         left_y = int(y - (self.open_w/3)*self.bin2img*math.sin(angle))
+#         right_x = int(x - (self.open_w/3)*self.bin2img*math.cos(angle))
+#         right_y = int(y + (self.open_w/3)*self.bin2img*math.sin(angle))
+#         return left_x, left_y, right_x, right_y
+
+#     def draw_grasp(self, grasps, img, top_color=(255,0,0)):
+#         """Use one line and an small empty circle representing grasp pose"""
+
+#         for i in range(len(grasps)-1,-1,-1):
+#             # [_,x,y,_,angle, ca, cb] = grasps[i]
+#             x = int(grasps[i][1])
+#             y = int(grasps[i][2])
+#             angle = grasps[i][4]
+#             ca = grasps[i][5]
+#             cb = grasps[i][6]
+#             ow = grasps[i][7]
+#             lx, ly, rx, ry = self.create_grasp_model(x,y,angle, ow) # on drawc
+#             if i == 0:
+#                 (r,g,b) = top_color
+#                 cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
+#                 cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
+#                 cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
+#             else:
+#                 color = 255-15*(i-1)
+#                 cv2.circle(img, (lx, ly), 7, (0, color,color), -1)
+#                 cv2.circle(img, (rx, ry), 7, (0, color,color), -1)
+#                 cv2.line(img, (lx, ly), (rx, ry), (0, color,color), 2)
+#             # just for test
+#             # gmask = cv2.imread(f"./grasp/tmp/gmap_{ca}_{ca}.png",0)
+#             # plt.imshow(img, cmap='gray')
+#             # plt.imshow(gmask, alpha=0.5, cmap='jet')
+#             # plt.show()
+#         return img
+
+#     def draw_mask_grasp(self, grasps, img, color=(255,0,0)):
+#         for i in range(len(grasps)-1,-1,-1):
+#             x = int(grasps[i][1])
+#             y = int(grasps[i][2])
+#             angle = grasps[i][4]
+#             open_w = grasps[i][7]
+#             mask = self.get_hand_model(self.gripper_size, open_w, x = x, y = y, angle=angle)
+
+#             h,w,_ = img.shape
+#             (r,g,b) = color
+
+#             rgbmask = np.ones((h, w), dtype="uint8")
+#             rgbmask = np.dstack((np.array(rgbmask * b, 'uint8'), np.array(rgbmask * g, 'uint8'),
+#                             np.array(rgbmask * r, 'uint8')))
+#             img[:] = np.where(mask[:h, :w, np.newaxis] == 0, img, rgbmask)
+
+#         return img
 
 
-
-
-    # gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    # h,w,_ = img.shape
-    #
-    # bgmask = np.zeros((h, w), dtype="uint8")  # open
-    # bggrasp = np.ones((h, w), dtype="uint8")  # open
-    #
-    # offset = mask_size/2
-    # bgmask[int(grasp[0]-offset):int(grasp[0]+offset), int(grasp[1]-offset):int(grasp[1]+offset)] = mask
-    #
-    # # use the color you want in rgb channel
-    # (r,g,b) = (0,162,223)
-    #
-    # bggrasp = np.dstack((np.array(bggrasp * 255, 'uint8'), np.array(bggrasp * g, 'uint8'),
-    #                         np.array(bggrasp * r, 'uint8')))
-    # img[:] = np.where(bgmask[:h, :w, np.newaxis] == 0, img, bggrasp)
-    #
-    #
-    # cv2.imshow("windows", img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+#     def draw_single_grasp(self, x,y,angle, img, color):
+#         """Use one line and an small empty circle representing grasp pose"""
+#         lx, ly, rx, ry = self.grasp_model(x,y,angle) # on drawc
+#         (r,g,b) = color
+#         cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
+#         cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
+#         cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
+#         return img

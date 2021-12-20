@@ -10,78 +10,13 @@ from datetime import datetime as dt
 import timeit
 sys.path.append("./")
 import motion.motion_generator as mg
-from utils.base_utils import warning_print
+from utils.base_utils import *
 from utils.vision_utils import *
 
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
-class Gripper(object):
-    def __init__(self, finger_w=15, finger_h=25, gripper_width=37, model_ratio=250/112.5):
-        self.gripper_width = gripper_width
-        self.model_ratio = model_ratio
-        self.finger_w = finger_w
-        self.finger_h = finger_h
-
-    def hand_model(self, model_size=250):
-
-        c = int(model_size/2)
-        how = int(self.gripper_width/2*self.model_ratio)
-        hft = int(self.finger_h/2*self.model_ratio)
-        fw = int(self.finger_w*self.model_ratio)
-
-        ho = np.zeros((model_size, model_size), dtype = "uint8") # open
-        hc = np.zeros((model_size, model_size), dtype = "uint8") # close
-        
-        ho[(c-hft):(c+hft), (c-how-fw):(c-how)]=255
-        ho[(c-hft):(c+hft), (c+how):(c+how+fw)]=255
-        hc[(c-hft):(c+hft), (c-how):(c+how)]=255
-
-        return ho, hc
-
-    def grasp_model(self, x, y, angle):
-        left_x = int(x + (self.gripper_width/3)*self.model_ratio*math.cos(angle))
-        left_y = int(y - (self.gripper_width/3)*self.model_ratio*math.sin(angle))
-        right_x = int(x - (self.gripper_width/3)*self.model_ratio*math.cos(angle))
-        right_y = int(y + (self.gripper_width/3)*self.model_ratio*math.sin(angle))
-        return left_x, left_y, right_x, right_y
-
-    def draw_grasp(self, grasps, img, top_color=(255,0,0)):
-        """Use one line and an small empty circle representing grasp pose"""
-        for i in range(len(grasps)-1,-1,-1):
-            # [_,x,y,_,angle, ca, cb] = grasps[i]
-            x = int(grasps[i][1])
-            y = int(grasps[i][2])
-            angle = grasps[i][4]
-            ca = grasps[i][5]
-            cb = grasps[i][6]
-            lx, ly, rx, ry = self.grasp_model(x,y,angle) # on drawc
-            if i == 0:
-                (r,g,b) = top_color
-                cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
-                cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
-                cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
-            else:
-                color = 255-15*(i-1)
-                cv2.circle(img, (lx, ly), 7, (0, color,color), -1)
-                cv2.circle(img, (rx, ry), 7, (0, color,color), -1)
-                cv2.line(img, (lx, ly), (rx, ry), (0, color,color), 2)
-            # just for test
-            # gmask = cv2.imread(f"./grasp/tmp/gmap_{ca}_{ca}.png",0)
-            # plt.imshow(img, cmap='gray')
-            # plt.imshow(gmask, alpha=0.5, cmap='jet')
-            # plt.show()
-        return img
-
-    def draw_single_grasp(self, x,y,angle, img, color):
-        """Use one line and an small empty circle representing grasp pose"""
-        lx, ly, rx, ry = self.grasp_model(x,y,angle) # on drawc
-        (r,g,b) = color
-        cv2.circle(img, (lx, ly), 7, (b,g,r), -1)
-        cv2.circle(img, (rx, ry), 7, (b,g,r), -1)
-        cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
-        return img
+from PIL import Image
 
 class Graspability(object):
     def __init__(self, rotation_step, depth_step, hand_depth):
@@ -135,7 +70,7 @@ class Graspability(object):
        
         # prepare rotated hand model
         ht_rot, hc_rot = [], []
-        from PIL import Image
+        
         hand_open_mask = Image.fromarray(np.uint8(hand_open_mask))
         hand_close_mask = Image.fromarray(np.uint8(hand_close_mask))
 
@@ -181,6 +116,98 @@ class Graspability(object):
                     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
                     candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
         candidates.sort(key=self.takefirst, reverse=True)
+        return candidates
+
+    def width_adjusted_graspability_map(self, img, hand_open_mask, hand_close_mask, width_count):
+        """ generate graspability map and obtain all grasp candidates
+        Parameters
+        ----------
+        img : 3-channel image
+        hand_open_mask : 1-channel image
+        hand_close_mask : 1-channel image
+
+        Returns
+        -------
+        candidates : list  
+            a list containing all possible grasp candidates, every candidate -> [g,x,y,z]
+        """
+
+        candidates = []
+        count_a = 0
+        count_b = 0
+        start_rotation = 0
+        stop_rotation = 180
+        start_depth = 0
+        stop_depth = 201
+       
+        # prepare rotated hand model
+        ht_rot, hc_rot = [], []
+        from PIL import Image
+        hand_open_mask = Image.fromarray(np.uint8(hand_open_mask))
+        hand_close_mask = Image.fromarray(np.uint8(hand_close_mask))
+
+        for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
+            ht_= hand_close_mask.rotate(r)
+            hc_ = hand_open_mask.rotate(r)
+            ht_rot.append(np.array(ht_.convert('L')))
+            hc_rot.append(np.array(hc_.convert('L')))
+
+        # print("Computing graspability map... ")
+        # img = cv2.GaussianBlur(img,(3,3),0)
+
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        
+        for d in np.arange(start_depth, stop_depth, self.rotation_step):
+            count_a += 1
+            
+            _, Wc = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
+            _, Wt = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
+
+            count_b = 0
+            for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
+                Hc = hc_rot[count_b]
+                Ht = ht_rot[count_b]
+                
+                C = cv2.filter2D(Wc, -1, Hc) #Hc
+                T = cv2.filter2D(Wt, -1, Ht) #Ht
+                count_b += 1
+
+                C_ = 255-C
+                comb = T & C_
+                G = self.get_gaussian_blur(comb)
+
+                """Sample points with highest graspability"""
+                _,maxG,_,maxLoc = cv2.minMaxLoc(G)
+                x = maxLoc[0]
+                y = maxLoc[1]
+                z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                candidates.append([maxG, x, y, z, angle, count_a, count_b, width_count])
+                
+                """Sample points with largest graspability area"""
+                # ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
+                # ccwt = cv2.connectedComponentsWithStats(thresh)
+                # res = np.delete(ccwt[3], 0, 0)
+                # if res[:,0].shape[0]:
+                #     y = int(res[:,1][0])
+                #     x = int(res[:,0][0])
+                #     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                #     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                #     candidates.append([G[y][x], x, y, z, angle, count_a, count_b, width_count])
+                    
+                """Sample points with all graspability area"""
+                # ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
+                # ccwt = cv2.connectedComponentsWithStats(thresh)
+                
+                # res = np.delete(ccwt[3], 0, 0)
+
+                # for i in range(res[:,0].shape[0]):
+                #     y = int(res[:,1][i])
+                #     x = int(res[:,0][i])
+                #     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                #     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                #     candidates.append([G[y][x], x, y, z, angle, count_a, count_b, width_count])
+
         return candidates
 
     def target_oriented_graspability_map(self, img, hand_open_mask, hand_close_mask, Wc, Wt):
@@ -256,7 +283,6 @@ class Graspability(object):
             # cv2.imwrite(f"./vision/tmp/comb_{count_b}.png", comb)
 
         candidates.sort(key=self.takefirst, reverse=True)
-        print(candidates[0])
         return candidates
 
     def combined_graspability_map(self, img, hand_open_mask, hand_close_mask, merge_mask):
@@ -345,7 +371,7 @@ class Graspability(object):
             [list] -- a list of executable including [g,x,y,z,a,rot_step, depth_step]
         """
 
-        # candidates.sort(key=self.takefirst, reverse=True)
+        candidates.sort(key=self.takefirst, reverse=True)
         i = 0
         k = 0
         grasps = []

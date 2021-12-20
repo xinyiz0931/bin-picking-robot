@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
 from driver.phoxi import phoxi_client as pclt
-from grasping.graspability import Gripper, Graspability
+from grasping.graspability import Graspability
+from grasping.gripper import Gripper
 from motion.motion_generator import Motion
 # import learning.predictor.predict_client as pdclt
 from utils.base_utils import *
@@ -92,6 +93,70 @@ def detect_nontangle_grasp_point(gripper, n_grasp, img_path, margins, emap):
         warning_print("Grasp detection failed! No grasps!")
         return None, im_adj,img
 
+
+def detect_grasp_point2(n_grasp, img_path, margins, g_params, h_params):
+    """Detect grasp point using graspability
+
+    Arguments:
+        img_path {str} -- image path
+
+    Returns:
+        grasps -- grasp candidates, if detections fails, return 
+    """
+
+    (top_margin,left_margin,bottom_margin,right_margin) = margins
+    img = cv2.imread(img_path)
+
+    # cropped the necessary region (inside the bin)
+    height, width, _ = img.shape
+    im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
+    cropped_height, cropped_width, _ = im_cut.shape
+    main_proc_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
+    
+    im_adj = adjust_grayscale(im_cut)
+
+    (finger_h, finger_w, open_w, gripper_size) = h_params
+
+    min_open_w = 25
+    open_step = 20
+    
+    all_candidates = []
+
+    while open_w >= min_open_w:
+        # ------------------
+        gripper = Gripper(finger_w=finger_w, finger_h=finger_h, open_w=open_w, gripper_size=gripper_size)
+        hand_open_mask, hand_close_mask = gripper.create_hand_model()
+
+        (rstep, dstep, hand_depth) = g_params
+        method = Graspability(rotation_step=rstep, depth_step=dstep, hand_depth=hand_depth)
+
+        # generate graspability map
+        main_proc_print("Generate graspability map  ... ")
+        candidates = method.width_adjusted_graspability_map(
+            im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask,width_count=open_w)
+        all_candidates += candidates
+        # ------------------
+        open_w -= open_step
+        
+    # detect grasps
+    main_proc_print("Detect grasp poses ... ")
+    grasps = method.grasp_detection(
+        all_candidates, n=n_grasp, h=cropped_height, w=cropped_width)
+    # print(grasps)
+
+    if grasps != []:
+        important_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
+        # draw grasps
+        drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
+        # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
+        cv2.imshow("grasps", drawn_input_img)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+        return grasps, im_adj, img
+    else:
+        warning_print("Grasp detection failed! No grasps!")
+        return None, im_adj,img
+    
 
 def detect_grasp_point(gripper, n_grasp, img_path, margins, g_params):
     """Detect grasp point using graspability
