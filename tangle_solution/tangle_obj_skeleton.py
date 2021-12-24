@@ -218,7 +218,7 @@ class TangleObjSke(object):
 
 
 def main():
-    shape = "scylinder"
+    shape = "scopy"
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
