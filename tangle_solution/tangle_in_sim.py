@@ -321,9 +321,9 @@ def check_result(labels):
 
 def main():
 
-    # root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211206205744"
-    root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211203223808"
-    shape = "scylinder"
+    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211222214044"
+    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211203223808"
+    shape = "srect"
 
     phi_xz = 40
     phi_y = 22.5

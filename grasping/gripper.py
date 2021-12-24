@@ -118,7 +118,8 @@ class Gripper(object):
             x = int(grasps[i][1])
             y = int(grasps[i][2])
             angle = grasps[i][4]
-            open_w = grasps[i][7]
+            # open_w = grasps[i][7]
+            open_w = 50
             mask = self.get_hand_model(self.gripper_size, open_w, x = x, y = y, angle=angle)
 
             h,w,_ = img.shape

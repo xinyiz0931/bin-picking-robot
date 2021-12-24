@@ -157,11 +157,12 @@ class Graspability(object):
 
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         
-        for d in np.arange(start_depth, stop_depth, self.rotation_step):
+        for d in np.arange(start_depth, stop_depth, self.depth_step):
             count_a += 1
             
-            _, Wc = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
-            _, Wt = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
+            # revised by xinyi
+            _, Wc = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
+            _, Wt = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
 
             count_b = 0
             for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
@@ -230,8 +231,6 @@ class Graspability(object):
         count_b = 0
         start_rotation = 0
         stop_rotation = 180
-        start_depth = 0
-        stop_depth = 201
        
         # prepare rotated hand model
         ht_rot, hc_rot = [], []
@@ -249,8 +248,6 @@ class Graspability(object):
         # img = cv2.GaussianBlur(img,(3,3),0)
 
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        
-
         count_b = 0
         for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
             Hc = hc_rot[count_b]
@@ -263,18 +260,23 @@ class Graspability(object):
             C_ = 255-C
             comb = T & C_
             G = self.get_gaussian_blur(comb)
-
             ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
             ccwt = cv2.connectedComponentsWithStats(thresh)
             
             res = np.delete(ccwt[3], 0, 0)
 
-            for i in range(res[:,0].shape[0]):
-                y = int(res[:,1][i])
-                x = int(res[:,0][i])
-                z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
-                angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
-                candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
+            _,maxG,_,maxLoc = cv2.minMaxLoc(G)
+            x = maxLoc[0]
+            y = maxLoc[1]
+            z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+            angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+            candidates.append([maxG, x, y, z, angle, count_a, count_b])
+            # for i in range(res[:,0].shape[0]):
+            #     y = int(res[:,1][i])
+            #     x = int(res[:,0][i])
+            #     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+            #     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+            #     candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
 
             # cv2.imwrite(f"./vision/tmp/G_{count_b}.png", G)
             # cv2.imwrite(f"./vision/tmp/C_{count_b}.png", C)
