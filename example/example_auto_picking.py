@@ -104,7 +104,7 @@ def main():
             best_grasp = grasps[0]
             best_action = random.sample(list(range(6)),1)[0]
        
-        # rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path)
+        rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, margins)
         
     # # =======================  generate motion ===========================
     # success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 

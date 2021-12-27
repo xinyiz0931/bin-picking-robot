@@ -241,16 +241,23 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
     im_adj = adjust_grayscale(im_cut)
 
     (finger_h, finger_w, open_w, gripper_size) = h_params
-    gripper = Gripper(finger_w=finger_w, finger_h=finger_h, open_w=open_w, gripper_size=gripper_size)
+    gripper = Gripper(finger_w=finger_w, 
+                      finger_h=finger_h, 
+                      open_w=open_w, 
+                      gripper_size=gripper_size)
+
     hand_open_mask, hand_close_mask = gripper.create_hand_model()
 
     (rstep, dstep, hand_depth) = g_params
-    method = Graspability(rotation_step=rstep, depth_step=dstep, hand_depth=hand_depth)
+    method = Graspability(rotation_step=rstep, 
+                          depth_step=dstep, 
+                          hand_depth=hand_depth)
 
     # generate graspability map
     main_proc_print("Generate graspability map  ... ")
-    candidates = method.graspability_map(
-        im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask)
+    candidates = method.graspability_map(im_adj, 
+                                         hand_open_mask=hand_open_mask, 
+                                         hand_close_mask=hand_close_mask)
     
     if candidates != []:
     # detect grasps
@@ -262,9 +269,9 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
             important_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
-            cv2.imshow("window", drawn_input_img)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
+            # cv2.imshow("window", drawn_input_img)
+            # cv2.waitKey()
+            # cv2.destroyAllWindows()
             return grasps, im_adj, drawn_input_img
         else:
             warning_print("Grasp detection failed! No grasps!")
@@ -275,12 +282,13 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
         return None, im_adj,img
 
 
-def transform_coordinates(grasp_point, pc, img_path, calib_path):
+def transform_coordinates(grasp_point, pc, img_path, calib_path, margins):
     """
     1. replace bad point to adjust height
     2. image (x,y) -> camera (x,y,z)
     3. camera (x,y,z) -> robot (x,y,z)
     """
+    (top_margin,left_margin,bottom_margin,right_margin) = margins
     result_print("Grasp point (crop) : [{}, {}, {}]".format(grasp_point[1], grasp_point[2],grasp_point[4]))
     full_image_x = grasp_point[1] + left_margin
     full_image_y = grasp_point[2] + top_margin
