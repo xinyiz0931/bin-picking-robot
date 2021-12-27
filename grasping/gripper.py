@@ -81,20 +81,51 @@ class Gripper(object):
         hc[(c-hfh):(c+hfh), (c-how):(c+how)]=255
 
         return ho, hc
-    
-    def get_hand_model(self, model_size, open_width, x=None, y=None,angle=None):
+
+    # def get_hand_model(self, model_size, open_width, x=None, y=None,angle=None):
+        
+    #     how = int(open_width/2)
+    #     hfh = int(self.finger_h/2)
+
+    #     fw = int(self.finger_w)
+
+    #     ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
+    #     hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
+
+    #     if x is None and y is None:
+    #         x, y = int(model_size/2), int(model_size/2)
+    #     print(x,y)
+    #     ho[(y-hfh):(y+hfh), (x-how-fw):(x-how)]=255
+    #     ho[(y-hfh):(y+hfh), (x+how):(x+how+fw)]=255
+    #     ho[(y-1):(y+1), (x-how):(x+how)]=255
+
+    #     # hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
+
+    #     if angle is None:
+    #         return ho, hc
+
+    #     else:
+    #         # hc = Image.fromarray(np.uint8(hc))
+    #         ho = Image.fromarray(np.uint8(ho))
+    #         angle = angle * 180/math.pi
+    #         # hc_ = hc.rotate(angle, center=(x,y))
+    #         ho_ = ho.rotate(angle, center=(x,y))
+
+    #         return np.array(ho_.convert('L'))
+
+    def get_hand_model(self, model_width, model_height, open_width, x=None, y=None,angle=None):
         
         how = int(open_width/2)
         hfh = int(self.finger_h/2)
 
         fw = int(self.finger_w)
 
-        ho = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # open
-        hc = np.zeros((self.gripper_size, self.gripper_size), dtype = "uint8") # close
-                
-        if x is None and y is None:
-            x, y = int(model_size/2), int(model_size/2)
+        ho = np.zeros((model_width, model_height), dtype = "uint8") # open
+        hc = np.zeros((model_width, model_height), dtype = "uint8") # close
 
+        if x is None and y is None:
+            x, y = int(model_width/2), int(model_height/2)
+        
         ho[(y-hfh):(y+hfh), (x-how-fw):(x-how)]=255
         ho[(y-hfh):(y+hfh), (x+how):(x+how+fw)]=255
         ho[(y-1):(y+1), (x-how):(x+how)]=255
@@ -110,19 +141,23 @@ class Gripper(object):
             angle = angle * 180/math.pi
             # hc_ = hc.rotate(angle, center=(x,y))
             ho_ = ho.rotate(angle, center=(x,y))
-
             return np.array(ho_.convert('L'))
+        cv2.imshow("window", np.array(ho_.convert('L')))
+        cv2.waitKey()
+        cv2.destroyAllWindows()
     
     def draw_grasp(self, grasps, img, color=(255,0,0)):
+        
         for i in range(len(grasps)-1,-1,-1):
             x = int(grasps[i][1])
             y = int(grasps[i][2])
             angle = grasps[i][4]
             # open_w = grasps[i][7]
             open_w = 50
-            mask = self.get_hand_model(self.gripper_size, open_w, x = x, y = y, angle=angle)
-
             h,w,_ = img.shape
+            mask = self.get_hand_model(h,w, open_w, x = x, y = y, angle=angle)
+
+            
             if i == 0:
                 (r,g,b) = (0,255,0)
             else:
@@ -131,7 +166,8 @@ class Gripper(object):
             rgbmask = np.ones((h, w), dtype="uint8")
             rgbmask = np.dstack((np.array(rgbmask * b, 'uint8'), np.array(rgbmask * g, 'uint8'),
                             np.array(rgbmask * r, 'uint8')))
-            img[:] = np.where(mask[:h, :w, np.newaxis] == 0, img, rgbmask)
+            mask_resized = np.resize(mask, (h,w))
+            img[:] = np.where(mask_resized[:h, :w, np.newaxis] == 0, img, rgbmask)
         
 
         return img

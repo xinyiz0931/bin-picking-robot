@@ -14,11 +14,12 @@ from datetime import datetime as dt
 
 from example.binpicking import *
 from driver.phoxi import phoxi_client as pclt
-from grasping.graspability import Gripper, Graspability
+from grasping.graspability import Graspability
+from grasping.gripper import Gripper
 from motion.motion_generator import Motion
 import learning.predictor.predict_client as pdclt
 from utils.base_utils import *
-from utils.transform_util import *
+from utils.transform_utils import *
 from utils.vision_utils import *
 
 def main():
@@ -29,7 +30,7 @@ def main():
     depth_dir = os.path.join(ROOT_DIR, "vision/depth/")
 
     # pc_path = os.path.join(ROOT_DIR, "vision/pointcloud/out.ply")
-    img_path = os.path.join(ROOT_DIR, "vision/depth/depth0.png")
+    img_path = os.path.join(ROOT_DIR, "vision/depth/depth.png")
     crop_path = os.path.join(ROOT_DIR, "vision/depth/depthc.png")
     config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
     calib_path = os.path.join(ROOT_DIR, "vision/calibration/calibmat.txt")
@@ -50,31 +51,36 @@ def main():
     bottom_margin = int(config['IMAGE']['bottom_margin'])
     max_distance = float(config['IMAGE']['max_distance'])
     min_distance = float(config['IMAGE']['min_distance'])
-    
 
-    finger_width = float(config['GRASP']['finger_width'])
-    finger_height = float(config['GRASP']['finger_height'])
-    gripper_width = float(config['GRASP']['gripper_width'])
+    finger_w = float(config['GRASP']['finger_width'])
+    finger_h = float(config['GRASP']['finger_height'])
+    open_w = float(config['GRASP']['gripper_width'])
+    hand_size = int(config['GRASP']['hand_template_size'])
+
     rotation_step = float(config['GRASP']['rotation_step'])
     depth_step = float(config['GRASP']['rotation_step'])
     hand_depth = float(config['GRASP']['hand_depth'])
     dismiss_area_width = float(config['GRASP']['dismiss_area_width'])
 
     exp_mode = int(config['EXP']['exp_mode'])
+    
 
     # ======================== get depth img =============================
     # point_array = get_point_cloud(depth_dir) 
 
     # =======================  compute grasp =============================
-    # prepare hand model
-    gripper = Gripper()
-    # margins = (top_margin,left_margin,bottom_margin,right_margin)
-    margins = (0,0,500,500)
+    # prepare all kinds of parameters
+    margins =  (top_margin,left_margin,bottom_margin,right_margin)
     g_params = (rotation_step, depth_step, hand_depth)
-    grasps, input_img, full_image = detect_grasp_point(gripper=gripper, n_grasp=10, img_path=img_path, margins=margins, g_params=g_params)
+    h_params = (finger_h, finger_w, open_w, hand_size)
+
+    grasps, input_img, output_img = detect_grasp_point(n_grasp=10, 
+                                                       img_path=img_path, 
+                                                       margins=margins, 
+                                                       g_params=g_params, 
+                                                       h_params=h_params)
 
     # =======================  picking policy ===========================
-
     if grasps is None:
         best_action = -1
         rx,ry,rz,ra = np.zeros(4)
@@ -84,6 +90,7 @@ def main():
             # 0 -> graspaiblity
             best_grasp = grasps[0]
             best_action = 0 
+
         elif exp_mode == 1: 
             # 1 -> proposed circuclar picking
             pdc = pdclt.PredictorClient()
@@ -96,10 +103,8 @@ def main():
             # 2 -> random circular picking
             best_grasp = grasps[0]
             best_action = random.sample(list(range(6)),1)[0]
-        drawn_input_img = gripper.draw_grasp(grasps, input_img)
-        
-
-    #     rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path)
+       
+        # rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path)
         
     # # =======================  generate motion ===========================
     # success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 
@@ -107,7 +112,7 @@ def main():
     # ======================= Record the data ===================s=========
     main_proc_print("Save the results! ")
     cv2.imwrite(crop_path, input_img)
-    cv2.imwrite(draw_path, drawn_input_img)
+    cv2.imwrite(draw_path, output_img)
 
     # if success_flag:
     #     tdatetime = dt.now()

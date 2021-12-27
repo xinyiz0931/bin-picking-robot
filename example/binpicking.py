@@ -232,14 +232,6 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
     """
     (top_margin,left_margin,bottom_margin,right_margin) = margins
     img = cv2.imread(img_path)
-    ROOT_DIR = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211222214044"
-    touch_path = os.path.join(ROOT_DIR, "contact.png")
-    conflict_path = os.path.join(ROOT_DIR, "conflict.png")
-
-    # touch_mask = cv.imread("")
-    # conflict_mask = np.zeros(touch_mask.shape, dtype = "uint8")
-    touch_mask = cv2.imread(touch_path, 0)
-    conflict_mask = cv2.imread(conflict_path, 0)
 
     # cropped the necessary region (inside the bin)
     height, width, _ = img.shape
@@ -257,18 +249,12 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
 
     # generate graspability map
     main_proc_print("Generate graspability map  ... ")
-    candidates = method.target_oriented_graspability_map(
-        im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask,
-        Wc=conflict_mask, Wt=touch_mask)
-
-    # detect grasps
-    main_proc_print("Detect grasp poses ... ")
-    grasps = method.grasp_detection(
-        candidates, n=n_grasp, h=cropped_height, w=cropped_width)
-
+    candidates = method.graspability_map(
+        im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask)
+    
     if candidates != []:
     # detect grasps
-        main_proc_print("Detect grasp poses ... ")
+        main_proc_print(f"Detect grasp poses from {len(candidates)} candidates ... ")
         grasps = method.grasp_detection(
             candidates, n=n_grasp, h=cropped_height, w=cropped_width)
         # print(grasps)
@@ -276,14 +262,18 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
             important_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
-            # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
-            cv2.imshow("grasps", drawn_input_img)
+            cv2.imshow("window", drawn_input_img)
             cv2.waitKey()
             cv2.destroyAllWindows()
-            return grasps, im_adj, img
+            return grasps, im_adj, drawn_input_img
+        else:
+            warning_print("Grasp detection failed! No grasps!")
+            return None, im_adj,img
+
     else:
         warning_print("Grasp detection failed! No grasps!")
         return None, im_adj,img
+
 
 def transform_coordinates(grasp_point, pc, img_path, calib_path):
     """
