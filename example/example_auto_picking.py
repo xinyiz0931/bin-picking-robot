@@ -8,6 +8,7 @@ if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
+import open3d as o3d
 import configparser
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
@@ -31,12 +32,11 @@ def main():
 
     # pc_path = os.path.join(ROOT_DIR, "vision/pointcloud/out.ply")
     img_path = os.path.join(ROOT_DIR, "vision/depth/depth.png")
-    crop_path = os.path.join(ROOT_DIR, "vision/depth/depthc.png")
+    crop_path = os.path.join(ROOT_DIR, "vision/depth/depth_cropped.png")
     config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
     calib_path = os.path.join(ROOT_DIR, "vision/calibration/calibmat.txt")
     mf_path = os.path.join(ROOT_DIR, "motion/motion.dat")
     draw_path = os.path.join(ROOT_DIR, "vision/depth/final_result.png")
-
 
     # ======================= get config info ============================
     config = configparser.ConfigParser()
@@ -66,7 +66,9 @@ def main():
     
 
     # ======================== get depth img =============================
-    # point_array = get_point_cloud(depth_dir) 
+    # point_array = get_point_cloud(depth_dir, max_distance, min_distance, width, height)
+    pcd = o3d.io.read_point_cloud("/home/xinyi/data/out.ply")
+    point_array = pcd.points
 
     # =======================  compute grasp =============================
     # prepare all kinds of parameters
@@ -104,10 +106,10 @@ def main():
             best_grasp = grasps[0]
             best_action = random.sample(list(range(6)),1)[0]
        
-        rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, margins)
+        rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, width, margins)
         
     # # =======================  generate motion ===========================
-    # success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 
+    success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 
   
     # ======================= Record the data ===================s=========
     main_proc_print("Save the results! ")
