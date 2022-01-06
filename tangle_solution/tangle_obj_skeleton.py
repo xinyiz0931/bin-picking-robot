@@ -40,7 +40,7 @@ class TangleObjSke(object):
             jf.close()
         except IOError:
             warning_print("Fail to write")
-        
+      
     def draw_obj_skeleton(self, graph, draw_ax, color, alpha=1):
         node = np.array(graph["node"])
         draw_ax.scatter(node[:, 0], node[:, 1], node[:, 2], color=color, alpha=alpha)
@@ -216,9 +216,45 @@ class TangleObjSke(object):
 
         return vertices
 
+def from_ske():
+    """Manually write the object graph to generate json file"""
+    shape = "j"
 
-def main():
-    shape = "scopy"
+    write_path = f"./objmodel\\skeleton_{shape}.json"
+    collision_path = f"./objmodel\\collision_{shape}.txt"
+    wrl_path = f"./objmodel\\cube_{shape}.wrl"
+    # ================ obj info ====================
+    obj_ske = {}
+    obj_ske["node"] = [[-40,-30,0], [-37.321, -40, 0], [-30, -47.321, 0], [-20, -50, 0],
+                       [-10,-47.321, 0], [-2.679,-40,0],[0,-30,0],
+                       [0, 70, 0], [0, 70, 30]]
+    obj_ske["edge"] = [[0,1], [1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]]
+    obj_ske["section"] = {}
+    obj_ske["section"]["shape"] = "circle"
+    obj_ske["section"]["size"] = 7
+    # graph["section"]["shape"] = "rectangle"
+    # graph["section"]["size"] = [2, 10]
+    # ================ obj info ====================
+
+    tok = TangleObjSke()
+    tok.write_obj(write_path, obj_ske)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    tok.draw_obj_skeleton(obj_ske, ax, "green")
+
+    center = tok.calc_center_of_mass(obj_ske)
+    ax.scatter(center[0], center[1], center[2], color='red')
+
+    vertices=tok.decompose_obj(obj_ske, collision_path)
+    
+    for v in vertices:
+        tok.draw_node(v, ax, 'blue', alpha=0.5)
+
+    plt.show()
+
+def from_obj():
+    shape = "j"
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
@@ -252,7 +288,7 @@ if __name__ == "__main__":
     import timeit
     start = timeit.default_timer()
 
-    main()
+    from_ske()
 
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))
