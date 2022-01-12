@@ -95,7 +95,7 @@ def test_view():
 
 def show_mesh_model():
     import open3d as o3d
-    mesh = o3d.io.read_triangle_mesh("./objmodel/model_u.ply")
+    mesh = o3d.io.read_triangle_mesh("./objmodel/model_scylindertwist.ply")
     print("Testing mesh in Open3D...")
     print(mesh)
     print('Vertices:')
@@ -114,7 +114,8 @@ def create_img():
     plt.imshow(img)
     plt.show()
 def main():
-    create_img()
+    # create_img()
+    show_mesh_model()
     # img = cv2.imread("./vision/depth/depth0.png",0)
     # _, mask = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)
     # plt.imshow(img, cmap='gray')
