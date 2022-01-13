@@ -7,11 +7,11 @@ from example.binpicking import *
 
 def main():
 
-    # ROOT_DIR = os.path.abspath("./")
-    # img_path = os.path.join(ROOT_DIR, "vision/depth/depth4.png")
-    img_path = "/media/xinyi/Files/code/dataset/labeled_pool/20210616045533_360_333_4_1_0.png"
-    ROOT_DIR = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211223182100"
-    img_path = os.path.join(ROOT_DIR, "depth.png")
+    ROOT_DIR = os.path.abspath("./")
+    img_path = os.path.join(ROOT_DIR, "vision/test/depth4.png")
+    # img_path = "/media/xinyi/Files/code/dataset/labeled_pool/20210616045533_360_333_4_1_0.png"
+    # ROOT_DIR = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211223182100"
+    # img_path = os.path.join(ROOT_DIR, "depth.png")
     # ============== REAL WORLD SETUP ==============
     # finger_w=6.5
     # finger_h=20
@@ -43,8 +43,8 @@ def main():
     g_params = (rotation_step, depth_step, hand_depth)
     h_params = (finger_h, finger_w, open_w, gripper_size)
 
-    # grasps, input_img, full_image = detect_grasp_point(n_grasp=10, img_path=img_path, margins=margins, g_params=g_params, h_params=h_params)
-    grasps, input_img, full_image = detect_target_oriented_grasp(10, ROOT_DIR, margins, g_params, h_params)
+    grasps, input_img, full_image = detect_grasp_point(n_grasp=10, img_path=img_path, margins=margins, g_params=g_params, h_params=h_params)
+    # grasps, input_img, full_image = detect_target_oriented_grasp(10, ROOT_DIR, margins, g_params, h_params)
 
     # temporal printing
     if grasps:

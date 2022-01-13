@@ -3,7 +3,7 @@ grpcio-tools==1.38.1
 matplotlib
 numpy
 colorama
-open3d==0.12.0
+open3d==0.9.0.0
 opencv-contrib-python==3.4.6.27
 opencv-python==4.5.2.52
 pandas
