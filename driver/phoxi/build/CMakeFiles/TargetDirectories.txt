@@ -1,3 +1,0 @@
-/home/xinyi/Workspace/myrobot/driver/phoxi/build/CMakeFiles/rebuild_cache.dir
-/home/xinyi/Workspace/myrobot/driver/phoxi/build/CMakeFiles/edit_cache.dir
-/home/xinyi/Workspace/myrobot/driver/phoxi/build/CMakeFiles/phoxicontrol.dir

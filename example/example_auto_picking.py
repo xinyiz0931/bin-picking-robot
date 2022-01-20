@@ -2,41 +2,24 @@ import os
 import sys
 import math
 import random
-# execute the script from the root directory etc. ~/src/myrobot
-sys.path.append("./")
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-import cv2
-import numpy as np
-import open3d as o3d
-import configparser
-import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
-from example.binpicking import *
-from driver.phoxi import phoxi_client as pclt
-from grasping.graspability import Graspability
-from grasping.gripper import Gripper
-from motion.motion_generator import Motion
-import learning.predictor.predict_client as pdclt
-from utils.base_utils import *
-from utils.transform_utils import *
-from utils.vision_utils import *
+from myrobot.binpicking import *
 
 def main():
     main_proc_print("Start! ")
     # ========================== define path =============================
     ROOT_DIR = os.path.abspath("./")
-    calib_dir = os.path.join(ROOT_DIR, "vision/calibration/")
-    depth_dir = os.path.join(ROOT_DIR, "vision/depth/")
+    calib_dir = os.path.join(ROOT_DIR, "data/calibration/")
+    depth_dir = os.path.join(ROOT_DIR, "data/depth/")
 
-    # pc_path = os.path.join(ROOT_DIR, "vision/pointcloud/out.ply")
-    img_path = os.path.join(ROOT_DIR, "vision/depth/depth.png")
-    crop_path = os.path.join(ROOT_DIR, "vision/depth/depth_cropped.png")
+    # pc_path = os.path.join(ROOT_DIR, "data/pointcloud/out.ply")
+    img_path = os.path.join(ROOT_DIR, "data/depth/depth.png")
+    crop_path = os.path.join(ROOT_DIR, "data/depth/depth_cropped.png")
     config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
-    calib_path = os.path.join(ROOT_DIR, "vision/calibration/calibmat.txt")
-    mf_path = os.path.join(ROOT_DIR, "motion/motion.dat")
-    draw_path = os.path.join(ROOT_DIR, "vision/depth/final_result.png")
+    calib_path = os.path.join(ROOT_DIR, "data/calibration/calibmat.txt")
+    mf_path = os.path.join(ROOT_DIR, "data/motion/motion.dat")
+    draw_path = os.path.join(ROOT_DIR, "data/depth/final_result.png")
 
     # ======================= get config info ============================
     config = configparser.ConfigParser()
@@ -67,7 +50,7 @@ def main():
 
     # ======================== get depth img =============================
     # point_array = get_point_cloud(depth_dir, max_distance, min_distance, width, height)
-    pcd = o3d.io.read_point_cloud("/home/xinyi/data/out.ply")
+    pcd = o3d.io.read_point_cloud("./data/test/out.ply")
     point_array = pcd.points
 
     # =======================  compute grasp =============================

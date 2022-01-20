@@ -3,12 +3,12 @@ import sys
 
 
 sys.path.append("./")
-from example.binpicking import *
+from myrobot.binpicking import *
 
 def main():
 
     ROOT_DIR = os.path.abspath("./")
-    img_path = os.path.join(ROOT_DIR, "vision/test/depth4.png")
+    img_path = os.path.join(ROOT_DIR, "data/test/depth4.png")
     # img_path = "/media/xinyi/Files/code/dataset/labeled_pool/20210616045533_360_333_4_1_0.png"
     # ROOT_DIR = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211223182100"
     # img_path = os.path.join(ROOT_DIR, "depth.png")
@@ -18,14 +18,14 @@ def main():
     # open_w = 48
     # gripper_size = 250
     # ============== DEPTH SETUP (500x500)==============
-    # finger_w=13
-    # finger_h=40
-    # open_w = 96/2 - 10
-    # gripper_size = 500
-    finger_w=3
-    finger_h=10
-    open_w = 20
+    finger_w=13
+    finger_h=40
+    open_w = 96/2 - 10
     gripper_size = 500
+    # finger_w=3
+    # finger_h=10
+    # open_w = 20
+    # gripper_size = 500
     # ============== SIMBIM SETUP (225x225)==============
     # finger_w=5.85
     # finger_h=18
