@@ -79,8 +79,15 @@ class Gripper(object):
 
         return ho, hc
 
-    def get_hand_model(self, model_width, model_height, open_width, x=None, y=None,angle=None):
-        
+    def get_hand_model(self, model_type, model_width=None, model_height=None, open_width=None, x=None, y=None,radian=None):
+
+        '''Note: angle is radian''' 
+        if model_width is None:
+            model_width = self.gripper_size
+        if model_height is None:
+            model_height = self.gripper_size
+        if open_width is None:
+            open_width = self.open_w
         how = int(open_width/2)
         hfh = int(self.finger_h/2)
 
@@ -96,18 +103,32 @@ class Gripper(object):
         ho[(y-hfh):(y+hfh), (x+how):(x+how+fw)]=255
         ho[(y-1):(y+1), (x-how):(x+how)]=255
 
-        # hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
-
-        if angle is None:
-            return ho, hc
+        hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
+        if radian is None:
+            if model_typ=='open':
+                return ho
+            elif model_type == 'close':
+                return hc
+            else:
+                return None
 
         else:
-            # hc = Image.fromarray(np.uint8(hc))
-            ho = Image.fromarray(np.uint8(ho))
-            angle = angle * 180/math.pi
-            # hc_ = hc.rotate(angle, center=(x,y))
-            ho_ = ho.rotate(angle, center=(x,y))
-            return np.array(ho_.convert('L'))
+            angle = radian * 180/math.pi
+            if model_type=='open':
+                ho = Image.fromarray(np.uint8(ho))
+                #angle = angle * 180/math.pi
+                ho_ = ho.rotate(angle, center=(x,y))
+                return np.array(ho_.convert('L'))
+            
+            elif model_type=='close':
+                hc = Image.fromarray(np.uint8(hc))
+                #angle = angle * 180/math.pi
+                hc_ = hc.rotate(angle, center=(x,y))
+                return np.array(hc_.convert('L'))
+
+            else:
+                warning_print("Wrong input hand type")
+                return None
         cv2.imshow("window", np.array(ho_.convert('L')))
         cv2.waitKey()
         cv2.destroyAllWindows()
@@ -121,7 +142,7 @@ class Gripper(object):
             # open_w = grasps[i][7]
             open_w = 50
             h,w,_ = img.shape
-            mask = self.get_hand_model(h,w, open_w, x = x, y = y, angle=angle)
+            mask = self.get_hand_model('open',h,w,open_w,x,y,angle)
 
             
             if i == 0:
