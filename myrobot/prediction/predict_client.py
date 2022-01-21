@@ -4,10 +4,9 @@ import time
 import numpy as np
 
 import sys
-sys.path.append("./")
 
-import learning.predictor.predictor_pb2 as pdmsg
-import learning.predictor.predictor_pb2_grpc as pdrpc
+import predictor_pb2 as pdmsg
+import predictor_pb2_grpc as pdrpc
 
 class PredictorClient(object):
     def __init__(self):

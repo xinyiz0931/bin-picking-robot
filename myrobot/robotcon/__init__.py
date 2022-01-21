@@ -1,4 +1,6 @@
+import os
 import sys
-sys.path.append('./myrobot/robotcon/nxt')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, 'nxt'))
 from .nxt.nxtrobot_server import NxtServer
 from .nxt.nxtrobot_client import NxtRobot

@@ -9,7 +9,7 @@ import shutil
 from datetime import datetime as dt
 import timeit
 
-import cv2
+#import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -111,7 +111,8 @@ class Graspability(object):
                     x = int(res[:,0][i])
                     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
                     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
-                    candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
+                    #candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
+                    candidates.append([G[y][x],x,y,z,angle])
         candidates.sort(key=self.takefirst, reverse=True)
         return candidates
 

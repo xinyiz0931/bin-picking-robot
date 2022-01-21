@@ -78,6 +78,7 @@ def main():
 
         elif exp_mode == 1: 
             # 1 -> proposed circuclar picking
+            from myrobot.prediction import predict_client as pdclt
             pdc = pdclt.PredictorClient()
             grasps2bytes=np.ndarray.tobytes(np.array(grasps))
             predict_result= pdc.predict(imgpath=crop_path, grasps=grasps2bytes)

@@ -14,11 +14,10 @@ import configparser
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
-# from myrobot.driver.phoxi import phoxi_client as pclt
+from myrobot.driver import phoxi_client as pclt
 
 from myrobot.grasping import Graspability, Gripper
 from myrobot.motion import Motion
-# import learning.predictor.predict_client as pdclt
 from myrobot.utils import *
 
 def get_point_cloud(save_dir, max_distance, min_distance, width, height):

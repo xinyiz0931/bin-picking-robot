@@ -7,12 +7,12 @@ from tensorflow.keras.models import load_model
 
 from concurrent import futures
 import sys
-sys.path.append("./")
-sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import numpy as np
+if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
+        sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
-import learning.predictor.predictor_pb2 as pdmsg
-import learning.predictor.predictor_pb2_grpc as pdrpc
+import predictor_pb2 as pdmsg
+import predictor_pb2_grpc as pdrpc
 
 class PredictorServer(pdrpc.PredictorServicer):
     def load_aspnet(self, model_dir):
