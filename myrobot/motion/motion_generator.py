@@ -8,7 +8,7 @@ import math
 class Motion(object):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.initialpose = "0 10 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -133.7 -7 0 0 0 0 0 0"
+        self.initialpose = "0 2 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -133.7 -7 0 0 0 0 0 0"
         self.placepose = "0 2 JOINT_REL 70 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
 
     def empty_motion_generator(self):
@@ -51,7 +51,7 @@ class Motion(object):
         fp.close()
 
     def motion_generator_half(self, rx,ry,rz,ra):
-        """full Circle-like motion"""
+        """half Circle-like motion"""
         fp = open(self.filepath, 'wt')
         print("0 0.5 LHAND_JNT_OPEN",file=fp)
         print("0 1 LARM_XYZ_ABS {:.3f} {:.3f} 0.3 -180 -90 145".format(rx,ry),file=fp)
@@ -72,7 +72,7 @@ class Motion(object):
         fp.close()
 
     def motion_generator_half_spin(self, rx,ry,rz,ra):
-        """full Circle-like motion with spinning"""
+        """half Circle-like motion with spinning"""
         fp = open(self.filepath, 'wt')
         print("0 0.5 LHAND_JNT_OPEN",file=fp)
         print("0 1 LARM_XYZ_ABS {:.3f} {:.3f} 0.3 -180 -90 145".format(rx,ry),file=fp)
@@ -97,28 +97,59 @@ class Motion(object):
         print("0 0.5 LHAND_JNT_OPEN",file=fp)
         print(self.initialpose,file=fp)
         fp.close()
-    
+
     def motion_generator_full(self, rx,ry,rz,ra):
-        """half Circle-like motion"""
+        """two Circle-like motion"""
         fp = open(self.filepath, 'wt')
         print("0 0.5 LHAND_JNT_OPEN",file=fp)
         print("0 1 LARM_XYZ_ABS {:.3f} {:.3f} 0.3 -180 -90 145".format(rx,ry),file=fp)
         print("0 0.5 LARM_JNT_REL 0 0 0 0 0 0 {:.3f}".format(33.0 + ra),file=fp)
-        print("0 1 LARM_XYZ_REL 0 0 -0.15 0 0 0",file=fp)
-        print("0 1.5 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(rz - 0.15),file=fp)
+        print("0 1 LARM_XYZ_REL 0 0 -0.1 0 0 0",file=fp)
+        print("0 1.2 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(rz - 0.2),file=fp)
         print("0 0.5 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
-        print("0 1 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(0.20 - rz),file=fp)
+        print("0 1.2 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(0.20 - rz),file=fp)
         print("0 1 LARM_XYZ_ABS 0.537 0.160 0.32 -180 -90 145",file=fp)
-        print("0 0.5 LARM_XYZ_ABS 0.53 0.21 0.37 155 -73 -176",file=fp)
-        print("0 0.75 LARM_XYZ_ABS 0.580 0.01 0.42 160 -57 170",file=fp)
-        print("0 0.75 LARM_XYZ_ABS 0.534 -0.18 0.43 174 -45 144",file=fp)
-        print("0 0.75 LARM_XYZ_ABS 0.43 -0.23 0.44 -168 -63 131",file=fp)
-        print("0 1 LARM_XYZ_ABS 0.43 0.24 0.4 -180 -90 145",file=fp)
+
+        print("0 0.5 LARM_XYZ_ABS 0.597 0.06 0.34 -180 -90 145",file=fp)
+        print("0 0.5 LARM_XYZ_ABS 0.627 -0.14 0.36 -180 -90 145",file=fp)
+        print("0 0.5 LARM_XYZ_ABS 0.527 -0.29 0.38 -180 -90 145",file=fp)
+        print("0 1 LARM_XYZ_ABS 0.477 -0.14 0.40 -180 -90 145",file=fp)
+        # print("0 1 LARM_XYZ_ABS 0.457 0.16 0.41 -180 -90 145",file=fp)
+        print("0 1 LARM_XYZ_ABS 0.537 0.160 0.42 -180 -90 145",file=fp)
+        # print("0 0.5 LARM_XYZ_ABS 0.53 0.21 0.43 155 -73 -176",file=fp)
+        # print("0 0.75 LARM_XYZ_ABS 0.580 0.01 0.44 160 -57 170",file=fp)
+        # print("0 0.75 LARM_XYZ_ABS 0.534 -0.18 0.44 174 -45 144",file=fp)
+        # print("0 0.75 LARM_XYZ_ABS 0.43 -0.23 0.44 -168 -63 131",file=fp)
+        # print("0 1 LARM_XYZ_ABS 0.43 0.16 0.46 -180 -90 145",file=fp)
+        
+
         print("0 2 JOINT_REL 70 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",file=fp)
         print("0 1 LARM_XYZ_REL 0 0 -0.25 0 0 0",file=fp)
         print("0 0.5 LHAND_JNT_OPEN",file=fp)
         print(self.initialpose,file=fp)
-        fp.close()
+        fp.close()     
+    
+    # def motion_generator_full(self, rx,ry,rz,ra):
+    #     """Full circle-like motion"""
+    #     fp = open(self.filepath, 'wt')
+    #     print("0 0.5 LHAND_JNT_OPEN",file=fp)
+    #     print("0 1 LARM_XYZ_ABS {:.3f} {:.3f} 0.3 -180 -90 145".format(rx,ry),file=fp)
+    #     print("0 0.5 LARM_JNT_REL 0 0 0 0 0 0 {:.3f}".format(33.0 + ra),file=fp)
+    #     print("0 1 LARM_XYZ_REL 0 0 -0.15 0 0 0",file=fp)
+    #     print("0 1.5 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(rz - 0.15),file=fp)
+    #     print("0 0.5 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+    #     print("0 1 LARM_XYZ_REL 0 0 {:.3f} 0 0 0".format(0.20 - rz),file=fp)
+    #     print("0 1 LARM_XYZ_ABS 0.537 0.160 0.32 -180 -90 145",file=fp)
+    #     print("0 0.5 LARM_XYZ_ABS 0.53 0.21 0.37 155 -73 -176",file=fp)
+    #     print("0 0.75 LARM_XYZ_ABS 0.580 0.01 0.42 160 -57 170",file=fp)
+    #     print("0 0.75 LARM_XYZ_ABS 0.534 -0.18 0.43 174 -45 144",file=fp)
+    #     print("0 0.75 LARM_XYZ_ABS 0.43 -0.23 0.44 -168 -63 131",file=fp)
+    #     print("0 1 LARM_XYZ_ABS 0.43 0.24 0.4 -180 -90 145",file=fp)
+    #     print("0 2 JOINT_REL 70 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",file=fp)
+    #     print("0 1 LARM_XYZ_REL 0 0 -0.25 0 0 0",file=fp)
+    #     print("0 0.5 LHAND_JNT_OPEN",file=fp)
+    #     print(self.initialpose,file=fp)
+    #     fp.close()
 
     def motion_generator_full_spin(self, rx,ry,rz,ra):
         """Full circle-like motion with spinning"""

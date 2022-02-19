@@ -9,6 +9,7 @@ def main():
 
     ROOT_DIR = os.path.abspath("./")
     img_path = os.path.join(ROOT_DIR, "data/test/depth4.png")
+    img_path = "/home/xinyi/Workspace/myrobot_bak/exp/action_random/success/20210817231941_257_371_2_.png"
     # img_path = "/media/xinyi/Files/code/dataset/labeled_pool/20210616045533_360_333_4_1_0.png"
     # ROOT_DIR = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211223182100"
     # img_path = os.path.join(ROOT_DIR, "depth.png")
@@ -39,7 +40,7 @@ def main():
     main_proc_print("Rotation step: {}".format(rotation_step))
     main_proc_print("Depth step: {}".format(depth_step))
 
-    margins = (0,0,500,500)
+    margins = (0,0,1080,869)
     g_params = (rotation_step, depth_step, hand_depth)
     h_params = (finger_h, finger_w, open_w, gripper_size)
 

@@ -18,19 +18,20 @@ class PredictorServer(pdrpc.PredictorServicer):
     def load_aspnet(self, model_dir):
         """Load models"""
         self.model = load_model(model_dir)
+        self.threshold =0.5 
     
     def action_selection_policy(self, prob):
         final_prob =0
-        if (prob < 0.5).all(): 
+        if (prob < self.threshold).all(): 
             # no prob is larger than 0.5 ==> Action 6
             char = 6
             final_prob = prob[6]
-        elif (prob >= 0.5).all():
+        elif (prob >= self.threshold).all():
             char = 0
             final_prob = prob[0]
         else: 
             for k in range(7):
-                if prob[k] > 0.5:
+                if prob[k] > self.threshold:
                     char = k
                     final_prob = prob[k]
                     break
@@ -76,7 +77,6 @@ class PredictorServer(pdrpc.PredictorServicer):
             a, p = self.action_selection_policy(prob)
             alist.append(a)
             plist.append(p)
-
         # action_indexes = sorted(range(len(alist)), key=lambda k: alist[k])
         for i in range(7):
             if alist.count(i) != 0:
@@ -85,16 +85,18 @@ class PredictorServer(pdrpc.PredictorServicer):
                     [index]=[j for j, x in enumerate(alist) if x == i]
                     final_gindex = 0
                     final_gindex = index
-                elif alist.count(6)==len(alist) and (np.array(plist) < 0.5).all()==True:
+                    break
+                elif alist.count(6)==len(alist) and (np.array(plist) < self.threshold).all()==True:
                     final_a = 6
-                    final_gindex = 0
+                    final_gindex = plist.index(max(plist)) 
+                    break
                 else:
                     indexes = [j for j,x in enumerate(alist) if x == i]
                     max_p = max([plist[j] for j in indexes])
                     
                     index=[j for j, x in enumerate(plist) if x == max_p]
                     final_gindex = index[0]
-
+                    break
         return pdmsg.Action(action=final_a, graspno=final_gindex)
 
 def serve(model_dir, host = "localhost:50051"):
@@ -118,7 +120,7 @@ def serve(model_dir, host = "localhost:50051"):
 if __name__ == "__main__":
     # serve(model_dir = "C:\\Users\\matsu\\Documents\\myrobot\\learning\model\\Logi_AL_20210827_145223.h5",
     #       host = "127.0.0.1:18300")
-    serve(model_dir = "/home/xinyi/Workspace/myrobot/learning/model/Logi_AL_20210827_145223.h5",
+    serve(model_dir = "/home/xinyi/Workspace/aspnet/model/Logi_AL_20210827_145223.h5",
           host = "localhost:50051")
           
           
