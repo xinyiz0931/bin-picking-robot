@@ -706,7 +706,7 @@ def normalize_depth_map(gray_array, max_distance, min_distance, img_width, img_h
     img = ((gray_array - min_distance) * (1/(max_distance - min_distance) * 255)).astype('uint8')
     img = (-img).reshape((img_height, img_width))
 
-    img[img==255]=80
+    # img[img>=225]=80
     # remove pixels of 255
     
     # cv2.imshow("windows", img)    

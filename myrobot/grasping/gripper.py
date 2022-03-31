@@ -105,7 +105,7 @@ class Gripper(object):
 
         hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
         if radian is None:
-            if model_typ=='open':
+            if model_type=='open':
                 return ho
             elif model_type == 'close':
                 return hc
@@ -133,8 +133,9 @@ class Gripper(object):
         cv2.waitKey()
         cv2.destroyAllWindows()
     
-    def draw_grasp(self, grasps, img, color=(255,0,0)):
-        
+    def draw_grasp(self, grasps, img, color=(255,0,0), draw_top=None):
+        # default: draw top grasp as No.0 of grasp list
+        # draw_top = No.
         for i in range(len(grasps)-1,-1,-1):
             x = int(grasps[i][1])
             y = int(grasps[i][2])
@@ -143,13 +144,10 @@ class Gripper(object):
             open_w = 50
             h,w,_ = img.shape
             mask = self.get_hand_model('open',h,w,open_w,x,y,angle)
-
-            
-            if i == 0:
-                (r,g,b) = (0,255,0)
+            if i == draw_top:
+                (r,g,b) = (255,0,0)
             else:
                 (r,g,b) = color
-
             rgbmask = np.ones((h, w), dtype="uint8")
             rgbmask = np.dstack((np.array(rgbmask * b, 'uint8'), np.array(rgbmask * g, 'uint8'),
                             np.array(rgbmask * r, 'uint8')))

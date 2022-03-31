@@ -1,7 +1,6 @@
 import grpc
 import sys
 import argparse
-from myrobot.utils import *
 import yaml
 
 import nxtrobot_pb2 as nxt_msg
@@ -238,34 +237,45 @@ if __name__ == "__main__":
     nxt = NxtRobot(host='[::]:15005')
 
     if args.movement == "recovery":
-        result_print("Recovery from emergency ... ")
+        print("Recovery from emergency ... ")
         nxt.servoOff()
         nxt.servoOn()
         nxt.goInitial()
 
     elif args.movement == "startrobot":
-        result_print("Start the nextage robot ... ")
+        print("Start the nextage robot ... ")
         nxt.checkEncoders()
         nxt.goInitial()
     
     elif args.movement == "restartrobot":
-        result_print("Restart the nextage robot ... ")
+        print("Restart the nextage robot ... ")
         nxt.servoOn()
         nxt.goInitial()
 
     elif args.movement == "goinitial":
-        result_print("Start going intial pose ... ")
+        print("Start going intial pose ... ")
         nxt.goInitial()
     
     elif args.movement == "stoprobot":
-        warning_print("Stop the nextage robot ... ")
+        print("Stop the nextage robot ... ")
         nxt.goOffPose()
-    elif args.movement == "closehand":
-        warning_print("Close hand ... ")
+    elif args.movement == "restartrobot":
+        print("Servo on and restart")
+        nxt.servoOn()
+        nxt.goinitial()
+
+    elif args.movement == "closelhand":
+        print("Close left hand ... ")
         nxt.closeHandToolLft()
-    elif args.movement == "openhand":
-        warning_print("Open hand ... ")
+    elif args.movement == "openlhand":
+        print("Open left hand ... ")
         nxt.openHandToolLft() 
+    elif args.movement == "closerhand":
+        print("Close right hand ... ")
+        nxt.closeHandToolRgt()
+    elif args.movement == "openrhand":
+        print("Open right hand ... ")
+        nxt.openHandToolRgt() 
     else:
-        warning_print("Wrong robot movment! ")
+        print("Wrong robot movment! ")
 

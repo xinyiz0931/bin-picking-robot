@@ -6,7 +6,7 @@ import math
 from concurrent import futures
 import nxtrobot_pb2 as nxt_msg
 import nxtrobot_pb2_grpc as nxt_rpc
-#import nxtlib.predefinition.predefinition as pre_def
+import nxtlib.predefinition.predefinition as pre_def
 
 class NxtServer(nxt_rpc.NxtServicer):
     """

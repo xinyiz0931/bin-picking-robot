@@ -10,14 +10,13 @@ If you want re-draw the rectangle, hit `r` to refresh.
 """
 import sys
 # execute the script from the root directory etc. ~/src/myrobot
-sys.path.append("./")
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import os
 import cv2
 import argparse
 import configparser
-from utils.base_utils import *
+from myrobot.utils import *
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables

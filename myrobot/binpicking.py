@@ -3,7 +3,6 @@ import sys
 import math
 import random
 from numpy.core.numeric import full
-
 from numpy.lib.type_check import _imag_dispatcher
 # execute the script from the root directory etc. ~/src/myrobot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
@@ -13,6 +12,7 @@ import numpy as np
 import configparser
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
+from cfg.config import *
 
 from myrobot.driver import phoxi_client as pclt
 
@@ -46,6 +46,20 @@ def get_point_cloud(save_dir, max_distance, min_distance, width, height):
     cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
     result_print("Depth map : shape=({}, {})".format(width, height))
     return pc
+
+
+def draw_grasps_with_path(grasps, top_index, img_path, h_params, color=((73,192,236))):
+    img = cv2.imread(img_path)
+    (finger_h, finger_w, open_w, gripper_size) = h_params
+    gripper = Gripper(finger_w, finger_h, open_w, gripper_size)
+    draw_img = gripper.draw_grasp(grasps, img.copy(), color)
+    return draw_img
+
+def draw_grasps(grasps, top_index, img, h_params, color=((73,192,236))):
+    (finger_h, finger_w, open_w, gripper_size) = h_params
+    gripper = Gripper(finger_w, finger_h, open_w, gripper_size)
+    draw_img = gripper.draw_grasp(grasps, img.copy(), color)
+    return draw_img
 
 def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
     """Detect grasp point using graspability
@@ -94,10 +108,10 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
         if grasps != [] :
             important_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
-            drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
-            cv2.imshow("window", drawn_input_img)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
+            drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), draw_top=0)#(73,192,236))
+            #cv2.imshow("window", drawn_input_img)
+            #cv2.waitKey()
+            #cv2.destroyAllWindows()
             return grasps, im_adj, drawn_input_img
         else:
             warning_print("Grasp detection failed! No grasps!")
@@ -163,7 +177,7 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
     main_proc_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
     
     im_adj = adjust_grayscale(im_cut)
-
+    im_adj = im_cut
     (finger_h, finger_w, open_w, gripper_size) = h_params
 
     min_open_w = 25
@@ -304,6 +318,10 @@ def transform_coordinates(grasp_point, point_cloud, img_path, calib_path, width,
     x, y, z, a = camera_to_robot(
         camera_x, camera_y, camera_z, grasp_point[4], calib_path
     )
+    
+    z += 0.016
+    if z < plane_distance:
+        z = plane_distance
     result_print("To robot coordinate : [{:.3f}, {:.3f}, {:.3f}]".format(x, y, z))
 
     return x,y,z,a
@@ -317,13 +335,12 @@ def generate_motion(filepath, ee_pose, action):
     ###### Object: harness ######
     # h_offset = 0.013
     # z -= h_offset 
-    z += 0.005
     exec_flag = 0
     # for both accuracy and safety, be careful with the robot coordinate
     # if z is too small or too large, DO NOT generate motion file, just empty it
     generator = Motion(filepath)
 
-    if z < 0.011 or z >=0.130 or x <= 0.367 or x >= 0.644 or y >=0.252 or y <= -0.243: #table
+    if z < 0.030 or z >=0.130 or x <= 0.30 or x >= 0.644 or y >=0.252 or y <= -0.243: #table
         warning_print("Out of robot workspace!! ")
         generator.empty_motion_generator()
         main_proc_print("Fail! Please try again ... ")
