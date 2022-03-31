@@ -105,7 +105,7 @@ class Gripper(object):
 
         hc[(y-hfh):(y+hfh), (x-how):(x+how)]=255
         if radian is None:
-            if model_typ=='open':
+            if model_type=='open':
                 return ho
             elif model_type == 'close':
                 return hc
@@ -144,14 +144,10 @@ class Gripper(object):
             open_w = 50
             h,w,_ = img.shape
             mask = self.get_hand_model('open',h,w,open_w,x,y,angle)
-
-            if draw_top == None and i == 0:
-                (r,g,b) = (0,255,0)
-            elif i == draw_top:
-                (r,g,b) = (0,255,0)
+            if i == draw_top:
+                (r,g,b) = (255,0,0)
             else:
                 (r,g,b) = color
-
             rgbmask = np.ones((h, w), dtype="uint8")
             rgbmask = np.dstack((np.array(rgbmask * b, 'uint8'), np.array(rgbmask * g, 'uint8'),
                             np.array(rgbmask * r, 'uint8')))

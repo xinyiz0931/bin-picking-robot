@@ -11,13 +11,10 @@ but the size of each cube are 1/2 of the original size.
 """
 import os
 import sys
-sys.path.append("./")
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.plot_utils import plot_subfigures, get_cmap
-from utils.base_utils import *
-from utils.transform_utils import *
+from myrobot.utils import *
 
 class TangleObjSke(object):
     def __init__(self):
@@ -218,7 +215,7 @@ class TangleObjSke(object):
 
 def from_ske():
     """Manually write the object graph to generate json file"""
-    shape = "j"
+    shape = "cc"
 
     write_path = f"./objmodel\\skeleton_{shape}.json"
     collision_path = f"./objmodel\\collision_{shape}.txt"
@@ -254,17 +251,22 @@ def from_ske():
     plt.show()
 
 def from_obj():
-    shape = "j"
+    shape = "cc"
 
     # write_path = f"D:\\code\\myrobot\\objmodel\\skeleton_{shape}.json"
     # collision_path = f"D:\\code\\myrobot\\objmodel\\collision_{shape}.txt"
 
-    write_path = f"./objmodel\\skeleton_{shape}.json"
+    skeleton_path = f"./objmodel\\skeleton_{shape}.json"
     collision_path = f"./objmodel\\collision_{shape}.txt"
     wrl_path = f"./objmodel\\cube_{shape}.wrl"
 
+    skeleton_path = f"./objmodel/skeleton_{shape}.json"
+    collision_path = f"./objmodel/collision_{shape}.txt"
+    wrl_path = f"./objmodel/cube_{shape}.wrl"
+
+
     tok = TangleObjSke()
-    obj_ske = tok.load_obj(write_path)
+    obj_ske = tok.load_obj(skeleton_path)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -288,7 +290,8 @@ if __name__ == "__main__":
     import timeit
     start = timeit.default_timer()
 
-    from_ske()
+    # from_ske()
+    from_obj()
 
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))

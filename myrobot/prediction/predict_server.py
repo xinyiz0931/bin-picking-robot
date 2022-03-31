@@ -18,10 +18,14 @@ class PredictorServer(pdrpc.PredictorServicer):
     def load_aspnet(self, model_dir):
         """Load models"""
         self.model = load_model(model_dir)
-        self.threshold =0.5 
+        self.threshold =0.5
     
     def action_selection_policy(self, prob):
-        final_prob =0
+        final_prob = 0
+        fp = open("/home/xinyi/v.txt", 'a')
+        print(f"{prob[0]},{prob[1]},{prob[2]},{prob[3]},{prob[4]},{prob[5]},{prob[6]}",file=fp)
+        fp.close()
+        print(prob)
         if (prob < self.threshold).all(): 
             # no prob is larger than 0.5 ==> Action 6
             char = 6
@@ -120,6 +124,8 @@ def serve(model_dir, host = "localhost:50051"):
 if __name__ == "__main__":
     # serve(model_dir = "C:\\Users\\matsu\\Documents\\myrobot\\learning\model\\Logi_AL_20210827_145223.h5",
     #       host = "127.0.0.1:18300")
+    # serve(model_dir = "/home/xinyi/Workspace/aspnet/model/Logi_AL_20210827_145223.h5",
+    #       host = "localhost:50051")
     serve(model_dir = "/home/xinyi/Workspace/aspnet/model/Logi_AL_20210827_145223.h5",
           host = "localhost:50051")
           

@@ -13,9 +13,12 @@ min_distance = 1100
 
 #[GRASP]
 hand_template_size = 500
-finger_width = 13
-finger_height = 40
-open_width = 37
+#finger_width = 13
+#finger_height = 40
+#open_width = 37
+finger_width = 10
+finger_height = 20
+open_width = 30
 rotation_step = 45
 depth_step = 50
 hand_depth = 50

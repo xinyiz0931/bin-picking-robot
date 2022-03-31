@@ -16,6 +16,7 @@ def main():
 
     # pc_path = os.path.join(ROOT_DIR, "data/pointcloud/out.ply")
     img_path = os.path.join(ROOT_DIR, "data/depth/depth.png")
+    img_path = os.path.join(ROOT_DIR, "data/depth/depth_raw.png")
     crop_path = os.path.join(ROOT_DIR, "data/depth/depth_cropped.png")
     config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
     calib_path = os.path.join(ROOT_DIR, "data/calibration/calibmat.txt")
@@ -89,8 +90,9 @@ def main():
             best_graspno = predict_result.graspno
             best_grasp = grasps[predict_result.graspno]
             # decrease the time cost
-            if best_action == 6: best_action = random.sample([3,4],1)[0]
-            if best_action == 0: best_action = 1
+            # if best_action == 6: best_action = random.sample([3,4],1)[0]
+            # if best_action == 0: best_action = 1
+            best_action=6
         elif exp_mode == 2:
             # 2 -> random circular picking
             best_grasp = grasps[0]
@@ -105,7 +107,7 @@ def main():
     main_proc_print("Save the results! ")
     
     if success_flag:
-        draw_grasp_img = draw_grasps(grasps, best_graspno, crop_path, h_params)
+        draw_grasp_img = draw_grasps_with_path(grasps, best_graspno, crop_path, h_params, color=(255,0,0))
         cv2.imwrite(draw_path, draw_grasp_img)
 
     # if success_flag:

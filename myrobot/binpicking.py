@@ -48,14 +48,18 @@ def get_point_cloud(save_dir, max_distance, min_distance, width, height):
     return pc
 
 
-def draw_grasps(grasps, top_index, img_path, h_params):
+def draw_grasps_with_path(grasps, top_index, img_path, h_params, color=((73,192,236))):
     img = cv2.imread(img_path)
     (finger_h, finger_w, open_w, gripper_size) = h_params
     gripper = Gripper(finger_w, finger_h, open_w, gripper_size)
-    draw_img = gripper.draw_grasp(grasps, img.copy(), (73,192,236), top_index)
+    draw_img = gripper.draw_grasp(grasps, img.copy(), color)
     return draw_img
 
-
+def draw_grasps(grasps, top_index, img, h_params, color=((73,192,236))):
+    (finger_h, finger_w, open_w, gripper_size) = h_params
+    gripper = Gripper(finger_w, finger_h, open_w, gripper_size)
+    draw_img = gripper.draw_grasp(grasps, img.copy(), color)
+    return draw_img
 
 def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
     """Detect grasp point using graspability
@@ -104,7 +108,7 @@ def detect_grasp_point(n_grasp, img_path, margins, g_params, h_params):
         if grasps != [] :
             important_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
-            drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (38,80,30), draw_top=0)#(73,192,236))
+            drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), draw_top=0)#(73,192,236))
             #cv2.imshow("window", drawn_input_img)
             #cv2.waitKey()
             #cv2.destroyAllWindows()

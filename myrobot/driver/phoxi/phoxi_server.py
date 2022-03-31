@@ -1,7 +1,7 @@
 import grpc
 import time
 import numpy as np
-#import phoxicontrol as pctrl
+import phoxicontrol as pctrl
 from concurrent import futures
 import sys
 import phoxi_pb2 as pxmsg
