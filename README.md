@@ -2,7 +2,7 @@
 Binpicking tool including vision, planning and robot control
 
 ```
-pip install -e .
+$ pip install -e .
 ```
 ```
 >>> import myrobot
