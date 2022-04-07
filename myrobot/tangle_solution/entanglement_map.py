@@ -1,27 +1,21 @@
 import os
 import sys
 import glob
-sys.path.append("./")
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import math
 import numpy as np
-import itertools
-
-np.set_printoptions(suppress=True)
-np.seterr(divide='ignore', invalid='ignore')
 import matplotlib.pyplot as plt
 from scipy import ndimage
-from utils.base_utils import *
-from utils.image_proc_utils import *
-from utils.plot_utils import *
-from tangle_solution.topo_coor import TopoCoor, LineDetection
+from myrobot.utils import *
+from myrobot.tangle_solution import TopoCoor, LineDetection
 
 class EntanglementMap(object):
-    def __init__(self, length_thre, distance_thre, sliding_size, sliding_stride):
-        """Initialize EntanglementMap class with following four parameters
-
+    def __init__(self, length_thre, distance_thre, sliding_size, sliding_stride, 
+                 weight_w=0.8, weight_d=0.199, weight_c=0.001):
+        """
+        Initialize EntanglementMap class with following four parameters
         Arguments:
             length_thre {int} -- length threshold when fitting line segments
             distance_thre {int} -- distance threshold when fitting line segments
@@ -32,12 +26,23 @@ class EntanglementMap(object):
         self.distance_thre = distance_thre
         self.sliding_size = sliding_size
         self.sliding_stride = sliding_stride
-        self.tc = TopoCoor(length_thre, distance_thre)
+        self.weight_w = weight_w
+        self.weight_d = weight_d
+        self.weight_c = weight_c
+
+        self.ld = LineDetection(self.length_thre, self.distance_thre)
+        self.tc = TopoCoor()
 
     def entanglement_map(self, src):
         """
-        Input: 3-channel image
-        Output: entanglement map as an array, not an image in range[0,255]
+        Calculate entanglement map for input depth image
+        Parameters: 
+            src {array} -- 3-channel image
+        Return: 
+            emap {array} -- (win num x win num), entanglement map using sliding window function (not normalized)
+            wmat_vis {array} -- writhe matrix normalized in [0,255]
+            w {float} -- writhe
+            d {float} -- density
         """
 
         height, width, _ = src.shape
@@ -48,30 +53,33 @@ class EntanglementMap(object):
         for y in range(0,height-self.sliding_size + 1, self.sliding_stride): 
             for x in range(0,width-self.sliding_size + 1, self.sliding_stride): 
                 cropped = src[y:y + self.sliding_size , x:x + self.sliding_size]
-                wmat, w, d = self.tc.topo_coor_from_image(cropped,cmask=False)
+                wmat, w, d = self.tc.topo_coor_from_img(cropped,self.length_thre,self.distance_thre,cmask=False)
                 wmap = np.append(wmap, w)
                 dmap = np.append(dmap, d)
 
         hnum = int((height-self.sliding_size) / self.sliding_stride + 1)
         wnum = int((width-self.sliding_size) / self.sliding_stride + 1)
-
         wmap = (wmap.reshape(hnum, wnum)).astype(float)
         dmap = (dmap.reshape(hnum, wnum)).astype(float)
         
-        wmat, w, d, cmask = self.tc.topo_coor_from_image(src,cmask=True)
+        # calculate weights
+        wmat, w, d, cmask = self.tc.topo_coor_from_img(src,self.length_thre,self.distance_thre,cmask=True)
         result_print("w: {:.2}, d: {:.2}".format(w,d))
         cmask = cv2.resize(cmask,(hnum, wnum))
         wmat /= (wmat.max() / 255.0) # real writhe value
         wmat_vis = np.uint8(wmat) # normalize to [0,255]
 
-        emap = 0.8*np.nan_to_num(wmap)+0.2*np.nan_to_num(dmap)+0.001*cmask
+        emap = self.weight_w*np.nan_to_num(wmap)+self.weight_d*np.nan_to_num(dmap)+self.weight_c*cmask
 
         return emap, wmat_vis, w, d
     
     def line_map(self, src):
         """
-        Input: 3-channel image
-        Output: line number map as an array, not an image in range[0,255]
+        Calculate a map for the distribution of line number from depth image
+        Parameters: 
+            src {array} -- 3-channel image
+        Return: 
+            lmap {array} -- line number map using sliding window function
         """
         height, width, _ = src.shape
 
@@ -79,8 +87,7 @@ class EntanglementMap(object):
         for y in range(0,height-self.sliding_size + 1, self.sliding_stride): 
             for x in range(0,width-self.sliding_size + 1, self.sliding_stride): 
                 cropped = src[y:y + self.sliding_size , x:x + self.sliding_size]
-                ld = LineDetection()
-                _, _, lines_num = ld.detect_line(cropped,self.length_thre, self.distance_thre)
+                _, _, lines_num = self.ld.detect_line(cropped)
                 if lines_num is None:
                     lmap = np.append(lmap, 0)
                 else:
@@ -94,8 +101,11 @@ class EntanglementMap(object):
 
     def brightness_map(self, src, brightness_thre=127):
         """
-        Input: 3-channel image
-        Output: brightness map as an array, not an image in range[0,255]
+        Calculate a map for the distribution of pixel brightness from depth image
+        Parameters: 
+            src {array} -- 3-channel image
+        Return: 
+            bmap {array} -- pixel brightness map using sliding window function
         """
         height, width, _ = src.shape
 

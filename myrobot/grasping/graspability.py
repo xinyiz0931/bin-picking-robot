@@ -8,6 +8,7 @@ import configparser
 import shutil
 from datetime import datetime as dt
 import timeit
+from cv2 import merge
 
 #import cv2
 import numpy as np
@@ -309,7 +310,8 @@ class Graspability(object):
 
         # print("Computing graspability map... ")
         # img = cv2.GaussianBlur(img,(3,3),0)
-        merge_mask = 255 - cv2.resize(merge_mask, (img.shape[1], img.shape[0]))
+        merge_mask /= (merge_mask.max() / 255.0) # real writhe value
+        merge_mask = np.uint8(255 - cv2.resize(merge_mask, (img.shape[1], img.shape[0])))
 
 
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -318,12 +320,8 @@ class Graspability(object):
             
             _, Wc = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
             _, _Wt = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
+
             Wt = cv2.bitwise_and(merge_mask,_Wt)
-            
-            # plt.imshow(Wt)
-            # plt.show()
-
-
             count_b = 0
             for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
                 Hc = hc_rot[count_b]
@@ -339,20 +337,26 @@ class Graspability(object):
                 C_ = 255-C
                 comb = T & C_
                 G = self.get_gaussian_blur(comb)
-                
 
-                ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
-                ccwt = cv2.connectedComponentsWithStats(thresh)
+                """Sample points with highest graspability"""
+                _,maxG,_,maxLoc = cv2.minMaxLoc(G)
+                x = maxLoc[0]
+                y = maxLoc[1]
+                z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                candidates.append([maxG, x, y, z, angle, count_a, count_b])
                 
-                res = np.delete(ccwt[3], 0, 0)
+                """Sample points with largest graspability area"""
+                # ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
+                # ccwt = cv2.connectedComponentsWithStats(thresh)
+                # res = np.delete(ccwt[3], 0, 0)
+                # for i in range(res[:,0].shape[0]):
+                #     y = int(res[:,1][i])
+                #     x = int(res[:,0][i])
+                #     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
+                #     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                #     candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
 
-                for i in range(res[:,0].shape[0]):
-                    y = int(res[:,1][i])
-                    x = int(res[:,0][i])
-                    z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
-                    angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
-                    candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
-                # save all images during the process                
         return candidates
 
     def grasp_detection(self, candidates, w, h, n=10, _dismiss=50, _distance=50):

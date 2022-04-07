@@ -1,10 +1,13 @@
 import os
 import sys
 import math
+import configparser
 import random
 from datetime import datetime as dt
 
+
 from myrobot.binpicking import *
+from myrobot.config import BinConfig
 
 def main():
     
@@ -24,50 +27,22 @@ def main():
     draw_path = os.path.join(ROOT_DIR, "data/depth/final_result.png")
 
     # ======================= get config info ============================
-    config = configparser.ConfigParser()
-    config.read(config_path)
-    
-    #image / point cloud 
-
-    width = int(config['IMAGE']['width'])
-    height = int(config['IMAGE']['height'])
-    left_margin = int(config['IMAGE']['left_margin'])
-    top_margin = int(config['IMAGE']['top_margin'])
-    right_margin = int(config['IMAGE']['right_margin'])
-    bottom_margin = int(config['IMAGE']['bottom_margin'])
-    max_distance = float(config['IMAGE']['max_distance'])
-    min_distance = float(config['IMAGE']['min_distance'])
-
-    finger_width = float(config['GRASP']['finger_width'])
-    finger_height = float(config['GRASP']['finger_height'])
-    open_width = float(config['GRASP']['gripper_width'])
-    hand_template_size = int(config['GRASP']['hand_template_size'])
-
-    rotation_step = float(config['GRASP']['rotation_step'])
-    depth_step = float(config['GRASP']['rotation_step'])
-    hand_depth = float(config['GRASP']['hand_depth'])
-    dismiss_area_width = float(config['GRASP']['dismiss_area_width'])
-
-    exp_mode = int(config['EXP']['exp_mode'])
-    
+    cfg = BinConfig()
 
     # ======================== get depth img =============================
-    point_array = get_point_cloud(depth_dir, max_distance, min_distance, width, height)
+    point_array = get_point_cloud(depth_dir, cfg.max_distance, cfg.min_distance, cfg.width, cfg.height)
     #pcd = o3d.io.read_point_cloud("./data/test/out.ply")
     #point_array = pcd.points
 
     # =======================  compute grasp =============================
-    # prepare all kinds of parameters
-    margins =  (top_margin,left_margin,bottom_margin,right_margin)
-    g_params = (rotation_step, depth_step, hand_depth)
-    h_params = (finger_height, finger_width, open_width, hand_template_size)
-
-    grasps, input_img, output_img = detect_grasp_point(n_grasp=10, 
+    grasps, img_input, img_grasp = detect_grasp_point(n_grasp=10, 
                                                        img_path=img_path, 
-                                                       margins=margins, 
-                                                       g_params=g_params, 
-                                                       h_params=h_params)
-    cv2.imwrite(crop_path, input_img)
+                                                       margins=cfg.margins, 
+                                                       g_params=cfg.g_params, 
+                                                       h_params=cfg.h_params)
+    cv2.imwrite(crop_path, img_input)
+    cv2.imwrite(draw_path, img_grasp)
+
     # =======================  picking policy ===========================
     if grasps is None:
         best_action = -1
@@ -75,29 +50,29 @@ def main():
         rx,ry,rz,ra = np.zeros(4)
     else:
         # four policies
-        if exp_mode == 0:
+        if cfg.exp_mode == 0:
             # 0 -> graspaiblity
             best_grasp = grasps[0]
             best_action = 0 
 
-        elif exp_mode == 1: 
+        elif cfg.exp_mode == 1: 
             # 1 -> proposed circuclar picking
-            from myrobot.prediction import predict_client as pdclt
-            pdc = pdclt.PredictorClient()
-            grasps2bytes=np.ndarray.tobytes(np.array(grasps))
-            predict_result= pdc.predict(imgpath=crop_path, grasps=grasps2bytes)
-            best_action = predict_result.action
-            best_graspno = predict_result.graspno
-            best_grasp = grasps[predict_result.graspno]
+            # from myrobot.prediction import predict_client as pdclt
+            # pdc = pdclt.PredictorClient()
+            # grasps2bytes=np.ndarray.tobytes(np.array(grasps))
+            # predict_result= pdc.predict(imgpath=crop_path, grasps=grasps2bytes)
+            # best_action = predict_result.action
+            # best_graspno = predict_result.graspno
+            best_action, best_graspno = predict_action_grasp(grasps, crop_path)
+            best_grasp = grasps[best_graspno]
             # decrease the time cost
             # if best_action == 6: best_action = random.sample([3,4],1)[0]
             # if best_action == 0: best_action = 1
-            best_action=6
-        elif exp_mode == 2:
+        elif cfg.exp_mode == 2:
             # 2 -> random circular picking
             best_grasp = grasps[0]
             best_action = random.sample(list(range(6)),1)[0]
-       
+
         rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, width, margins)
         
     # # =======================  generate motion ===========================
@@ -105,10 +80,6 @@ def main():
   
     # ======================= Record the data ===================s=========
     main_proc_print("Save the results! ")
-    
-    if success_flag:
-        draw_grasp_img = draw_grasps_with_path(grasps, best_graspno, crop_path, h_params, color=(255,0,0))
-        cv2.imwrite(draw_path, draw_grasp_img)
 
     # if success_flag:
     #     tdatetime = dt.now()
@@ -117,7 +88,6 @@ def main():
     #     cv2.imwrite('./exp/{}'.format(input_name), input_img)
     #     cv2.imwrite('./exp/draw/{}'.format(input_name), cimg)
     #     cv2.imwrite('./exp/full/{}'.format(input_name), full_image)
-
 
 if __name__ == "__main__":
 

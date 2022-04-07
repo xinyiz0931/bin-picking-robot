@@ -3,19 +3,14 @@ import sys
 import math
 import random
 # execute the script from the root directory etc. ~/src/myrobot
-sys.path.append("./")
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
-import configparser
 import matplotlib.pyplot as plt
 
-from grasping.graspability import Gripper, Graspability
-from utils.base_utils import *
-from utils.transform_utils import *
-from utils.vision_utils import *
-
+from myrobot.grasping import Gripper, Graspability
+from myrobot.utils import *
 
 def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
     """Detect grasp point using graspability
@@ -62,9 +57,8 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
 if __name__ == '__main__':
 
     """Configurations defined by users"""
-    # root_dir = "D:\\code\\dataset\\tangle_in_sim\\20211119131126"
-    root_dir = "C:\\Users\\matsumura\\Documents\\BinSimulator\\XYBin\\bin\\exp\\6DPOSE\\20211202151420"
-    img_path = os.path.join(root_dir, "depth.png")
+    root_dir = os.path.abspath("./")
+    img_path = os.path.join(root_dir, "data/test/depth4.png")
 
     # conflict = np.zeros((500,500))
     # for i in range(7):
@@ -88,9 +82,9 @@ if __name__ == '__main__':
 
     drawn_input_img = gripper.draw_grasp(grasps, input_img)
 
-    cv2.imwrite(os.path.join(root_dir, "best.png"), drawn_input_img)
+    # cv2.imwrite(os.path.join(root_dir, "best.png"), drawn_input_img)
     # gmap = cv2.imread("./vision\\tmp\\G_11.png", 0)
     
-    # plt.imshow(cv2.imread(img_path, 0), cmap='gray')
-    # plt.imshow(gmap, cmap='jet', alpha=0.4)
-    # plt.show()
+    plt.imshow(cv2.imread(img_path, 0), cmap='gray')
+    plt.imshow(gmap, cmap='jet', alpha=0.4)
+    plt.show()

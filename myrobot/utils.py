@@ -1,5 +1,7 @@
 import os
 import sys
+
+from pandas import infer_freq
 # execute the script from the root directory etc. ~/src/myrobot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
@@ -532,6 +534,9 @@ def rotate_in_sim(p, xz, y):
 # ========================== VISION UTILS ===========================
 
 def rotate_img(img, angle, center=None, scale=1.0, cropped=True):
+    """
+    angle: degree (countclockwise)
+    """
     (h,w) = img.shape[:2]
 
     if center is None:
@@ -556,6 +561,40 @@ def rotate_img(img, angle, center=None, scale=1.0, cropped=True):
         # Now, we will perform actual image rotation
         rotated = cv2.warpAffine(img, M, (new_w, new_h))
         return cv2.resize(rotated, (h,w))
+
+def rotate_img_kpt(img, kpts, angle, center=None, scale=1.0, cropped=True):
+    """
+    angle: degree (countclockwise)
+    locs: np.array([[x1,y1],[x2,y2],...])
+    return: rotated image, rotated keypoints np.array([[x1,y1],[x2,y2],...])
+    """
+    (h,w) = img.shape[:2]
+    num_kpt = kpts.shape[0]
+
+
+    if center is None:
+        center=(w/2, h/2)
+    M = cv2.getRotationMatrix2D(center, angle, scale)
+    input_kpts = np.c_[kpts, np.ones(num_kpt)]
+    if cropped is True:
+        rotated = cv2.warpAffine(img, M, (w,h))
+        rot_kpts = np.dot(M,input_kpts.T)
+        return rotated, rot_kpts.T[:,0:2]
+    else:
+        cosM = np.abs(M[0][0])
+        sinM = np.abs(M[0][1])
+
+        new_h = int((h * sinM) + (w * cosM))
+        new_w = int((h * cosM) + (w * sinM))
+        M[0][2] += (new_w/2) - center[0]
+        M[1][2] += (new_h/2) - center[1]
+
+        # Now, we will perform actual image rotation
+        rotated = cv2.warpAffine(img, M, (new_w, new_h))
+        rot_kpts = np.dot(M,input_kpts.T).T[:,0:2]
+        rot_kpts[:,0]*=(w/new_w)
+        rot_kpts[:,1]*=(h/new_h)
+        return cv2.resize(rotated, (h,w)), rot_kpts
 
 def rotate_3d(p, R, origin=(0, 0, 0)):
     o = np.atleast_2d(origin)
@@ -852,3 +891,21 @@ def reform_xyz(xyz):
 
     re_xyz = np.asarray(down_pcd.points)
     return (re_xyz)
+
+# img = cv2.imread("C:\\Users\\xinyi\\Downloads\\twice.jpg")
+# img = cv2.resize(img, (500,500))
+# kpt = np.array([[217,197],[325,191],[271,119]])
+# for p in kpt:
+#     cv2.circle(img, p, 5, (0,0,255), -1)
+#     print(p)
+
+# rot_img, rot_kpt = rotate_img_kpt(img, kpt, 45, cropped=False)
+
+# for p in rot_kpt:
+#     print(p)
+#     cv2.circle(rot_img, (int(p[0]),int(p[1])), 5, (0,0,255), -1)
+# cv2.imshow("windows", rot_img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+# # plt.imshow(rot_img)
+# # plt.show()

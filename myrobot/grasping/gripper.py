@@ -133,9 +133,9 @@ class Gripper(object):
         cv2.waitKey()
         cv2.destroyAllWindows()
     
-    def draw_grasp(self, grasps, img, color=(255,0,0), draw_top=None):
+    def draw_grasp(self, grasps, img, top_idx=0, color=(255,0,0),top_color=(0,255,0)):
         # default: draw top grasp as No.0 of grasp list
-        # draw_top = No.
+        # e.g. top_no=3, draw top grasp as No.3
         for i in range(len(grasps)-1,-1,-1):
             x = int(grasps[i][1])
             y = int(grasps[i][2])
@@ -144,8 +144,8 @@ class Gripper(object):
             open_w = 50
             h,w,_ = img.shape
             mask = self.get_hand_model('open',h,w,open_w,x,y,angle)
-            if i == draw_top:
-                (r,g,b) = (255,0,0)
+            if i == top_idx:
+                (r,g,b) = top_color
             else:
                 (r,g,b) = color
             rgbmask = np.ones((h, w), dtype="uint8")

@@ -37,8 +37,6 @@ def shape_selection(event, x, y, flags, param):
         cv2.rectangle(image, ref_point[0], ref_point[1], (0, 255, 0), 2)
         # cv2.imshow("image", image)
 
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument("image", help="add source image")
 args = parser.parse_args()
@@ -71,18 +69,25 @@ while True:
 
 cv2.destroyAllWindows()
 
+print('left_margin:   ', str(ref_point[0][0]))
+print('top_margin:    ', str(ref_point[0][1]))
+print('right_margin:  ', str(ref_point[1][0]))
+print('bottom_margin: ', str(ref_point[1][1]))
+
+# TODO: write to config file ...
+
 # record the info into cfg file
 # set absolute directory for config.yaml
-if flag:
-    config = configparser.ConfigParser()
-    config.read(config_path)
+# if flag:
+#     config = configparser.ConfigParser()
+#     config.read(config_path)
 
-    config.set('IMAGE', 'left_margin', str(ref_point[0][0]))
-    config.set('IMAGE', 'top_margin', str(ref_point[0][1]))
-    config.set('IMAGE', 'right_margin', str(ref_point[1][0]))
-    config.set('IMAGE', 'bottom_margin', str(ref_point[1][1]))
+#     config.set('IMAGE', 'left_margin', str(ref_point[0][0]))
+#     config.set('IMAGE', 'top_margin', str(ref_point[0][1]))
+#     config.set('IMAGE', 'right_margin', str(ref_point[1][0]))
+#     config.set('IMAGE', 'bottom_margin', str(ref_point[1][1]))
 
-    config.write(open(config_path, "w"))
-    main_proc_print("Successfully defined the workspace size! ")
-else:
-    warning_print("Failed to define the workspace size! ")
+#     config.write(open(config_path, "w"))
+#     main_proc_print("Successfully defined the workspace size! ")
+# else:
+#     warning_print("Failed to define the workspace size! ")
