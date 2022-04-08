@@ -366,7 +366,7 @@ def calc_lineseg_dist(p, l):
 
 def calc_shortest_dist(p, l):
     """Function calculates the distance from point p to line segment [a,b]. 
-    Arguments:
+    Parameters:
         p {list} -- [x,y,z] a point
         l {list} -- [p1.x,p1.y.p1.z, p2.x,p2.y.p2.z] a line
     Returns:
@@ -408,7 +408,7 @@ def calc_intersection(a1, a2, b1, b2):
         return (float('inf'), float('inf'))
     return [x/z, y/z]
 
-def replace_bad_point(imgpath, loc, bounding_size=10):
+def replace_bad_point(img, loc, bounding_size=10):
     """    
     find the closest meaningful point for top-ranked grasp point
     to avoid some cases where the pixel value is zero or very low
@@ -417,7 +417,7 @@ def replace_bad_point(imgpath, loc, bounding_size=10):
     """
     
     (x, y) = loc
-    gray = cv2.imread(imgpath, 0)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     background_pixel = 10
     if gray[y,x] < background_pixel: 
         h, w = gray.shape
@@ -429,12 +429,10 @@ def replace_bad_point(imgpath, loc, bounding_size=10):
         y_p = max_xy[0][0] + y-bounding_size
         x_p = max_xy[1][0] + x-bounding_size
 
-        return 1, (x_p, y_p)
+        return (x_p, y_p)
     else:
-        return 0, loc
+        return loc
     
-
-
 def camera_to_robot(c_x, c_y, c_z, angle, calib_path):
     """Using 4x4 calibration matrix to calculate x and y
         Using pixel value to calculate z

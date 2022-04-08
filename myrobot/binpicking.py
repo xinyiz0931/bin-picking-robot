@@ -5,9 +5,6 @@ Date: 2020/5/11
 """
 import os
 import sys
-# execute the script from the root directory etc. ~/src/myrobot
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -372,38 +369,152 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
         return None, im_adj,img
 
 
-
-def transform_coordinates(grasp_point, point_cloud, img_path, calib_path, width, margins):
+def transform_camera_to_robot(camera_loc, calib_path):
     """
-    1. replace bad point to adjust height
-    2. image (x,y) -> camera (x,y,z)
-    3. camera (x,y,z) -> robot (x,y,z)
+    Transform camera loc to robot loc
+    Use 4x4 calibration matrix
+    Parameters:
+        camera_loc {tuple} -- (cx,cy,cy) at camera coordinate
+        calib_path {str} -- calibration matrix file path
+    Returns: 
+        robot_loc {tuple} -- (rx,ry,rz) at robot coordinate
     """
-    (top_margin,left_margin,bottom_margin,right_margin) = margins
-    result_print("Grasp point (crop) : [{}, {}, {}]".format(grasp_point[1], grasp_point[2],grasp_point[4]))
-    full_image_x = grasp_point[1] + left_margin
-    full_image_y = grasp_point[2] + top_margin
-    result_print("Grasp point (full) : [{}, {}, {}]".format(full_image_x, full_image_y, 45*grasp_point[4]))
-    # only when height value is unnatural, execute `replace_bad_point`
-    flag, (image_x, image_y) = replace_bad_point(img_path, (full_image_x, full_image_y))
+    # get calibration matrix 4x4
+    (cx, cy, cz) = camera_loc
+    calibmat = np.loadtxt(calib_path)
+    camera_pos = np.array([cx, cy, cz, 1])
+    rx, ry, rz, _ = np.dot(calibmat, camera_pos)  # unit: mm --> m
+    return (rx, ry, rz)
 
-    if flag: # first time adjust height
-        warning_print("Seek the neighbor point to adjust height")
+def transform_image_to_camera(image_loc, img_path, pc, margins):
+    """
+    1. Replace bad point and adjust the feasible height
+    2. Transform image loc to camera loc
+    Parameters:
+        image_loc {tuple} -- (ix,iy), pixel location
+        img_path {str} -- full image without cropping
+        pc {array} -- (point num x 3) point cloud 
+        margins {tupple} -- cropped roi
+    Returns: 
+        camera_loc {tuple} -- (cx,cy,cz)
+    """
+    (ix, iy) = image_loc
+    (top_margin,left_margin,_,_) = margins
 
-    offset = image_y * width + image_x
-    [camera_x, camera_y, camera_z] = point_cloud[offset]/1000 # unit: m
-    result_print("To camera coordinate : [{:.3f}, {:.3f}, {:.3f}]".format(camera_x, camera_y, camera_z))
+    img = cv2.imread(img_path)
+    _, width, _ = img.shape
+
+    full_ix = ix + left_margin
+    full_iy = iy + top_margin
+    (new_ix, new_iy) = replace_bad_point(img, (full_ix, full_iy))
+    offset = new_iy * width + new_ix
+
+    [cx, cy, cz] = pc[offset]/1000 # unit: m
+    return (cx,cy,cz)
+
+def transform_image_to_robot(image_loc, img_path, calib_path, point_cloud, margins):
+    """
+    Transform image loc to robot loc
+    Parameters:
+        image_loc {tuple} -- (ix,iy,ia) at camera coordinate, angle in degree
+        calib_path {str} -- calibration matrix file path
+    Returns: 
+        robot_loc {tuple} -- (rx,ry,rz,ra) at robot coordinate, angle in degree
+    """
+    # position
+    (ix, iy, ia) = image_loc
+    (cx, cy, cz) = transform_image_to_camera((ix,iy), img_path, point_cloud, margins)
+    (rx, ry, rz) = transform_camera_to_robot((cx,cy,cz), calib_path)
     
-    x, y, z, a = camera_to_robot(
-        camera_x, camera_y, camera_z, grasp_point[4], calib_path
-    )
-    
-    z += 0.016
-    if z < plane_distance:
-        z = plane_distance
-    result_print("To robot coordinate : [{:.3f}, {:.3f}, {:.3f}]".format(x, y, z))
+    # rotation
+    ra = 180.0 * ia / math.pi
+    if(ra < -90): ra = 180 + ra
+    elif(90 < ra): ra = ra - 180
+    return rx, ry, rz, ra
 
-    return x,y,z,a
+def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min_y=-0.25, max_y=0.25):
+    (x,y,z) = robot_loc
+    if x < min_x or x > max_x: 
+        warning_print("Out of x-axis reachability! ")
+        return False
+    elif y < min_y or y > max_y:
+        warning_print("Out of y-axis reachability! ")
+        return False
+    elif z < min_z or z > max_z:
+        warning_print("Out of z-axis reachability! ")
+        return False
+    else:
+        return True
+
+# def image_to_robot(img_x, img_y, img_z, i_angle):
+
+#     # get calibration elements
+#     # [calib_sx, calib_sy, calib_tx, calib_ty] = self.calib_mat
+
+#     # robot_x = calib_sy*img_y + calib_ty
+#     # robot_y = calib_sx*img_x + calib_tx
+
+#     # mat = np.array([[0.00054028,0.0000389,0.04852181],[-0.00001502,0.00053068,-0.5952836],[0,0,1]])
+#     print("input: ", (1544-img_y), (2064-img_x))
+#     robot_frame = mat.dot([(1544-img_y), (2064-img_x), 1])
+#     robot_x = robot_frame[0]
+#     robot_y = robot_frame[1]
+
+#     # img_z_refined, robot_z =  self.height_heuristic(int(img_x), int(img_y))
+#     robot_z = 0.005 + 0.00045*(img_z - 50) - 0.01
+
+#     if(0.67 <= robot_x):
+#         print("Error: x is too large! ")
+#     if(0.67 <= robot_y):
+#         print("Error: y is too large! ")
+#     # if(0.005152941176470586 >= robot_z):
+#     if(0.005 >= robot_z):
+#         print("Error: z is too small! ")
+#         robot_z = 0.005
+
+#     robot_angle = 180.0 * angle / math.pi
+#     if(robot_angle < -90):
+#         robot_angle = 180 + robot_angle
+#     elif(90 < robot_angle):
+#         robot_angle = robot_angle - 180
+
+#     return robot_x, robot_y, robot_z, robot_angle
+
+
+# def transform_coordinates(grasp_point, point_cloud, img_path, calib_path, width, margins):
+#     """
+#     1. replace bad point to adjust height
+#     2. image (x,y) -> camera (x,y,z)
+#     3. camera (x,y,z) -> robot (x,y,z)
+#     """
+#     (top_margin,left_margin,bottom_margin,right_margin) = margins
+#     result_print("Grasp point (crop) : [{}, {}, {}]".format(grasp_point[1], grasp_point[2],grasp_point[4]))
+#     full_image_x = grasp_point[1] + left_margin
+#     full_image_y = grasp_point[2] + top_margin
+#     result_print("Grasp point (full) : [{}, {}, {}]".format(full_image_x, full_image_y, 45*grasp_point[4]))
+#     # only when height value is unnatural, execute `replace_bad_point`
+#     flag, (image_x, image_y) = replace_bad_point(img_path, (full_image_x, full_image_y))
+
+#     if flag: # first time adjust height
+#         warning_print("Seek the neighbor point to adjust height")
+
+#     offset = image_y * width + image_x
+#     [camera_x, camera_y, camera_z] = point_cloud[offset]/1000 # unit: m
+#     result_print("To camera coordinate : [{:.3f}, {:.3f}, {:.3f}]".format(camera_x, camera_y, camera_z))
+    
+    
+#     x, y, z, a = camera_to_robot(
+#         camera_x, camera_y, camera_z, grasp_point[4], calib_path
+#     )
+
+
+    
+#     z += 0.016
+#     if z < plane_distance:
+#         z = plane_distance
+#     result_print("To robot coordinate : [{:.3f}, {:.3f}, {:.3f}]".format(x, y, z))
+
+#     return x,y,z,a
 
 
 def generate_motion(filepath, ee_pose, action):

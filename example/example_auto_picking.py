@@ -4,6 +4,8 @@ import math
 import configparser
 import random
 from datetime import datetime as dt
+
+from matplotlib.pyplot import margins
 from myrobot.binpicking import *
 from myrobot.config import BinConfig
 
@@ -33,7 +35,7 @@ def main():
     config_path = os.path.join(root_dir, "cfg/config.yaml")
     calib_path = os.path.join(root_dir, "data/calibration/calibmat.txt")
     mf_path = os.path.join(root_dir, "data/motion/motion.dat")
-    draw_path = os.path.join(root_dir, "data/depth/final_result.png")
+    draw_path = os.path.join(root_dir, "data/depth/result.png")
 
     # ======================= get config info ============================
     cfg = BinConfig(config_path)
@@ -82,8 +84,10 @@ def main():
             best_grasp = grasps[0]
             best_action = random.sample(list(range(6)),1)[0]
 
-        rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, width, margins)
-        
+        # rx,ry,rz,ra = transform_coordinates(best_grasp, point_array, img_path, calib_path, cfg.width, cfg.margins)
+        (rx,ry,rz,ra) = transform_image_to_robot((best_grasp[1],best_grasp[2],best_grasp[4]),
+                                                img_path, calib_path, point_array, cfg.margins)
+
     # # =======================  generate motion ===========================
     success_flag = generate_motion(mf_path, [rx,ry,rz,ra], best_action) 
   

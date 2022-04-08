@@ -1,8 +1,6 @@
 
 import os
 import yaml
-import re
-from collections import OrderedDict
 
 class BinConfig(object):
     def __init__(self, config_path):
@@ -15,10 +13,30 @@ class BinConfig(object):
         except FileNotFoundError:
             print("Wrong file or file path")
 
-
     def __getattr__(self, key):
         try:
-            return self.config[key]
+            if key== "margins":
+                return (self.config["top_margin"],
+                        self.config["left_margin"],
+                        self.config["bottom_margin"],
+                        self.config["right_margin"])
+            elif key== "g_params":
+                return (self.config["rotation_step"],
+                        self.config["depth_step"],
+                        self.config["hand_depth"])
+            elif key== "h_params":
+                return (self.config["finger_width"],
+                        self.config["finger_height"],
+                        self.config["gripper_width"],
+                        self.config["hand_template_size"])
+            elif key== "t_params":
+                return (self.config["length_thre"],
+                        self.config["distance_thre"],
+                        self.config["sliding_size"],
+                        self.config["sliding_stride"],
+                        self.config["compressed_size"])
+            else:
+                return self.config[key]
         except KeyError:
             raise AttributeError
 
@@ -44,3 +62,4 @@ class BinConfig(object):
 
     def keys(self):
         return self.config.keys()
+    

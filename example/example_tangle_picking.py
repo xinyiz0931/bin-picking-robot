@@ -1,11 +1,7 @@
 import os
-import sys
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import datetime as dt
 from myrobot.binpicking import *
 from myrobot.config import BinConfig
 
@@ -53,7 +49,7 @@ def main():
     fig.add_subplot(234)
     plt.imshow(img_grasp)
     plt.axis("off")
-    plt.title("EMap")
+    plt.title("FGE")
 
     fig.add_subplot(235)
     plt.imshow(t_img_grasp)
