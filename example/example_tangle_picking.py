@@ -10,8 +10,11 @@ from myrobot.binpicking import *
 from myrobot.config import BinConfig
 
 def main():
+    root_dir = os.path.abspath("./")
+    config_path = os.path.join(root_dir, "cfg/config.yaml")
 
-    cfg = BinConfig()
+    cfg = BinConfig(config_path)
+    
     img_path = os.path.join("./data", "test", "depth4.png")
 
     img_edge, num_edge = detect_edge(img_path, cfg.t_params)
@@ -48,7 +51,7 @@ def main():
     plt.title("Depth + EMap")
 
     fig.add_subplot(234)
-    plt.imshow(t_img_grasp)
+    plt.imshow(img_grasp)
     plt.axis("off")
     plt.title("EMap")
 

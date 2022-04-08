@@ -8,6 +8,7 @@ Draw a rectangle for inside of the box.
 If you are happy with the size, hit `enter` or `q`, the config file will be updated. 
 If you want re-draw the rectangle, hit `r` to refresh. 
 """
+from email.policy import default
 import sys
 # execute the script from the root directory etc. ~/src/myrobot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
@@ -15,7 +16,7 @@ if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
 import os
 import cv2
 import argparse
-import configparser
+from myrobot.config import BinConfig
 from myrobot.utils import *
 
 def shape_selection(event, x, y, flags, param):
@@ -37,13 +38,16 @@ def shape_selection(event, x, y, flags, param):
         cv2.rectangle(image, ref_point[0], ref_point[1], (0, 255, 0), 2)
         # cv2.imshow("image", image)
 
+root_dir = os.path.abspath("./")
+img_path = os.path.join(root_dir, "data/depth/depth_raw.png")
+
+config_path = os.path.join(root_dir, "cfg/config.yaml")
+
 parser = argparse.ArgumentParser()
-parser.add_argument("image", help="add source image")
+parser.add_argument("--image", help="add source image", default=img_path)
 args = parser.parse_args()
 
-ROOT_DIR = os.path.abspath("./")
-img_path = os.path.join(ROOT_DIR, args.image)
-config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
+img_path = os.path.join(root_dir, args.image)
 
 ref_point = []
 image = cv2.imread(img_path)
@@ -76,18 +80,17 @@ print('bottom_margin: ', str(ref_point[1][1]))
 
 # TODO: write to config file ...
 
+
+
 # record the info into cfg file
 # set absolute directory for config.yaml
-# if flag:
-#     config = configparser.ConfigParser()
-#     config.read(config_path)
-
-#     config.set('IMAGE', 'left_margin', str(ref_point[0][0]))
-#     config.set('IMAGE', 'top_margin', str(ref_point[0][1]))
-#     config.set('IMAGE', 'right_margin', str(ref_point[1][0]))
-#     config.set('IMAGE', 'bottom_margin', str(ref_point[1][1]))
-
-#     config.write(open(config_path, "w"))
-#     main_proc_print("Successfully defined the workspace size! ")
-# else:
-#     warning_print("Failed to define the workspace size! ")
+if flag:
+    cfg = BinConfig(config_path)
+    cfg.set('left_margin', ref_point[0][0])
+    cfg.set('top_margin', ref_point[0][1])
+    cfg.set('right_margin', ref_point[1][0])
+    cfg.set('bottom_margin', ref_point[1][1])
+    cfg.write()
+    main_proc_print("Successfully defined the workspace size! ")
+else:
+    warning_print("Failed to define the workspace size! ")

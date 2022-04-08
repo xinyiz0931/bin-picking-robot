@@ -1,12 +1,6 @@
 import os
 import sys
-
-from pandas import infer_freq
-# execute the script from the root directory etc. ~/src/myrobot
-if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
-    sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
-import open3d as o3d
 import math
 import colorama
 colorama.init()
@@ -768,6 +762,7 @@ def adjust_array_range(array, range=(0,1), if_img=False):
         return np.array(np.interp(array, (array.min(), array.max()), range), dtype=np.uint8)
 
 def depth2pc(gray, pc_path=None):
+    import open3d as o3d
     h, w = gray.shape
     y_ = np.linspace(1, h, h)
     x_ = np.linspace(1, w, w)
@@ -838,7 +833,9 @@ def xyz2depth(gray_array, max_distance, min_distance, img_width, img_height):
     return img_adjusted
 
 def process_raw_pc(pcd_path):
+    import open3d as o3d
     pcd = o3d.io.read_point_cloud(pcd_path)
+
     # o3d.visualization.draw_geometries([pcd])
 
     xyz = np.asarray(pcd.points)
@@ -864,6 +861,7 @@ def process_raw_pc(pcd_path):
 
 
 def process_raw_xyz(xyz_path):
+    import open3d as o3d
     xyz = np.loadtxt(xyz_path)
     xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
 
@@ -879,6 +877,7 @@ def process_raw_xyz(xyz_path):
     return (re_xyz)
 
 def reform_xyz(xyz):
+    import open3d as o3d
     xyz = np.delete(xyz, np.where(xyz[:, 1] <= 1)[0], axis=0)
 
     pcd = o3d.geometry.PointCloud()

@@ -4,30 +4,39 @@ import math
 import configparser
 import random
 from datetime import datetime as dt
-
-
 from myrobot.binpicking import *
 from myrobot.config import BinConfig
+
+# def main():
+#     root_dir = os.path.abspath("./")
+#     config_path = os.path.join(root_dir, "cfg/config.yaml")
+#     cfg = BinConfig(config_path)
+#     print(cfg.test_no)
+
+#     cfg.set("test_no", 81)
+
+#     # cfg.update("test_no", "this")
+#     print(cfg.test_no)
 
 def main():
     
     main_proc_print("Start! ")
     # ========================== define path =============================
-    ROOT_DIR = os.path.abspath("./")
-    calib_dir = os.path.join(ROOT_DIR, "data/calibration/")
-    depth_dir = os.path.join(ROOT_DIR, "data/depth/")
+    root_dir = os.path.abspath("./")
+    calib_dir = os.path.join(root_dir, "data/calibration/")
+    depth_dir = os.path.join(root_dir, "data/depth/")
 
-    # pc_path = os.path.join(ROOT_DIR, "data/pointcloud/out.ply")
-    img_path = os.path.join(ROOT_DIR, "data/depth/depth.png")
-    img_path = os.path.join(ROOT_DIR, "data/depth/depth_raw.png")
-    crop_path = os.path.join(ROOT_DIR, "data/depth/depth_cropped.png")
-    config_path = os.path.join(ROOT_DIR, "cfg/config.ini")
-    calib_path = os.path.join(ROOT_DIR, "data/calibration/calibmat.txt")
-    mf_path = os.path.join(ROOT_DIR, "data/motion/motion.dat")
-    draw_path = os.path.join(ROOT_DIR, "data/depth/final_result.png")
+    # pc_path = os.path.join(root_dir, "data/pointcloud/out.ply")
+    img_path = os.path.join(root_dir, "data/depth/depth.png")
+    img_path = os.path.join(root_dir, "data/depth/depth_raw.png")
+    crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
+    config_path = os.path.join(root_dir, "cfg/config.yaml")
+    calib_path = os.path.join(root_dir, "data/calibration/calibmat.txt")
+    mf_path = os.path.join(root_dir, "data/motion/motion.dat")
+    draw_path = os.path.join(root_dir, "data/depth/final_result.png")
 
     # ======================= get config info ============================
-    cfg = BinConfig()
+    cfg = BinConfig(config_path)
 
     # ======================== get depth img =============================
     point_array = get_point_cloud(depth_dir, cfg.max_distance, cfg.min_distance, cfg.width, cfg.height)
