@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from bprobot.utils import *
+from bpbot.utils import *
 
 class Gripper(object):
     def __init__(self, finger_w, finger_h, open_w, gripper_size):

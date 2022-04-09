@@ -1,5 +1,5 @@
 import os
-from bprobot.binpicking import *
+from bpbot.binpicking import *
 
 def main():
 

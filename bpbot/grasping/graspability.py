@@ -14,7 +14,7 @@ from cv2 import merge
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from bprobot.utils import *
+from bpbot.utils import *
 
 class Graspability(object):
     def __init__(self, rotation_step, depth_step, hand_depth):

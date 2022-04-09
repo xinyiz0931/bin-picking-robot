@@ -6,8 +6,8 @@ import random
 from datetime import datetime as dt
 
 from matplotlib.pyplot import margins
-from bprobot.binpicking import *
-from bprobot.config import BinConfig
+from bpbot.binpicking import *
+from bpbot.config import BinConfig
 
 # def main():
 #     root_dir = os.path.abspath("./")
