@@ -6,7 +6,7 @@ from nxtrobot_client import NxtRobot
 
 if __name__ == "__main__":
     # absolute path needed
-    mfik_path =  "/home/xinyi/Workspace/myrobot/data/motion/motion_ik.dat"
+    mfik_path =  "/home/xinyi/Workspace/bprobot/data/motion/motion_ik.dat"
     parser = argparse.ArgumentParser(description='ik file path')
     parser.add_argument('--filepath','-f', type=str, 
                         help='ik file path', default=mfik_path)

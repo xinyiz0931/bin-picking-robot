@@ -2,13 +2,12 @@
 import os
 import sys
 import time
-
 import math
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from myrobot.utils import *
+from bprobot.utils import *
 
 class Gripper(object):
     def __init__(self, finger_w, finger_h, open_w, gripper_size):
@@ -141,7 +140,7 @@ class Gripper(object):
             y = int(grasps[i][2])
             angle = grasps[i][4]
             # open_w = grasps[i][7]
-            open_w = 50
+            open_w = self.open_w
             h,w,_ = img.shape
             mask = self.get_hand_model('open',h,w,open_w,x,y,angle)
             if i == top_idx:

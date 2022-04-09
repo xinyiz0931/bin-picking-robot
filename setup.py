@@ -9,10 +9,10 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "myrobot",
+    name = "bprobot",
     version = "0.1.0",
     author = "Xinyi Zhang",
     description = ("Integrated bin picking functions."),
-    packages=['myrobot'],
+    packages=['bprobot'],
     long_description=read('README.md'),
 )

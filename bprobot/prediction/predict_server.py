@@ -122,7 +122,7 @@ def serve(model_dir, host = "localhost:50051"):
         server.stop(0)
 
 if __name__ == "__main__":
-    # serve(model_dir = "C:\\Users\\matsu\\Documents\\myrobot\\learning\model\\Logi_AL_20210827_145223.h5",
+    # serve(model_dir = "C:\\Users\\matsu\\Documents\\bprobot\\learning\model\\Logi_AL_20210827_145223.h5",
     #       host = "127.0.0.1:18300")
     # serve(model_dir = "/home/xinyi/Workspace/aspnet/model/Logi_AL_20210827_145223.h5",
     #       host = "localhost:50051")

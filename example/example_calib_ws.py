@@ -10,14 +10,14 @@ If you want re-draw the rectangle, hit `r` to refresh.
 """
 from email.policy import default
 import sys
-# execute the script from the root directory etc. ~/src/myrobot
+# execute the script from the root directory etc. ~/src/bprobot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import os
 import cv2
 import argparse
-from myrobot.config import BinConfig
-from myrobot.utils import *
+from bprobot.config import BinConfig
+from bprobot.utils import *
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables
@@ -73,18 +73,14 @@ while True:
 
 cv2.destroyAllWindows()
 
-print('left_margin:   ', str(ref_point[0][0]))
-print('top_margin:    ', str(ref_point[0][1]))
-print('right_margin:  ', str(ref_point[1][0]))
-print('bottom_margin: ', str(ref_point[1][1]))
-
-# TODO: write to config file ...
-
-
-
 # record the info into cfg file
 # set absolute directory for config.yaml
 if flag:
+    print('left_margin:   ', str(ref_point[0][0]))
+    print('top_margin:    ', str(ref_point[0][1]))
+    print('right_margin:  ', str(ref_point[1][0]))
+    print('bottom_margin: ', str(ref_point[1][1]))
+
     cfg = BinConfig(config_path)
     cfg.set('left_margin', ref_point[0][0])
     cfg.set('top_margin', ref_point[0][1])

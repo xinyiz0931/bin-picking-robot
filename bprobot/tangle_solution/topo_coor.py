@@ -11,7 +11,7 @@ import cv2
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from myrobot.utils import *
+from bprobot.utils import *
 
 class LineDetection(object):
     def __init__(self, length_thre=15, distance_thre=3):

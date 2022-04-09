@@ -8,7 +8,7 @@ import sys
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from myrobot.utils import *
+from bprobot.utils import *
 
 class TangleObjSke(object):
     def __init__(self):

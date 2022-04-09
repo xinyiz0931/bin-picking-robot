@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from myrobot.utils import * 
-from myrobot.tangle_solution import TopoCoor6D
+from bprobot.utils import * 
+from bprobot.tangle_solution import TopoCoor6D
 
 def view(tc6d, pose, proj_ea=[0,0,0]):
 

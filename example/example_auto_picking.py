@@ -6,8 +6,8 @@ import random
 from datetime import datetime as dt
 
 from matplotlib.pyplot import margins
-from myrobot.binpicking import *
-from myrobot.config import BinConfig
+from bprobot.binpicking import *
+from bprobot.config import BinConfig
 
 # def main():
 #     root_dir = os.path.abspath("./")
@@ -68,7 +68,7 @@ def main():
 
         elif cfg.exp_mode == 1: 
             # 1 -> proposed circuclar picking
-            # from myrobot.prediction import predict_client as pdclt
+            # from bprobot.prediction import predict_client as pdclt
             # pdc = pdclt.PredictorClient()
             # grasps2bytes=np.ndarray.tobytes(np.array(grasps))
             # predict_result= pdc.predict(imgpath=crop_path, grasps=grasps2bytes)

@@ -1,8 +1,8 @@
 import os
 from datetime import datetime as dt
 
-from myrobot.binpicking import *
-from myrobot.config import BinConfig
+from bprobot.binpicking import *
+from bprobot.config import BinConfig
 
 def main():
     main_proc_print("Start! ")

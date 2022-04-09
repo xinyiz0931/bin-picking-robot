@@ -9,9 +9,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
-from myrobot.grasping import Graspability, Gripper
-from myrobot.motion import Motion
-from myrobot.utils import *
+from bprobot.grasping import Graspability, Gripper
+from bprobot.motion import Motion
+from bprobot.utils import *
 
 def get_point_cloud(save_dir, max_distance, min_distance, width, height):
     """
@@ -23,7 +23,7 @@ def get_point_cloud(save_dir, max_distance, min_distance, width, height):
     """
     # 1. ===================================================
     main_proc_print("Capture point cloud ... ")
-    from myrobot.driver import phoxi_client as pclt
+    from bprobot.driver import phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
     pxc.triggerframe()
     pc = pxc.getpcd()
@@ -71,7 +71,7 @@ def detect_edge(img_path, t_params, margins=None):
     """
     Read image and detect edge
     """
-    from myrobot.tangle_solution import LineDetection
+    from bprobot.tangle_solution import LineDetection
     if margins is not None:
         img = crop_roi(img_path, margins)
     else:
@@ -89,7 +89,7 @@ def get_entanglement_map(img_path, t_params, margins=None):
     """
     Read image and generate entanglement map
     """
-    from myrobot.tangle_solution import LineDetection, EntanglementMap
+    from bprobot.tangle_solution import LineDetection, EntanglementMap
     if margins is not None:
         img = crop_roi(img_path, margins)
     else:
@@ -232,7 +232,7 @@ def predict_action_grasp(grasps, crop_path):
         best_action {int} -- index of best action within range(0,1,...,6)
         best_graspno {int} -- index of best grasp among grasps
     """
-    from myrobot.prediction import predict_client as pdclt
+    from bprobot.prediction import predict_client as pdclt
     pdc = pdclt.PredictorClient()
     grasps2bytes=np.ndarray.tobytes(np.array(grasps))
     predict_result= pdc.predict(imgpath=crop_path, grasps=grasps2bytes)

@@ -2,15 +2,15 @@ import os
 import sys
 import math
 import random
-# execute the script from the root directory etc. ~/src/myrobot
+# execute the script from the root directory etc. ~/src/bprobot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from myrobot.grasping import Gripper, Graspability
-from myrobot.utils import *
+from bprobot.grasping import Gripper, Graspability
+from bprobot.utils import *
 
 def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
     """Detect grasp point using graspability

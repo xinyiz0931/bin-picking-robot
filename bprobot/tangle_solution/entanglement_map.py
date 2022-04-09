@@ -8,8 +8,8 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage
-from myrobot.utils import *
-from myrobot.tangle_solution import TopoCoor, LineDetection
+from bprobot.utils import *
+from bprobot.tangle_solution import TopoCoor, LineDetection
 
 class EntanglementMap(object):
     def __init__(self, length_thre, distance_thre, sliding_size, sliding_stride, 
