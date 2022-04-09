@@ -6,8 +6,8 @@ import random
 import numpy as np
 import itertools
 import matplotlib.pyplot as plt
-from bprobot.utils import *
-from bprobot.tangle_solution import TangleObjSke
+from bpbot.utils import *
+from bpbot.tangle_solution import TangleObjSke
 
 class TopoCoor6D(object):
     def __init__(self, skeleton_file, collision_file):

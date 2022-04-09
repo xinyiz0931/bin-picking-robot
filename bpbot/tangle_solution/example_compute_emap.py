@@ -1,8 +1,8 @@
 import os
 import cv2
 import matplotlib.pyplot as plt
-from bprobot.tangle_solution import LineDetection, EntanglementMap
-from bprobot.utils import *
+from bpbot.tangle_solution import LineDetection, EntanglementMap
+from bpbot.utils import *
 
 def main():
 

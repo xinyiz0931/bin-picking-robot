@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     import predict_client as pdclt
     pdc = pdclt.PredictorClient()
-    imgpath = "/home/xinyi/Workspace/bprobot/vision/depth/depth.png"
+    imgpath = "/home/xinyi/Workspace/bpbot/vision/depth/depth.png"
     y = np.array([[4, 5], [6, 7]])
     y2bytes=np.ndarray.tobytes(y)
     pdc.predict(imgpath=imgpath, grasps=y2bytes)

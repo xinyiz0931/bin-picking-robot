@@ -1,4 +1,4 @@
-# bprobot
+# bpbot
 
 Bin picking tools including vision, grasp planning and robot control
 
@@ -10,7 +10,7 @@ $ pip install -e .
 
 Use bin picking functions by
 ```
->>> import bprobot
+>>> import bpbot
 ```
 
 e.g. executing files in `examples`

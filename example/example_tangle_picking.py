@@ -2,8 +2,8 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from bprobot.binpicking import *
-from bprobot.config import BinConfig
+from bpbot.binpicking import *
+from bpbot.config import BinConfig
 
 def main():
     root_dir = os.path.abspath("./")

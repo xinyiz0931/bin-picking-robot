@@ -10,14 +10,14 @@ If you want re-draw the rectangle, hit `r` to refresh.
 """
 from email.policy import default
 import sys
-# execute the script from the root directory etc. ~/src/bprobot
+# execute the script from the root directory etc. ~/src/bpbot
 if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
     sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import os
 import cv2
 import argparse
-from bprobot.config import BinConfig
-from bprobot.utils import *
+from bpbot.config import BinConfig
+from bpbot.utils import *
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables

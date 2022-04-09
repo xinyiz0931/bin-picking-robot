@@ -10,8 +10,8 @@ from turtle import color
 
 from numpy import save
 
-from bprobot.binpicking import *
-from bprobot.prediction import predict_client as pdclt
+from bpbot.binpicking import *
+from bpbot.prediction import predict_client as pdclt
 pdc = pdclt.PredictorClient()
 
 """Draft!!!!"""
@@ -24,7 +24,7 @@ def count_illogical():
 
     s, f = 0,0
 
-    root_dir = "/home/xinyi/Workspace/bprobot_bak/dataset/picking_400"
+    root_dir = "/home/xinyi/Workspace/bpbot_bak/dataset/picking_400"
 
     for name in os.listdir(root_dir):
 
@@ -64,7 +64,7 @@ def count_illogical():
 
 def test():
     h_params = (finger_height, finger_width, open_width, hand_template_size)
-    root_dir = "/home/xinyi/Workspace/bprobot_bak/exp/proposed_method/long_for_paper"
+    root_dir = "/home/xinyi/Workspace/bpbot_bak/exp/proposed_method/long_for_paper"
     img_name = "20210830145030_274_281_6_.png"
     img_path = os.path.join(root_dir, img_name)
     _, graspx, graspsy, angle, label_ = img_name.split('_')
@@ -143,10 +143,10 @@ def main():
     
     main_proc_print("Start! ")
     # ========================== define path =============================
-    root_dir = "/home/xinyi/Workspace/bprobot_bak/exp/proposed_method/long_for_paper"
+    root_dir = "/home/xinyi/Workspace/bpbot_bak/exp/proposed_method/long_for_paper"
     root_dir = "/home/xinyi/Workspace/dataset/val_long"
 
-    from bprobot.prediction import predict_client as pdclt
+    from bpbot.prediction import predict_client as pdclt
     
     pdc = pdclt.PredictorClient()
     for name in os.listdir(root_dir):
