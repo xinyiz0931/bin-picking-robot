@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+service PickSep {
+    rpc infer_picknet (ImgPath) returns (ActionCls) {}
+    rpc infer_picknet_sepnet_pos (ImgPath) returns (ActionCls) {}
+    rpc infer_sepnet(ImgPath) returns (Action) {}
+    rpc infer_picknet_sepnet (ImgPath) returns (ActionCls) {}
+
+}
+
+message ImgPath {
+    string imgpath = 1;
+}
+message ActionCls {
+    int32 pickorsep = 1;
+    bytes action = 2;
+}
+message Action {
+    bytes action = 1;
+}

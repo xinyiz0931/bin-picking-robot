@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+service Phoxi {
+    rpc triggerframe (Null) returns (Null) {}
+    rpc gettextureimg (Null) returns (CamImg) {}
+    rpc getdepthimg (Null) returns (CamImg) {}
+    rpc getpcd (Null) returns (PointCloud) {}
+    rpc getnormals (Null) returns (PointCloud) {}
+    rpc saveplyauto (Null) returns (Null) {}
+    rpc saveply (SaveDir) returns (Null) {}
+}
+
+message Null {
+}
+
+message SaveDir{
+    string path = 1;
+}
+
+message MatKW {
+    // 4x4
+    bytes data = 1;
+}
+
+message Pair {
+    int32 data0 = 1;
+    int32 data1 = 2;
+}
+
+message PointCloud {
+    bytes  points = 1;
+}
+
+message CamImg {
+    // could be rgb (channel=3) or depth (channel=1)
+    int32  width = 1;
+    int32  height = 2;
+    int32  channel = 3;
+    bytes  image = 4;
+}

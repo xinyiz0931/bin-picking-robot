@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+service ASP {
+    rpc action_success_prediction (ASPInput) returns (ASPOutput) {}
+    rpc action_grasp_inference (ASPOutput) returns (AGPair) {}
+    rpc set_threshold (DValue) returns (NoValue) {}
+}
+message DValue {
+    double value = 1;
+}
+message NoValue {
+}
+message ASPInput {
+    string imgpath = 1;
+    bytes grasps = 2;
+}
+
+message ASPOutput {
+    bytes probs = 1;
+}
+message AGPair {
+    int32 action = 1;
+    int32 graspidx = 2;
+}

@@ -1,0 +1,39 @@
+exp_mode: 0
+height: 1544
+width: 2064
+plane_distance: 0.025
+author: xinyi
+pick:
+  distance:
+    max: 1141
+    min: 1080
+  margin:
+    left: 823
+    top: 440
+    right: 1251
+    bottom: 922
+mid:
+  distance:
+    max: 1113
+    min: 1070
+  margin:
+    left: 1351
+    top: 437
+    right: 1815
+    bottom: 957
+graspability:
+  rotation_step: 22.5
+  depth_step: 10
+  dismiss_area_width: 100
+  hand_depth: 25
+gripper:
+  template_size: 500
+  finger_height: 40
+  finger_width: 13
+  open_width: 40
+tangle:
+  compressed_size: 250
+  length_thre: 15
+  distance_thre: 3
+  sliding_size: 125
+  sliding_stride: 25

@@ -1,0 +1,14 @@
+pyyaml
+grpcio
+grpcio-tools
+matplotlib
+numpy
+colorama
+open3d
+opencv-contrib-python
+opencv-python
+pandas 
+scikit-image
+scipy
+seaborn
+termcolor
