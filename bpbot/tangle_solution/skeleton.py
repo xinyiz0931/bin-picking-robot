@@ -56,6 +56,15 @@ class TangleObjSke(object):
         """
         node = np.array(node)
         ax.scatter(node[:, 0], node[:, 1], node[:, 2], color=color, alpha=alpha)
+        # ax.scatter(node[0][0], node[0][1], node[0][2], color='yellow', alpha=alpha)
+        # ax.scatter(node[1][0], node[1][1], node[1][2], color='red', alpha=alpha)
+        # ax.scatter(node[2][0], node[2][1], node[2][2], color='green', alpha=alpha)
+        # ax.scatter(node[3][0], node[3][1], node[3][2], color='blue', alpha=alpha)
+
+        # ax.scatter(node[4][0], node[4][1], node[4][2], color='red', alpha=alpha)
+        # ax.scatter(node[5][0], node[5][1], node[5][2], color='green', alpha=alpha)
+        # ax.scatter(node[6][0], node[6][1], node[6][2], color='blue', alpha=alpha)
+        # ax.scatter(node[7][0], node[7][1], node[7][2], color='yellow', alpha=alpha)
 
     def show_ply(self, ply_path):
         import open3d as o3d
@@ -111,6 +120,7 @@ class TangleObjSke(object):
         cube_quat_primitive = [0,0,0,1]
 
         vertices = []
+        rot_vertice = []
         for (i,j) in edge:
             vertex = []
             # 1. pre cube size
@@ -193,12 +203,14 @@ class TangleObjSke(object):
             print("					]", file=fp)
             print("				}", file=fp)
             print("				coordIndex [ ", file=fp)
-            print("              0,  3,  2,  1, -1,", file=fp)
-            print("              4,  5,  6,  7, -1,", file=fp)
-            print("              0,  1,  5,  4, -1,", file=fp)
-            print("              3,  0,  4,  7, -1,", file=fp)
-            print("              2,  3,  7,  6, -1,", file=fp)
-            print("              1,  2,  6,  5, -1,", file=fp)
+            print("              0,  1,  3,  4, -1,", file=fp) 
+            print("              1,  0,  2,  5, -1,", file=fp) 
+            print("              2,  1,  3,  6, -1,", file=fp) 
+            print("              3,  0,  2,  7, -1,", file=fp) 
+            print("              4,  0,  5,  7, -1,", file=fp) 
+            print("              5,  1,  4,  6, -1,", file=fp) 
+            print("              6,  2,  5,  7, -1,", file=fp) 
+            print("              7,  3,  4,  6, -1,", file=fp) 
             print("				]", file=fp)
             print("			}", file=fp)
             print("		}", file=fp)
@@ -253,13 +265,12 @@ def create_obj():
     ax.scatter(center[0], center[1], center[2], color='red')
     plt.show()
 
-def decompose_obj():
+def decompose_obj(shape):
     """
     1. Load a object from json file
     2. Decompose this object using cubes and write to the collision.txt file
     3. Visualize
     """
-    shape = "scylindertwistsmall"
 
     obj_json_path = os.path.join("./objmodel", f"skeleton_{shape}.json")
     collision_path = os.path.join("./objmodel", f"collision_{shape}.txt")
@@ -273,7 +284,7 @@ def decompose_obj():
     center = tok.calc_center_of_mass(obj_ske)
     vertices=tok.decompose_obj_to_cube(obj_ske, collision_path)
     # optional: write vertices to the vertex_*.txt
-    # tok.write_decomposed_obj(vertices, wrl_path)
+    tok.write_decomposed_to_wrl(vertices, wrl_path)
 
     # 3. ===================================================
     fig = plt.figure()
@@ -288,14 +299,15 @@ if __name__ == "__main__":
     
     import timeit
     start = timeit.default_timer()
-    # create_obj()
-    # create_obj()
+
     tok = TangleObjSke()
-    tok.show_ply(ply_path="./objmodel\\model_ball.ply")
+
+    # tok.show_ply(ply_path="./objmodel\\model_cc.ply")
     
-    create_obj()
- 
-    # decompose_obj()
+    # create_obj()
+    shape = "j"
+    decompose_obj(shape)
+
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))
     
