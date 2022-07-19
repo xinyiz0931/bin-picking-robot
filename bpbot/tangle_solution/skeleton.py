@@ -56,15 +56,15 @@ class TangleObjSke(object):
         """
         node = np.array(node)
         ax.scatter(node[:, 0], node[:, 1], node[:, 2], color=color, alpha=alpha)
-        # ax.scatter(node[0][0], node[0][1], node[0][2], color='yellow', alpha=alpha)
-        # ax.scatter(node[1][0], node[1][1], node[1][2], color='red', alpha=alpha)
-        # ax.scatter(node[2][0], node[2][1], node[2][2], color='green', alpha=alpha)
-        # ax.scatter(node[3][0], node[3][1], node[3][2], color='blue', alpha=alpha)
+        # ax.scatter(node[0][0], node[0][1], node[0][2], color='r', alpha=1)
+        # ax.scatter(node[1][0], node[1][1], node[1][2], color='g', alpha=1)
+        # ax.scatter(node[2][0], node[2][1], node[2][2], color='b', alpha=1)
+        # ax.scatter(node[3][0], node[3][1], node[3][2], color='y', alpha=1)
 
-        # ax.scatter(node[4][0], node[4][1], node[4][2], color='red', alpha=alpha)
-        # ax.scatter(node[5][0], node[5][1], node[5][2], color='green', alpha=alpha)
-        # ax.scatter(node[6][0], node[6][1], node[6][2], color='blue', alpha=alpha)
-        # ax.scatter(node[7][0], node[7][1], node[7][2], color='yellow', alpha=alpha)
+        # ax.scatter(node[4][0], node[4][1], node[4][2], color='c', alpha=0.3)
+        # ax.scatter(node[5][0], node[5][1], node[5][2], color='m', alpha=0.3)
+        # ax.scatter(node[6][0], node[6][1], node[6][2], color='k', alpha=0.3)
+        # ax.scatter(node[7][0], node[7][1], node[7][2], color='pink', alpha=0.3)
 
     def show_ply(self, ply_path):
         import open3d as o3d
@@ -136,18 +136,39 @@ class TangleObjSke(object):
                 c_rot_mat = calc_2vectors_rot_mat(cube_primitive, (node[j] - node[i]))
                 cq = mat2quat(c_rot_mat)
 
-            ncx, ncy, ncz = np.dot(c_rot_mat,[cx, cy, cz])
-
-            vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]-ncz])
-            vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]-ncz])
-            vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]-ncz])
-            vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]-ncz])
             
-            vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]+ncz])
-            vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]+ncz])
-            vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]+ncz])
-            vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]+ncz])
+            ncx, ncy, ncz = np.dot(c_rot_mat,[cx, cy, cz])
+            ncp = np.dot(c_rot_mat,[cx, cy, cz])
 
+            # vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]-ncz])
+            # vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]-ncz])
+            # vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]-ncz])
+            # vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]-ncz])
+            
+            # vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]+ncz])
+            # vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]+ncz])
+            # vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]+ncz])
+            # vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]+ncz])
+
+            # vertex.append([cp[0]-cx, cp[1]+cy, cp[2]-cz])
+            # vertex.append([cp[0]-cx, cp[1]-cy, cp[2]-cz])
+            # vertex.append([cp[0]+cx, cp[1]-cy, cp[2]-cz])
+            # vertex.append([cp[0]+cx, cp[1]+cy, cp[2]-cz])
+            # vertex.append([cp[0]-cx, cp[1]+cy, cp[2]+cz])
+            # vertex.append([cp[0]-cx, cp[1]-cy, cp[2]+cz])
+            # vertex.append([cp[0]+cx, cp[1]-cy, cp[2]+cz])
+            # vertex.append([cp[0]+cx, cp[1]+cy, cp[2]+cz])
+            
+            vertex.append(np.dot(c_rot_mat,[0-cx, 0+cy, 0-cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0-cx, 0-cy, 0-cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0+cx, 0-cy, 0-cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0+cx, 0+cy, 0-cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0-cx, 0+cy, 0+cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0-cx, 0-cy, 0+cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0+cx, 0-cy, 0+cz])+cp)
+            vertex.append(np.dot(c_rot_mat,[0+cx, 0+cy, 0+cz])+cp)
+            
+            vertex.append(cp)
             vertices.append(vertex)
             # save the data
             # cubes_size.append([cx,cy,cz])
@@ -168,7 +189,7 @@ class TangleObjSke(object):
 
     def write_decomposed_to_wrl(self, vertices, wrl_path):
         """
-        Write the decomposed cubes vertices to a wrl file
+        Write the decomposed cubes vertices to a wrl file, unit: m
         Parameters:
             vertices {array} -- (fitted cube num,8,3)
             wrl_path {str} 
@@ -198,24 +219,29 @@ class TangleObjSke(object):
             print("				coord DEF co Coordinate {", file=fp)
             print("					point [", file=fp)
             for i in range(8):
-                print(f"						{v[i][0]} {v[i][1]} {v[i][2]}", file=fp)
+                print(f"						{v[i][0]/1000} {v[i][1]/1000} {v[i][2]/1000}", file=fp)
 
             print("					]", file=fp)
             print("				}", file=fp)
             print("				coordIndex [ ", file=fp)
-            print("              0,  1,  3,  4, -1,", file=fp) 
-            print("              1,  0,  2,  5, -1,", file=fp) 
-            print("              2,  1,  3,  6, -1,", file=fp) 
-            print("              3,  0,  2,  7, -1,", file=fp) 
-            print("              4,  0,  5,  7, -1,", file=fp) 
-            print("              5,  1,  4,  6, -1,", file=fp) 
-            print("              6,  2,  5,  7, -1,", file=fp) 
-            print("              7,  3,  4,  6, -1,", file=fp) 
+            print("              0,  3,  2,  1, -1,", file=fp) 
+            print("              4,  5,  6,  7, -1,", file=fp) 
+            print("              0,  1,  5,  4, -1,", file=fp) 
+            print("              3,  0,  4,  7, -1,", file=fp) 
+            print("              2,  3,  7,  6, -1,", file=fp) 
+            print("              1,  2,  6,  5, -1,", file=fp) 
             print("				]", file=fp)
             print("			}", file=fp)
             print("		}", file=fp)
             print("	]", file=fp)
             print("}\n", file=fp)
+        
+        # 0,  3,  2,  1, -1,
+	    # 4,  5,  6,  7, -1,
+	    # 0,  1,  5,  4, -1,
+	    # 3,  0,  4,  7, -1,
+	    # 2,  3,  7,  6, -1,
+	    # 1,  2,  6,  5, -1,
 
         fp.close()
         main_proc_print("Wrote decomposed object to a wrl file... ")
@@ -292,7 +318,9 @@ def decompose_obj(shape):
     tok.draw_obj_skeleton(obj_ske, ax, "green")
     ax.scatter(center[0], center[1], center[2], color='red')
     for v in vertices:
+        # v = vertices[0]
         tok.draw_node(v, ax, 'blue', alpha=0.5)
+        # tok.draw_node(v, ax, 'blue', alpha=1)
     plt.show()
 
 if __name__ == "__main__":
@@ -305,8 +333,10 @@ if __name__ == "__main__":
     # tok.show_ply(ply_path="./objmodel\\model_cc.ply")
     
     # create_obj()
-    shape = "j"
-    decompose_obj(shape)
+    # shapes = ["cc", "cr", "e", "eb", "f", "j", "sc", "sr", "st", "u"]
+    # for shape in shapes:
+    #     decompose_obj(shape)
+    decompose_obj("st")
 
     end = timeit.default_timer()
     main_proc_print("Time: {:.2f}s".format(end - start))
