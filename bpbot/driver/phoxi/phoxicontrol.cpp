@@ -118,7 +118,7 @@ private:
 			std::cout << "[!] Failed to retrieve the frame!" << std::endl;
 			return false;
 		}
-		std::cout << "[*] A new frame is captured." << std::endl;
+		std::cout << "[*] A new frame is captured. FrameID: "<<frameId << std::endl;
 		//PhoXiDevice->StopAcquisition();
 		return true;
 	}
@@ -212,7 +212,7 @@ public:
 		if (checkFrame(frame) && success) {
 			isframeobtained = true;
 			frameid += 1;
-			std::cout << "A new frame is obtained. FrameID: " << frameid << std::endl;
+			// std::cout << "A new frame is obtained. FrameID: " << frameid << std::endl;
 			return true;
 		}
 		else {
@@ -324,6 +324,7 @@ public:
 	bool saveply(const std::string filepath) {
 		//revised --> delete x,y,z boundaries as parameters
 		//by xinyi
+		std::cout << "[*] Save PLY! " << std::endl;
 		if (isframeobtained) {
 			int height = frame->PointCloud.Size.Height;
 			int width = frame->PointCloud.Size.Width;
@@ -332,6 +333,9 @@ public:
 					float x = frame->PointCloud[i][j].x;
 					float y = frame->PointCloud[i][j].y;
 					float z = frame->PointCloud[i][j].z;
+					frame->PointCloud[i][j].x /= 1000;
+					frame->PointCloud[i][j].y /= 1000;
+					frame->PointCloud[i][j].z /= 1000;
 					// if ((x < xmin || x > xmax) || (y < ymin || y > ymax) || (z < zmin || z > zmax)) {
 					if ((x < -99999 || x > 99999) || (y < -99999 || y > 99999) || (z < -99999 || z > 99999)) {
 						frame->PointCloud[i][j].x = 0;
@@ -340,7 +344,18 @@ public:
 					}
 				}
 			}
-			return frame->SaveAsPly(filepath, true, false, true, false, false, false, false, false);
+			// 0. file path
+            // 1. bool BinaryFile
+            // 2. NormalizeTexture
+            // 3. StorePointCloud
+            // 4. StoreNormalMap
+            // 5. StoreDepthMap
+            // 6. StoreTexture
+            // 7. StoreConfidenceMap
+            // 8. Unoredered
+            // 9. Metadata
+            return frame->SaveAsPly(filepath, false, true, true, false,
+                                    false, false, false, false, false);
 		}
 		else {
 			std::cout << "Grap a frame first!" << std::endl;
@@ -370,7 +385,18 @@ public:
 					}
 				}
 			}
-			return frame->SaveAsPly(filepath, true, false, true, false, false, false, false, false);
+			// 0. file path
+			// 1. bool BinaryFile
+			// 2. NormalizeTexture
+			// 3. StorePointCloud
+			// 4. StoreNormalMap
+			// 5. StoreDepthMap
+			// 6. StoreTexture
+			// 7. StoreConfidenceMap
+			// 8. Unoredered
+			// 9. Metadata
+			return frame->SaveAsPly(filepath, false, false, true, false,
+						   			false, false, false, false, false);
 		}
 		else {
 			std::cout << "Grap a frame first!" << std::endl;

@@ -1,13 +1,16 @@
 import cv2
 import numpy as np
-
-from cnoid.Util import *
-from cnoid.Base import *
-from cnoid.Body import *
-from cnoid.BodyPlugin import *
-from cnoid.GraspPlugin import *
-from cnoid.BinPicking import *
-
+import importlib
+spec = importlib.util.find_spec("cnoid")
+found_cnoid = spec is not None
+if found_cnoid: 
+    from cnoid.Util import *
+    from cnoid.Base import *
+    from cnoid.Body import *
+    from cnoid.BodyPlugin import *
+    from cnoid.GraspPlugin import *
+    from cnoid.BinPicking import *
+np.set_printoptions(suppress=True)
 
 
 def rigid_transform_3D(A, B):
@@ -109,27 +112,29 @@ root_dir = "/home/hlab/bpbot"
 
 tdatetime = dt.now()
 tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-calib_dir = os.path.join(root_dir, "data/calibration")
+calib_dir = os.path.join(root_dir, "data/calibration", "20220718")
 
 mf_path = os.path.join(root_dir, "data/motion/calib_reverse.dat")
+mfik_path = os.path.join(root_dir, "data/motion/calib_ik_reverse.dat")
 
-# robot_pos = []
-# with open(mf_path, "r") as f:
-#     for line in f.readlines():
-#         robot_pos.append([float(i) for i in line.split(" ")[3:6]])
-robot_pos = np.loadtxt(os.path.join(calib_dir, "20220714", "robot.txt"))
-camera_pos = np.loadtxt(os.path.join(calib_dir, "20220714", "camera.txt"))
+robot_pos = np.loadtxt(os.path.join(calib_dir, "robot.txt"))
 print(robot_pos.shape)
-robot_pos[:,2] += (0.135+0.0017)
-# plan_success = load_motionfile(mf_path)
-# camera_pos = []
+# robot_pos[:,2] += (0.135+0.0017)
+robot_pos[:,2] += (0.166+0.0017)
+# robot_pos *= 1000
 
+
+camera_pos = np.loadtxt(os.path.join(calib_dir, "camera.txt"))
+camera_pos /= 1000
+# camera_pos = []
+# # plan_success = load_motionfile(mf_path)
+# motion_seq = np.loadtxt(mfik_path)
 # if True:
 #     nxt = NxtRobot(host='[::]:15005')
-#     motion_seq = get_motion()
+#     # motion_seq = get_motion()
 #     num_seq = int(len(motion_seq)/21)
 #     print(f"[*] Total {num_seq} motion sequences! ")
-#     motion_seq = np.reshape(motion_seq, (num_seq, 21))
+#     # motion_seq = np.reshape(motion_seq, (num_seq, 21))
 #     for i, m in enumerate(motion_seq):
         
 #         if m[1] == 0: 
@@ -137,26 +142,26 @@ robot_pos[:,2] += (0.135+0.0017)
 #         elif m[1] == 1:
 #             nxt.openHandToolLft()
 #         nxt.setJointAngles(m[2:21],tm=m[0]) # no hand open-close control
-    
-#         print(f"[*] Start {i}-th capture! ")
+#         if i == 0: continue 
+#         print(f"[*] Start {i-1}-th capture! ")
 #         pxc.triggerframe()
 #         gray = pxc.getgrayscaleimg()
 #         image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
-#         clone = image.copy()
 
 #         pcd = pxc.getpcd()
-#         pcd_r = rotate_point_cloud(pcd)
+#         # pcd_r = rotate_point_cloud(pcd)
 #         id_locs = detect_ar_marker(image.copy(), show=False)
 #         if id_locs != {}: 
 #             print(f"[*] Detected marker: {id_locs}")
 #             x, y = id_locs[calib_mk_id]
             
-#             camera_p = pcd_r[y*image.shape[1]+x] / 1000
+#             # camera_p = pcd_r[y*image.shape[1]+x] / 1000
+#             camera_p = pcd[y*image.shape[1]+x]
 #             camera_pos.append(camera_p)
 #         else: print(f"[*] No markers detected! ")
 
 # camera_pos = np.asarray(camera_pos)
-np.savetxt(os.path.join(calib_dir,"20220714", "camera.txt"), camera_pos)
+# np.savetxt(os.path.join(calib_dir, "camera.txt"), camera_pos)
 
 print(camera_pos.shape, robot_pos.shape)
 R, t = rigid_transform_3D(camera_pos.T, robot_pos.T)
@@ -164,6 +169,5 @@ R, t = rigid_transform_3D(camera_pos.T, robot_pos.T)
 # assembly to 4x4 matrix and write in the calib_mat.txt
 H = np.r_[np.c_[R, t], [[0, 0, 0, 1]]]
 print(H)
-
-print(np.loadtxt(os.path.join(calib_dir, "old_result", "calibmat.txt")))
-np.savetxt(os.path.join(calib_dir,"20220714", "calibmat.txt"), H)
+# print(np.loadtxt(os.path.join(calib_dir, "old_result", "calibmat.txt")))
+np.savetxt(os.path.join(calib_dir, "calibmat.txt"), H, fmt='%.06f')

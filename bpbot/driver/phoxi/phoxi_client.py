@@ -161,7 +161,7 @@ if __name__ == "__main__":
     #cv2.imshow("w", cv2.resize(img, [640,480]))
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
+    pxc.saveply("/home/hlab/Desktop/test_ply.ply")
     end = timeit.default_timer()
     print("Time cost: ", end-start)
-    # pxc.saveply("../../vision/pointcloud/out.ply")
     # print("point cloud is captured and saved! ")

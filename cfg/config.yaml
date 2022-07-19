@@ -8,10 +8,10 @@ pick:
     max: 1128
     min: 1074
   margin:
-    left: 818
-    top: 393
-    right: 1246
-    bottom: 873
+    left: 998
+    top: 442
+    right: 1426
+    bottom: 934
 mid:
   distance:
     max: 1129

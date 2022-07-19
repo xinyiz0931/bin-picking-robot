@@ -93,7 +93,7 @@ class Graspability(object):
             for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
                 Hc = hc_rot[count_b]
                 Ht = ht_rot[count_b]
-                plt.imshow(cv2.hconcat([Hc, Ht])), plt.show()
+                # plt.imshow(cv2.hconcat([Hc, Ht])), plt.show()
                 
                 C = cv2.filter2D(Wc, -1, Hc) #Hc
                 T = cv2.filter2D(Wt, -1, Ht) #Ht

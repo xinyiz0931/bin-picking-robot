@@ -28,13 +28,12 @@ if __name__ == "__main__":
     m[18:21]: gripper control (4)
     """
 
-    for m in motion_seq:
+    for i, m in enumerate(motion_seq):
         if m[1] == 0:
             nxt.closeHandToolLft()
         elif m[1] == 1:
             nxt.openHandToolLft()
         nxt.setJointAngles(m[2:27],tm=m[0]) # no hand open-close control
-    
     print("Finish!!")
         
         

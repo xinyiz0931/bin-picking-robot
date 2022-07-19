@@ -123,7 +123,7 @@ def serve(serialno = "2019-09-051-LC3", host = "127.0.0.1:18300"):
     pxrpc.add_PhoxiServicer_to_server(pxserver, server)
     server.add_insecure_port(host)
     server.start()
-    print("The Phoxi server is started!")
+    print("[*] The Phoxi server is started!")
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)

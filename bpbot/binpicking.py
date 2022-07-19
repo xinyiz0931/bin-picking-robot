@@ -225,12 +225,12 @@ def gen_motion_pickorsep(file_path, ee_pose, v=None, motion_type="pick", dest="g
     x,y,z,a = ee_pose
     if z < 0.020: 
         warning_print("Touch the plane! ")
-        z = 0.020
-    z += 0.0147
-    # z += 0.016# for s-shape
-    z += 0.020  # for s cylinder shape
-    # z += 0.018  # for s cylinder shape
-    # z += 0.016  # for u bolt
+        # z = 0.020
+    # z += 0.0147
+    # # z += 0.016# for s-shape
+    # z += 0.020  # for s cylinder shape
+    # # z += 0.018  # for s cylinder shape
+    # # z += 0.016  # for u bolt
     exec_flag = False
     generator = Motion(filepath=file_path)
     if not check_reachability((x,y,z), min_z=0.030, max_z=0.106):
@@ -540,16 +540,16 @@ def transform_camera_to_robot(camera_loc, calib_path):
     Transform camera loc to robot loc
     Use 4x4 calibration matrix
     Parameters:
-        camera_loc {tuple} -- (cx,cy,cy) at camera coordinate
+        camera_loc {tuple} -- (cx,cy,cy) at camera coordinate, unit: m
         calib_path {str} -- calibration matrix file path
     Returns: 
-        robot_loc {tuple} -- (rx,ry,rz) at robot coordinate
+        robot_loc {tuple} -- (rx,ry,rz) at robot coordinate, unit: m
     """
     # get calibration matrix 4x4
     (cx, cy, cz) = camera_loc
     calibmat = np.loadtxt(calib_path)
     camera_pos = np.array([cx, cy, cz, 1])
-    rx, ry, rz, _ = np.dot(calibmat, camera_pos)  # unit: mm --> m
+    rx, ry, rz, _ = np.dot(calibmat, camera_pos)  # unit: m
     return (rx, ry, rz)
 
 def transform_image_to_camera(image_loc, img_path, pc, margins=None):
@@ -577,8 +577,8 @@ def transform_image_to_camera(image_loc, img_path, pc, margins=None):
     full_iy = iy + top_margin
     (new_ix, new_iy) = replace_bad_point(img, (full_ix, full_iy))
     offset = new_iy * width + new_ix
-    [cx, cy, cz] = pc[offset]/1000 # unit: m
-    return (cx,cy,cz)
+    [cx, cy, cz] = pc[offset] # unit: mm
+    return (cx/1000,cy/1000,cz/1000) # unit: m
 
 def transform_image_to_robot(image_loc, img_path, calib_path, point_cloud, margins=None):
     """
@@ -596,13 +596,16 @@ def transform_image_to_robot(image_loc, img_path, calib_path, point_cloud, margi
     (ix, iy, ia) = image_loc
     (cx, cy, cz) = transform_image_to_camera((ix,iy), img_path, point_cloud, margins)
     (rx, ry, rz) = transform_camera_to_robot((cx,cy,cz), calib_path)
-    
     # rotation
     ra = 180.0 * ia / math.pi
     notice_print(f"Image : point=({ix}, {iy}), angle={ra}")
     if(ra < -90): ra = 180 + ra
     elif(90 < ra): ra = ra - 180
-    notice_print(f"Robot : point=({rx:.3f}, {ry:.3f}, {rz:.3f})")
+    
+    notice_print(f"(Before) Robot : point=({rx:.3f}, {ry:.3f}, {rz:.3f})")
+    rz += (0.166+0.0017)
+    notice_print(f"(After) Robot : point=({rx:.3f}, {ry:.3f}, {rz:.3f})")
+    rz = 0.1
     return rx, ry, rz, ra
 
 def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min_y=-0.25, max_y=0.25):
