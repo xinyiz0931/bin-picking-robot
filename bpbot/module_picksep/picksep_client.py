@@ -25,9 +25,8 @@ class PickSepClient(object):
             print(f"Failed with {rpc_error.code()}")
             return
 
-
-
     def infer_picknet_sepnet_pos(self, imgpath):
+
         outputs = self.stub.infer_picknet_sepnet_pos(psmsg.ImgPath(imgpath=imgpath))
         return outputs.pickorsep, np.frombuffer(outputs.action, dtype=np.int0)
 
@@ -38,8 +37,8 @@ if __name__ == "__main__":
     psc = PickSepClient()
     # img_path = "D:\\Dataset\\sepnet\\test\\depth10.png"
     img_path = "/home/hlab/bpbot/data/test/depth3.png"
-    # cls, grasp = psc.infer_picknet(imgpath=img_path)
-    cls, grasp = psc.infer_picknet_sepnet(imgpath=img_path)
+    cls, grasp = psc.infer_picknet(imgpath=img_path)
+    # cls, grasp = psc.infer_picknet_sepnet(imgpath=img_path)
     
     print(cls, grasp)
     print("Time cost: ", timeit.default_timer() - start)

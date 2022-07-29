@@ -22,7 +22,7 @@ def capture_pc():
     pxc.triggerframe()
     pc = pxc.getpcd()
     gs = pxc.getgrayscaleimg()
-    return pc
+    return pc.copy()
 
 def pc2depth(pc, distance, width, height):
     rotated_pc = rotate_point_cloud(pc)
@@ -42,7 +42,7 @@ def get_point_cloud(save_dir, distance, width, height):
         pc {array} -- (point num x 3)
     """
     # 1. ===================================================
-    main_proc_print("Capture point cloud ... ")
+    main_proc_print("Capture! ")
     import bpbot.driver.phoxi.phoxi_client as pclt
     # from bpbot.driver import phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
@@ -63,9 +63,8 @@ def get_point_cloud(save_dir, distance, width, height):
     cv2.imwrite(os.path.join(save_dir, "depth_raw.png"), img)
     cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
     cv2.imwrite(os.path.join(save_dir, "texture.png"), gs)
-    notice_print("Depth map : shape=({}, {})".format(width, height))
 
-    return pc
+    return pc.copy()
 
 def crop_roi(img_path, margins=None):
     """
@@ -81,7 +80,7 @@ def crop_roi(img_path, margins=None):
         left_margin = margins["left"]
         bottom_margin = margins["bottom"]
         right_margin = margins["right"]
-
+    
     # cropped the necessary region (inside the bin)
     im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
     return im_cut
@@ -90,7 +89,7 @@ def align_depth(cfg, dist=10):
     """unit: cm"""
     depth = dist * 255 / (cfg["pick"]["distance"]["max"] - cfg["pick"]["distance"]["min"])
 
-def draw_grasps(grasps, img_path, h_params, top_idx=0, color=(255,0,0), top_color=(0,255,0), top_only=False):
+def draw_grasps(grasps, img_path, h_params=None, top_idx=0, color=(255,0,0), top_color=(0,255,0), top_only=False):
     """
     Read image and draw grasps
     grasps = [[g,x,y,d,a,_,_], ...], or [[x,y,a], ...]
@@ -101,7 +100,7 @@ def draw_grasps(grasps, img_path, h_params, top_idx=0, color=(255,0,0), top_colo
     open_w = h_params["open_width"]
     # open_w = 60
     template_size = h_params["template_size"]
-    gripper = Gripper(finger_w, finger_h, open_w, template_size)
+    gripper = Gripper(finger_w, finger_h, open_w)
     draw_img = gripper.draw_grasp(grasps, img.copy(), top_color=top_color, top_idx=top_idx, top_only=top_only)
     return draw_img
 
@@ -223,17 +222,13 @@ def pick_or_sep(img_path, h_params, bin="pick"):
 def gen_motion_pickorsep(file_path, ee_pose, v=None, motion_type="pick", dest="goal"):
     # input grasp angle a is in degree
     x,y,z,a = ee_pose
+    
     if z < 0.020: 
         warning_print("Touch the plane! ")
-        # z = 0.020
-    # z += 0.0147
-    # # z += 0.016# for s-shape
-    # z += 0.020  # for s cylinder shape
-    # # z += 0.018  # for s cylinder shape
-    # # z += 0.016  # for u bolt
+
     exec_flag = False
     generator = Motion(filepath=file_path)
-    if not check_reachability((x,y,z), min_z=0.030, max_z=0.106):
+    if not check_reachability((x,y,z), min_z=0.030, max_z=0.16):
         warning_print("Out of robot workspace!! ")
         generator.empty_motion_generator()
         warning_print("Fail! Please try again ... ")
@@ -246,10 +241,12 @@ def gen_motion_pickorsep(file_path, ee_pose, v=None, motion_type="pick", dest="g
         generator.gen_separation_motion(x,y,z,a, vx,vy)
     return exec_flag
 
-def gen_motion_tilt(degree, length, rx, ry, rz):
-    rad = degree * math.pi / 180
-    print("y: ", ry, " => ", ry + length* (1-math.cos(rad)))
-    print("z: ", rz, " => ", rz - length * math.sin(rad))
+def gen_motion_tilt(mf_path, g_hold, g_pull, v_pull, v_len):
+    generator = Motion(filepath=mf_path)
+    generator.gen_separation_motion_dualarm(g_hold, g_pull, v_pull, len=v_len)
+    # rad = degree * math.pi / 180
+    # print("y: ", ry, " => ", ry + length* (1-math.cos(rad)))
+    # print("z: ", rz, " => ", rz - length * math.sin(rad))
     
 def detect_grasp_point(n_grasp, img_path, g_params, h_params, margins=None):
     """Detect grasp point using graspability
@@ -279,12 +276,10 @@ def detect_grasp_point(n_grasp, img_path, g_params, h_params, margins=None):
     finger_h = h_params["finger_height"]
     # open_w = h_params["open_width"] + random.rand'int(0, 5)
     open_w = h_params["open_width"]
-    template_size = h_params["template_size"]
 
     gripper = Gripper(finger_w=finger_w, 
                       finger_h=finger_h, 
-                      open_w=open_w, 
-                      gripper_size=template_size)
+                      open_w=open_w)
 
     # drawn = gripper.draw_grasp(grasps, img_adj.copy(), top_idx=0) 
     hand_open_mask, hand_close_mask = gripper.create_hand_model()
@@ -534,8 +529,36 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
         warning_print("Grasp detection failed! No grasps!")
         return None, im_adj,img
 
+def check_collision(p, v, cfg, point_cloud, margin="mid"):
+    m = cfg[margin]["margin"]
+    margin_points = [[m["left"], m["top"]], [m["right"], m["top"]], 
+                     [m["right"], m["bottom"]], [m["left"], m["bottom"]]]
+    margin_points_robot = []
+    for p_i in margin_points:
+        p_r = transform_image_to_robot(p_i, point_cloud, cfg)
+        margin_points_robot.append(p_r)
+    for i in range(4):
+        m1 = margin_points_robot[i]
+        m2 = margin_points_robot[(i+1)%4]
+        itsct = calc_intersection(p, p+p*v, m1[:2], m2[:2])
+        if is_between(m1[:2], m2[:2], itsct) and np.dot(v, itsct - p) > 0: 
+            return calc_2points_distance(p, itsct)
+    return None
+    
+# def check_collision(p, v, margin, width, calibmat_path, point_cloud):
+#     margin_points = [[margin["left"], margin["top"]], [margin["right"], margin["top"]], 
+#                      [margin["right"], margin["bottom"]], [margin["left"], margin["bottom"]]]
+#     margin_points_robot = transform_image_to_robot(margin_points, width, calibmat_path, point_cloud)
+#     orders = ["top", "right", "bottom", "left"]
+#     for i in range(4):
+#         m1 = margin_points_robot[i]
+#         m2 = margin_points_robot[(i+1)%4]
+#         itsct = calc_intersection(p, p+p*v, m1[:2], m2[:2])
+#         if is_between(m1[:2], m2[:2], itsct) and np.dot(v, itsct - p) > 0: 
+#             return calc_2points_distance(p, itsct)
+#     return None
 
-def transform_camera_to_robot(camera_loc, calib_path):
+def transform_camera_to_robot(camera_locs, calibmat_path):
     """
     Transform camera loc to robot loc
     Use 4x4 calibration matrix
@@ -545,68 +568,114 @@ def transform_camera_to_robot(camera_loc, calib_path):
     Returns: 
         robot_loc {tuple} -- (rx,ry,rz) at robot coordinate, unit: m
     """
-    # get calibration matrix 4x4
-    (cx, cy, cz) = camera_loc
-    calibmat = np.loadtxt(calib_path)
-    camera_pos = np.array([cx, cy, cz, 1])
-    rx, ry, rz, _ = np.dot(calibmat, camera_pos)  # unit: m
-    return (rx, ry, rz)
+    calibmat = np.loadtxt(calibmat_path)
+    robot_locs = []
+    for loc in camera_locs:
+        # get calibration matrix 4x4
+        (cx, cy, cz) = loc
+        camera_pos = np.array([cx, cy, cz, 1])
+        rx, ry, rz, _ = np.dot(calibmat, camera_pos)  # unit: m
+        robot_locs.append([rx, ry, rz])
+    return np.asarray(robot_locs)
 
-def transform_image_to_camera(image_loc, img_path, pc, margins=None):
+def transform_image_to_camera(image_locs, image_width, pc, margins=None):
     """
     1. Replace bad point and adjust the feasible height
     2. Transform image loc to camera loc
     Parameters:
-        image_loc {tuple} -- (ix,iy), pixel location
-        img_path {str} -- full image without cropping
+        image_locs {list} -- N * (ix,iy), pixel location
         pc {array} -- (point num x 3) point cloud 
         margins {tupple} -- cropped roi
     Returns: 
-        camera_loc {tuple} -- (cx,cy,cz)
+        camera_locs {list} -- N * (cx,cy,cz)
     """
-    img = cv2.imread(img_path)
-    _, width, _ = img.shape
+    camera_locs = []
+    for loc in image_locs:
 
-    (ix, iy) = image_loc
-    if margins == None:
-        top_margin, left_margin = 0, 0
-    else: 
-        top_margin, left_margin = margins["top"], margins["left"]
+        (ix, iy) = loc
+        if margins == None:
+            top_margin, left_margin = 0, 0
+        else: 
+            top_margin, left_margin = margins["top"], margins["left"]
 
-    full_ix = ix + left_margin
-    full_iy = iy + top_margin
-    (new_ix, new_iy) = replace_bad_point(img, (full_ix, full_iy))
-    offset = new_iy * width + new_ix
-    [cx, cy, cz] = pc[offset] # unit: mm
-    return (cx/1000,cy/1000,cz/1000) # unit: m
+        full_ix = ix + left_margin
+        full_iy = iy + top_margin
+        #(new_ix, new_iy) = replace_bad_point(img, (full_ix, full_iy))
+        offset = int(full_iy * image_width + full_ix)
+        camera_locs.append(pc[offset]) # unit: m
+    return camera_locs
 
-def transform_image_to_robot(image_loc, img_path, calib_path, point_cloud, margins=None):
+def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=None, tilt=None):
     """
-    Transform image loc to robot loc
+    Transform image locs to robot locs (5-th joint pose in robot coordinate)
+    1. p_r_ft -> p_r_j: position of 5-th joint of the arm in robot coordinate
+    2. (u,v) -> p_c
+    3. p_c -> p_r_f: position of finger tip in robot coordinate
+    4. degree -> rpy_r_j: euler angles of 5-th joint in robot coordinate
     Parameters:
-        image_loc {tuple} -- (ix,iy,ia) at camera coordinate, angle in degree
+        image_locs {array} -- N * (ix,iy,ia) at camera coordinate, angle in degree
         calib_path {str} -- calibration matrix file path
     Returns: 
-        robot_loc {tuple} -- (rx,ry,rz,ra) at robot coordinate, angle in degree
+        robot_locs {array} -- N * (rx,ry,rz,ra) at robot coordinate, angle in degree
     """
-    if point_cloud is None:
-        warning_print("Empty point cloud! ")
-        return 0,0,0,0
-    # position
-    (ix, iy, ia) = image_loc
-    (cx, cy, cz) = transform_image_to_camera((ix,iy), img_path, point_cloud, margins)
-    (rx, ry, rz) = transform_camera_to_robot((cx,cy,cz), calib_path)
-    # rotation
-    ra = 180.0 * ia / math.pi
-    notice_print(f"Image : point=({ix}, {iy}), angle={ra}")
-    if(ra < -90): ra = 180 + ra
-    elif(90 < ra): ra = ra - 180
+    _obj_h = 0.005 
+    g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
+
+    if len(image_locs) == 3: 
+        # including calculate euler angle 
+        (u, v, theta) = image_locs # theta: degree
+        
+        # [1]
+        if tilt == None: tilt = 90
+        if hand == "left":
+            rpy_r_j = [(theta - 90), -tilt, 90]
+            g_jf = np.array([[1,0,0,-(cfg["hand"]["schunk_length"])],
+                            [0,1,0,0],
+                            [0,0,1,0],
+                            [0,0,0,1]])
+        elif hand == "right":
+            rpy_r_j = [(theta + 90) % 180, -tilt, -90]
+            g_jf = np.array([[1,0,0,-(cfg["hand"]["smc_length"])],
+                            [0,1,0,0],
+                            [0,0,1,0],
+                            [0,0,0,1]])
+    elif len(image_locs) == 2: 
+        (u, v) = image_locs 
     
-    notice_print(f"(Before) Robot : point=({rx:.3f}, {ry:.3f}, {rz:.3f})")
-    rz += (0.166+0.0017)
-    notice_print(f"(After) Robot : point=({rx:.3f}, {ry:.3f}, {rz:.3f})")
-    rz = 0.1
-    return rx, ry, rz, ra
+    if margin is not None: 
+        u += cfg[margin]["margin"]["left"]
+        v += cfg[margin]["margin"]["top"]
+    
+    # [2]
+    #(new_ix, new_iy) = replace_bad_point(img, (full_ix, full_iy))
+    p_c = point_cloud[int(v * cfg["width"] + u)] # unit: m
+
+    # [3] 
+    p_r_f = np.dot(g_rc, [*p_c, 1])  # unit: m
+    p_r_f = p_r_f[:3]
+
+    if len(image_locs) == 2: return p_r_f
+
+    # [4]
+    p_r_f[2] -= _obj_h
+    g_rf = np.r_[np.c_[rpy2mat(rpy_r_j, 'xyz'), p_r_f], [[0,0,0,1]]]
+    g_rj = np.dot(g_rf, np.linalg.inv(g_jf))
+    p_r_j = np.dot(g_rj, [0,0,0,1])
+    
+    return p_r_f, [*p_r_j[:3], *rpy_r_j]
+
+def rpy_image_to_robot(degree, hand="left", lr_tilt_degree=(90,60)):
+    if hand == "left":
+        return [(degree - 90), -lr_tilt_degree[0], 90]
+    elif hand == "right":
+        return [(degree + 90) % 180, -lr_tilt_degree[1], -90]
+
+def orientation_image_to_robot(degree, hand="left"):
+    if hand == "left": 
+        return degree - 180 if degree > 90 else degree
+    elif hand == "right":
+        # return degree - 180 if degree >= 90 else degree
+        return (degree + 90) % 180
 
 def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min_y=-0.25, max_y=0.25):
     max_z = 0.2
@@ -622,8 +691,6 @@ def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min
     #     return False
     else:
         return True
-
-
 
 def generate_motion(filepath, ee_pose, action):
     x,y,z,a = ee_pose

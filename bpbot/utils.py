@@ -29,8 +29,8 @@ def warning_print(warning_str):
 
 
 def notice_print(result_str):
-    (lambda x: cprint(x, 'green', attrs=['bold']))(
-        "[    OUTPUT    ] "+str(result_str))
+    # (lambda x: cprint(x, 'green', attrs=['bold']))("[    OUTPUT    ] "+str(result_str))
+    (lambda x: cprint(x, 'green'))("[    OUTPUT    ] "+str(result_str))
     # (lambda x: cprint(x, 'grey',  'on_green'))("[    NOTICE    ] "+str(result_str))
 
 
@@ -314,8 +314,8 @@ def rpy2quat(Re):
     return r.as_quat()
 
 
-def rpy2mat(Re):
-    r = R.from_euler('xyz', Re, degrees=True)
+def rpy2mat(Re, seq='xyz'):
+    r = R.from_euler(seq, Re, degrees=True)
     return r.as_matrix()
 
 
@@ -397,7 +397,6 @@ def calc_lineseg_dist(p, l):
     d = da + ratio*(db-da)
     return(d)
 
-
 def calc_shortest_dist(p, l):
     """Function calculates the distance from point p to line segment [a,b].
     Parameters:
@@ -423,6 +422,23 @@ def calc_shortest_dist(p, l):
     c = np.cross(p - a, d)
     return np.hypot(h, np.linalg.norm(c))
 
+def is_between(a1, a2, b):
+    """
+    a1: [x, y] an end point on line segnment
+    a2: [x, y] an end point on line segnment
+    b : [x, y] a point
+    """
+    a1 = np.asarray(a1)
+    a2 = np.asarray(a2)
+    b = np.asarray(b)
+    if abs(np.cross(a2-a1, b-a1)) > sys.float_info.epsilon: 
+        return False
+    if np.dot(a2-a1, b-a1) < 0:
+        return False
+    if np.dot(a2-a1, b-a1) > np.dot(a2-a1, a2-a1):
+        return False
+    return True
+    
 
 def calc_intersection(a1, a2, b1, b2):
     """
@@ -433,7 +449,6 @@ def calc_intersection(a1, a2, b1, b2):
     b1: [x, y] a point on the second line
     b2: [x, y] another point on the second line
     """
-
     s = np.vstack([a1, a2, b1, b2])        # s for stacked
     h = np.hstack((s, np.ones((4, 1))))  # h for homogeneous
     l1 = np.cross(h[0], h[1])           # get first line
@@ -490,7 +505,8 @@ def detect_ar_marker(image, marker_type="DICT_5X5_100", show=True):
     
     ARUCO_DICT = {
         "DICT_4X4_100": cv2.aruco.DICT_4X4_100,
-        "DICT_5X5_100": cv2.aruco.DICT_5X5_100}
+        "DICT_5X5_100": cv2.aruco.DICT_5X5_100,
+        "DICT_6X6_100": cv2.aruco.DICT_6X6_100}
     arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[marker_type])
     arucoParams = cv2.aruco.DetectorParameters_create()
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
@@ -1003,6 +1019,94 @@ def reform_xyz(xyz):
 
     re_xyz = np.asarray(down_pcd.points)
     return (re_xyz)
+
+
+def rigid_transform_3D(A, B):
+    assert A.shape == B.shape
+
+    num_rows, num_cols = A.shape
+    if num_rows != 3:
+        raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
+
+    num_rows, num_cols = B.shape
+    if num_rows != 3:
+        raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
+
+    # find mean column wise
+    centroid_A = np.mean(A, axis=1)
+    centroid_B = np.mean(B, axis=1)
+
+    # ensure centroids are 3x1
+    centroid_A = centroid_A.reshape(-1, 1)
+    centroid_B = centroid_B.reshape(-1, 1)
+
+    # subtract mean
+    Am = A - centroid_A
+    Bm = B - centroid_B
+
+    H = Am @ np.transpose(Bm)
+
+    # sanity check
+    # if linalg.matrix_rank(H) < 3:
+    #    raise ValueError("rank of H = {}, expecting 3".format(linalg.matrix_rank(H)))
+
+    # find rotation
+    U, S, Vt = np.linalg.svd(H)
+    R = Vt.T @ U.T
+
+    # special reflection case
+    if np.linalg.det(R) < 0:
+        print("det(R) < R, reflection detected!, correcting for it ...")
+        Vt[2, :] *= -1
+        R = Vt.T @ U.T
+
+    t = -R @ centroid_A + centroid_B
+
+    return R, t
+
+
+def validate_transform(A, R, t):
+    #A = calib_camera
+    B = R@A + t
+
+    # Recover R and t
+    ret_R, ret_t = rigid_transform_3D(A, B)
+
+    # Compare the recovered R and t with the original
+    B2 = (ret_R@A) + ret_t
+
+    n = 9
+
+    # Find the root mean squared error
+    err = B2 - B
+    err = err * err
+    err = np.sum(err)
+    rmse = np.sqrt(err/n)
+
+    print("Points A")
+    print(A)
+
+    print("Points B")
+    print(B)
+
+    print("Ground truth rotation")
+    print(R)
+
+    print("Recovered rotation")
+    print(ret_R)
+
+    print("Ground truth translation")
+    print(t)
+
+    print("Recovered translation")
+    print(ret_t)
+
+    print("RMSE:", rmse)
+
+    if rmse < 1e-5:
+        print("Everything looks good!")
+    else:
+        print("Hmm something doesn't look right ...")
 
 # img = cv2.imread("C:\\Users\\xinyi\\Downloads\\twice.jpg")
 # img = cv2.resize(img, (500,500))

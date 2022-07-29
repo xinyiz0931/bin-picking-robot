@@ -99,21 +99,6 @@ def validate_transform(A, R, t):
         print("Hmm something doesn't look right ...")
 
 
-def error_between_two_transformation(A,B):
-    """_summary_
-
-    Args:
-        A (numpy array): 4 x 4
-        B (numpy_array): 4 x 4
-
-    Returns:
-        rpy_: rotation error using euler angles
-        t_: transformation error
-    """
-    # TODO
-    a = 0
-    return rpy_, t_
-
 if __name__ == "__main__":
 
     # ========================== define path =============================

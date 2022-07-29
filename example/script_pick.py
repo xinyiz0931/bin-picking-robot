@@ -47,12 +47,13 @@ cfg = BinConfig(config_path)
 # ======================= get config info ============================
 
 bincfg = BinConfig(config_path)
-cfg = bincfg.config
+cfg = bincfg.data
 
 # ======================== get depth img =============================
 
 point_array = get_point_cloud(depth_dir, cfg['pick']['distance'],
                                  cfg['width'],cfg['height'])
+point_array /= 1000
 # # pcd = o3d.io.read_point_cloud("./data/test/out.ply")
 #     # point_array = pcd.points
 
@@ -63,7 +64,7 @@ if point_array is not None:
                                     img_path=img_path, 
                                     margins=cfg['pick']['margin'],
                                     g_params=cfg['graspability'],
-                                    h_params=cfg["hand"])
+                                    h_params=cfg["hand"]["schunk"])
     # grasps, img_input = detect_nontangle_grasp_point(n_grasp=10, 
     #                                 img_path=img_path, 
     #                                 margins=cfg["pick"]["margin"],
@@ -97,17 +98,17 @@ else:
         best_grasp = grasps[0]
         best_action = random.sample(list(range(6)),1)[0]
 
-    (rx,ry,rz,ra) = transform_image_to_robot((best_grasp[1],best_grasp[2],best_grasp[4]),
-                    img_path, calib_path, point_array, cfg["pick"]["margin"])
+    [best_grasp_r] = transform_image_to_robot([[best_grasp[1],best_grasp[2],best_grasp[4]]],
+                    cfg["width"], calib_path, point_array, margins=cfg["pick"]["margin"])
 
 # draw grasp 
-    img_grasp = draw_grasps(grasps, crop_path,  cfg["hand"], top_only=True, top_idx=best_graspno, color=(73,192,236), top_color=(0,255,0))
+
+    img_grasp = draw_grasps(grasps, crop_path,  cfg["hand"]["schunk"], top_only=True, top_idx=best_graspno, color=(73,192,236), top_color=(0,255,0))
     cv2.imwrite(draw_path, img_grasp)
 
+    gen_success = gen_motion_pickorsep(mf_path, best_grasp_r, dest="mid")
 # =======================  generate motion ===========================
 if found_cnoid: 
-    gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="mid")
-    # gen_success = generate_motion(mf_path, [rx,ry,rz,ra], best_action)
     plan_success = load_motionfile(mf_path)
     # if gen_success and plan_success:
     if plan_success:
@@ -116,13 +117,8 @@ if found_cnoid:
         num_seq = int(len(motion_seq)/21)
         print(f"Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 21))
-        for m in motion_seq:
-            if m[1] == 0: 
-                nxt.closeHandToolLft()
-            elif m[1] == 1:
-                nxt.openHandToolLft()
-            nxt.setJointAngles(m[2:21],tm=m[0]) # no hand open-close control
-        main_proc_print("Finish! ")
+
+        nxt.playMotionSeq(motion_seq) 
 
         # tdatetime = dt.now()
         # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
@@ -131,7 +127,6 @@ if found_cnoid:
         # cv2.imwrite(f"{root_dir}/exp/{tstr}/grasp.png", img_grasp)
         # cv2.imwrite(f"{root_dir}/exp/{tstr}/depth.png", img_input)
 # ======================= Record the data ===================s=========
-main_proc_print("Finish! ")
 
 # if success_flag:
 #     tdatetime = dt.now()

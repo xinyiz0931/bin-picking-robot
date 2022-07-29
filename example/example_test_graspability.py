@@ -9,7 +9,7 @@ def main():
     config_path = os.path.join(root_dir, "cfg/config.yaml")
 
     bincfg = BinConfig(config_path)
-    cfg = bincfg.config
+    cfg = bincfg.data
 
     # ============== REAL WORLD SETUP ==============
     # finger_w=6.5
@@ -17,8 +17,7 @@ def main():
     # open_w = 48
     # gripper_size = 250
     # ============== DEPTH SETUP (500x500)==============
-    h_params = {"template_size": 500, 
-                "finger_height": 40,
+    h_params = {"finger_height": 40,
                 "finger_width":  13, 
                 "open_width":    60}
     # h_params = cfg["hand"] 
@@ -44,7 +43,7 @@ def main():
     grasps, img_input = detect_grasp_point(n_grasp=5, img_path=img_path, 
                             g_params=g_params,
                             h_params=h_params)
-    img_grasp = draw_grasps(grasps, img_path, h_params)
+    # img_grasp = draw_grasps(grasps, img_path, h_params)
     # grasps, img_input, img_grasp = detect_grasp_point(n_grasp=5, img_path=img_path, g_params=g_params, h_params=h_params)
     # grasps, input_img, full_image = detect_target_oriented_grasp(10, ROOT_DIR, margins, g_params, h_params)
 

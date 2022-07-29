@@ -228,6 +228,34 @@ class NxtRobot(object):
         else:
             print("The robot_s is moved to the given pose.")
 
+    def playMotionSeq(self, motion_seq):
+        """
+        added by xinyi: motion_seq shape = (num_seq x 20)
+        including both hands open/closing
+        """
+        old_lhand = "STANDBY"
+        old_rhand = "STANDBY"
+        for m in motion_seq:
+            if (m[-2:] != 0).all(): lhand = "OPEN"
+            else: lhand = "CLOSE"
+            if (m[-4:-2] != 0).all(): rhand = "OPEN"
+            else: rhand = "CLOSE"
+
+            # print(f"left hand: {lhand}, right hand {rhand}")
+            if old_rhand != rhand:
+                if rhand == "OPEN": self.openHandToolRgt()
+                elif rhand == "CLOSE": self.closeHandToolRgt()
+
+            if old_lhand != lhand:
+                if lhand == "OPEN": self.openHandToolLft()
+                elif lhand == "CLOSE": self.closeHandToolLft()
+            
+            old_lhand = lhand
+            old_rhand = rhand
+
+            self.setJointAngles(m[1:], tm=m[0])
+        print("Finish! ")
+
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='')

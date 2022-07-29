@@ -73,11 +73,13 @@ class Graspability(object):
         hand_close_mask = Image.fromarray(np.uint8(hand_close_mask))
 
         for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
+            
             ht_= hand_close_mask.rotate(r)
             hc_ = hand_open_mask.rotate(r)
             ht_rot.append(np.array(ht_.convert('L')))
             hc_rot.append(np.array(hc_.convert('L'))) 
-
+            print("xinyi | ", r)
+            plt.imshow(ht_.convert('L')), plt.show()
         # print("Computing graspability map... ")
         # img = cv2.GaussianBlur(img,(3,3),0)
 

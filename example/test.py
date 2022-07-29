@@ -5,11 +5,13 @@ import random
 import matplotlib.pyplot as plt
 from bpbot import BinConfig
 from bpbot.binpicking import *
+from bpbot.utils import *
 import open3d as o3d
 
 from bpbot.grasping import Graspability, Gripper
 import numpy as np
 root_dir = os.path.abspath("./ext/bpbot")
+root_dir = os.path.abspath("./")
 img_path = os.path.join(root_dir, "data/depth/depth_cropped_mid_zone.png")
 # img = cv2.imread(img_path)
 # print((img > 35).sum())
@@ -18,48 +20,55 @@ img_path = os.path.join(root_dir, "data/depth/depth_cropped_mid_zone.png")
 config_path = os.path.join(root_dir, "cfg/config.yaml")
 
 bincfg = BinConfig(config_path)
-cfg = bincfg.config
+cfg = bincfg.data
 h_params = cfg["hand"]
 
-calib_dir = os.path.join(root_dir, "data/calibration/20220718")
+calib_dir = os.path.join(root_dir, "data/calibration/try")
 
 mat = np.loadtxt(os.path.join(calib_dir, "calibmat.txt"))
-# mat = np.loadtxt(os.path.join(root_dir, "data/calibration/calibmat.txt"))
+# # mat = np.loadtxt(os.path.join(root_dir, "data/calibration/calibmat.txt"))
 print(mat)
 rpoint = np.loadtxt(os.path.join(calib_dir, "robot.txt"))
-rpoint[:,2] += (0.135+0.0017)
-rpoint *= 1000
+rpoint[:,0] += 0.079
+rpoint[:,2] -= 0.030
+# # rpoint[:,2] += (0.014+0.017+0.135+0.0017)
 cpoint = np.loadtxt(os.path.join(calib_dir, "camera.txt"))
+# # rpoint = rpoint[0:10]
+# # cpoint = cpoint[0:10]
+# R, t = rigid_transform_3D((cpoint/1000).T, rpoint.T)
+# mat = np.r_[np.c_[R, t], [[0, 0, 0, 1]]]
+# print(mat)
 
+# cpoint[:,2] += (0.017+0.014+0.135+0.0017)
 fig = plt.figure()
 print("Let's draw a cubic using o3d.geometry.LineSet.")
 lines = []
 for i in range(rpoint.shape[0]-1):
     lines.append([i,i+1])
-rcolors = [[1, 0, 0] for i in range(len(lines))]
-ccolors = [[0, 0, 1] for i in range(len(lines))]
+_r = [[1, 0, 0] for i in range(len(lines))]
+_b = [[0, 0, 1] for i in range(len(lines))]
 # plot robot coordinate
 rline_set = o3d.geometry.LineSet(
     points=o3d.utility.Vector3dVector(rpoint),
     lines=o3d.utility.Vector2iVector(lines),
 )
-rline_set.colors = o3d.utility.Vector3dVector(rcolors)
+rline_set.colors = o3d.utility.Vector3dVector(_r)
 # plot camera coordinate
 cline_set = o3d.geometry.LineSet(
     points=o3d.utility.Vector3dVector(cpoint),
     lines=o3d.utility.Vector2iVector(lines),
 )
-cline_set.colors = o3d.utility.Vector3dVector(ccolors)
+cline_set.colors = o3d.utility.Vector3dVector(_b)
 
 # plot rotated camera coordinate 
-rot_cpoint = []
-for p in cpoint:
-    cx_, cy_, cz_,_ = np.dot(mat, [p[0],p[1],p[2],1])
-    rot_cpoint.append([cx_, cy_, cz_])
-rot_cline_set = o3d.geometry.LineSet(
-    points=o3d.utility.Vector3dVector(rot_cpoint),
-    lines=o3d.utility.Vector2iVector(lines),
-) 
+# rot_cpoint = []
+# for p in cpoint:
+#     cx_, cy_, cz_,_ = np.dot(mat, [p[0],p[1],p[2],1])
+#     rot_cpoint.append([cx_, cy_, cz_])
+# rot_cline_set = o3d.geometry.LineSet(
+#     points=o3d.utility.Vector3dVector(rot_cpoint),
+#     lines=o3d.utility.Vector2iVector(lines),
+# ) 
 
 rot_rpoint = []
 for p in rpoint:
@@ -69,10 +78,12 @@ rot_rline_set = o3d.geometry.LineSet(
     points=o3d.utility.Vector3dVector(rot_rpoint),
     lines=o3d.utility.Vector2iVector(lines),
 ) 
+rot_rline_set.colors = o3d.utility.Vector3dVector(_r)
 # plot
-pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/bg.ply")
-mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=100, origin=[0, 0, 0]) 
-o3d.visualization.draw_geometries([mesh_frame, pcd, cline_set, rot_rline_set])
+pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/test_ply.ply")
+mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0]) 
+# o3d.visualization.draw_geometries([mesh_frame, pcd, cline_set,rot_rline_set])
+o3d.visualization.draw_geometries([mesh_frame, pcd])
 
 
 # plot axis in robot coordinate

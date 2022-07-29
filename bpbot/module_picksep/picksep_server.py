@@ -37,6 +37,11 @@ class PickSepServer(psrpc.PickSepServicer):
         self.inference = Inference(config=cfg)
     
     def infer_picknet(self, request, context): 
+        """
+        Returns:
+            0 or 1: classification of pick or sep
+            array (4,): [u,v,score_pick, score_sep]
+        """
         print(f"[*] Start inference: picknet")
         outputs = self.inference.infer(data_dir=request.imgpath, infer_type="pick", save_dir=self.save_dir)
         pickorsep = int(outputs[0][0])

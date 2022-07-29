@@ -8,7 +8,8 @@ import math
 class Motion(object):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.initialpose = "0 1 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -133.7 -7 0 0 0 0 0 0"
+        self.initialpose = "0 3 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -133.7 -7 0 0 0 0 0 0"
+        self.initialpose_ = "0 3 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -133.7 -7 0 0 0.0300 -0.0300 0.0240 -0.0240"
         
         self.placepose = [
             "0 2 JOINT_REL 80 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",
@@ -122,7 +123,36 @@ class Motion(object):
         print(self.initialpose,file=fp)
         fp.close()
      
+    def gen_separation_motion_dualarm(self,g_hold,g_pull,v_pull,len=0.05):
+        [hx,hy,hz,hroll,hpitch,hyaw] = g_hold
+        [px,py,pz,proll,ppitch,pyaw] = g_pull
+        [vx,vy] = v_pull
+        len = 0.1
+        fp = open(self.filepath, 'wt')
+        #print(self.initialpose_,file=fp)
+        print("0 0.5 LHAND_JNT_OPEN",file=fp)
+        print("0 0.5 RHAND_JNT_OPEN",file=fp)
+        print("0 3 LARM_XYZ_ABS {:.3f} {:.3f} 0.2 {:.1f} {:.1f} {:.1f}".format(px,py,proll,ppitch,pyaw),file=fp)
+        print("0 3 LARM_XYZ_ABS {:.3f} {:.3f} {:.3f} {:.1f} {:.1f} {:.1f}".format(px,py,pz,proll,ppitch,pyaw),file=fp)
 
+        # print("0 3 RARM_XYZ_ABS {:.3f} {:.3f} {:.3f} {:.3f} -90 0".format(hx,hy,hz,ha),file=fp)
+        print("0 3 RARM_XYZ_ABS {:.3f} {:.3f} {:.3f} {:.1f} {:.1f} {:.1f}".format(hx,hy,hz,hroll,hpitch,hyaw),file=fp)
+        print("0 0.5 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+        print("0 0.5 RHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+
+        print("0 3 LARM_XYZ_ABS {:.3f} {:.3f} {:.3f} {:.1f} {:.1f} {:.1f}".format(px+len*vx,py+len*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+        print("0 3 LARM_XYZ_ABS {:.3f} {:.3f} {:.3f} {:.1f} {:.1f} {:.1f}".format(px+len*vx,py+len*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
+
+        # place
+        print("0 2 LARM_XYZ_ABS 0.48 0.35 0.25 {:.3f} {:.1f} {:.1f}".format(proll,ppitch,pyaw),file=fp) 
+        # print("0 1 LARM_XYZ_ABS 0.0861 0.5316 0.3 55.8 -90 -31.8", file=fp)
+        # print("0 1 LARM_XYZ_ABS 0.0861 0.5316 0.12 55.8 -90 -31.8", file=fp)
+
+        print("0 0.5 LHAND_JNT_OPEN",file=fp)
+        print("0 0.5 RHAND_JNT_OPEN",file=fp)
+        print(self.initialpose_,file=fp)
+        fp.close()
+     
     def get_pick_pose(self, rx, ry, rz, ra):
         return [
             "0 0.5 LHAND_JNT_OPEN", 

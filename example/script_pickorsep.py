@@ -118,13 +118,7 @@ if found_cnoid:
         num_seq = int(len(motion_seq)/21)
         print(f"Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 21))
-        for m in motion_seq:
-            if m[1] == 0: 
-                nxt.closeHandToolLft()
-            elif m[1] == 1:
-                nxt.openHandToolLft()
-            nxt.setJointAngles(m[2:21],tm=m[0]) # no hand open-close control
-        main_proc_print("Finish! ")
+        nxt.playMotionSeq(motion_seq) 
 
     # tdatetime = dt.now()
     # tstr = tdatetime.strftime('%Y%m%d%H%M%S')

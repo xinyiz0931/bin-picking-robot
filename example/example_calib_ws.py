@@ -73,8 +73,8 @@ if "dist" in ws_mode and args.zone != "pick_mid":
         max_distance = int(pcd_r[y*w+x][-1])
         notice_print(f"max_distance:  {max_distance}")
 
-    cfg.config[args.zone]["distance"]["max"] = max_distance
-    cfg.config[args.zone]["distance"]["min"] = min_distance - 15
+    cfg.data[args.zone]["distance"]["max"] = max_distance
+    cfg.data[args.zone]["distance"]["min"] = min_distance - 15
     cfg.write()
     main_proc_print("Successfully defined the max/min distance! ")
 
@@ -109,10 +109,10 @@ if "margin" in ws_mode:
             notice_print(f"right_margin:  {ref_point[1][0]}")
             notice_print(f"bottom_margin: {ref_point[1][1]}")
 
-            cfg.config["pick"]["margin"]["left"] = ref_point[0][0]
-            cfg.config["pick"]["margin"]["top"] = ref_point[0][1]
-            cfg.config["pick"]["margin"]["right"] = ref_point[1][0]
-            cfg.config["pick"]["margin"]["bottom"] = ref_point[1][1]
+            cfg.data["pick"]["margin"]["left"] = ref_point[0][0]
+            cfg.data["pick"]["margin"]["top"] = ref_point[0][1]
+            cfg.data["pick"]["margin"]["right"] = ref_point[1][0]
+            cfg.data["pick"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
             main_proc_print("Successfully defined pick workspace size! ")
@@ -148,10 +148,10 @@ if "margin" in ws_mode:
             notice_print(f"right_margin:  {ref_point[1][0]}")
             notice_print(f"bottom_margin: {ref_point[1][1]}")
 
-            cfg.config["mid"]["margin"]["left"] = ref_point[0][0]
-            cfg.config["mid"]["margin"]["top"] = ref_point[0][1]
-            cfg.config["mid"]["margin"]["right"] = ref_point[1][0]
-            cfg.config["mid"]["margin"]["bottom"] = ref_point[1][1]
+            cfg.data["mid"]["margin"]["left"] = ref_point[0][0]
+            cfg.data["mid"]["margin"]["top"] = ref_point[0][1]
+            cfg.data["mid"]["margin"]["right"] = ref_point[1][0]
+            cfg.data["mid"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
             main_proc_print("Successfully defined mid workspace size! ")

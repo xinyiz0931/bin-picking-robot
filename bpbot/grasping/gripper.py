@@ -10,12 +10,14 @@ from PIL import Image
 from bpbot.utils import *
 
 class Gripper(object):
-    def __init__(self, finger_w, finger_h, open_w, gripper_size):
+    def __init__(self, finger_w, finger_h, open_w):
         self.open_w = open_w
-        self.gripper_size = gripper_size
         self.finger_w = finger_w
         self.finger_h = finger_h
-    
+
+        self.real2image()
+        self.gripper_size = 500
+
     # a series of transformations: sim <-> image <-> real world
     def image2real(self):
         ratio = 500/250
@@ -46,9 +48,8 @@ class Gripper(object):
         self.finger_h /= ratio    
 
     def real2image(self):
-        ratio = 250/500
+        ratio = 1/2
         self.open_w /= ratio
-        self.gripper_size /= ratio
         self.finger_w /= ratio
         self.finger_h /= ratio
 
@@ -147,11 +148,12 @@ class Gripper(object):
         # default: draw top grasp as No.0 of grasp list
         # e.g. top_no=3, draw top grasp as No.3
         grasps = np.array(grasps)
-        if grasps.shape[0] < 1: return img
-
-        if grasps.shape[1] > 3: # output from graspability
+        if len(grasps) == 3 and len(grasps.shape)==1:
+            grasps = np.asarray([grasps])
+        
+        elif grasps.shape[1] > 3: # output from graspability
             grasps = grasps[:, [1, 2, 4]] 
-
+        
         if top_only:
             x = int(grasps[top_idx][0])
             y = int(grasps[top_idx][1])
@@ -238,6 +240,7 @@ class Gripper(object):
         start_rotation = 0
         stop_rotation = 180
         rotation_step = 10
+        rotation_step = 45
         # (x,y) = replace_bad_point(img, loc)
         (x,y) = loc
 
