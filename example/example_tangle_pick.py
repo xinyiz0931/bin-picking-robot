@@ -10,7 +10,7 @@ def main():
     config_path = os.path.join(root_dir, "cfg/config.yaml")
 
     bincfg = BinConfig(config_path)
-    cfg = bincfg.config
+    cfg = bincfg.data
     img_path = os.path.join("./data", "test", "depth4.png")
     # img_path = os.path.join("./data", "depth", "depth_cropped_2.png") 
 

@@ -26,12 +26,12 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
 
     # cropped the necessary region (inside the bin)
     height, width, _ = img.shape
-    im_cut = img[top_margin:bottom_margin, left_margin:right_margin]
-    cropped_height, cropped_width, _ = im_cut.shape
+    img_cut = img[top_margin:bottom_margin, left_margin:right_margin]
+    cropped_height, cropped_width, _ = img_cut.shape
     main_proc_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
     
-    im_adj = adjust_grayscale(im_cut)
-    # im_adj = im_cut
+    im_adj = adjust_grayscale(img_cut)
+    # im_adj = img_cut
     hand_open_mask, hand_close_mask = gripper.hand_model()
 
     (rstep, dstep, hand_depth, Wc, Wt) = g_params

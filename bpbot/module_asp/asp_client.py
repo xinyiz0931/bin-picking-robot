@@ -23,7 +23,7 @@ class ASPClient(object):
             out = self.stub.action_success_prediction(aspmsg.ASPInput(imgpath=imgpath, grasps=g2bytes))
             return np.frombuffer(out.probs, dtype=np.float32)
         except grpc.RpcError as rpc_error:
-            print(f"Failed with {rpc_error.code()}")
+            print(f"[!] Failed with {rpc_error.code()}")
             return
 
     def infer(self,imgpath, grasps):

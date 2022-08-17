@@ -3,7 +3,7 @@ import time
 import grpc
 from concurrent import futures
 from tangle import Config, Inference
-from tangle.utils import direction2vector 
+from tangle.utils import angle2vector 
 import numpy as np
 import picksep_pb2 as psmsg
 import picksep_pb2_grpc as psrpc
@@ -25,7 +25,8 @@ class PickSepServer(psrpc.PickSepServicer):
                 "img_width": 512,
                 # "pick_ckpt_folder": ["try_retrain_picknet_unet","model_epoch_15.pth"],
                 "pick_ckpt_folder": ["try8","model_epoch_8.pth"],
-                "sepp_ckpt_folder": ["try_38","model_epoch_3.pth"],
+                # "sepp_ckpt_folder": ["try_38","model_epoch_7.pth"],
+                "sepp_ckpt_folder": ["try_new_sepnet_position","model_epoch_9.pth"],
                 "sepd_ckpt_folder": ["try_new_res","model_epoch_11.pth"]
                 # "sepd_ckpt_folder": ["try_new","model_epoch_11.pth"]
             }
@@ -40,12 +41,11 @@ class PickSepServer(psrpc.PickSepServicer):
         """
         Returns:
             0 or 1: classification of pick or sep
-            array (4,): [u,v,score_pick, score_sep]
+            array (4): [pick x,y, score_pick, score_sep]
         """
         print(f"[*] Start inference: picknet")
         outputs = self.inference.infer(data_dir=request.imgpath, infer_type="pick", save_dir=self.save_dir)
         pickorsep = int(outputs[0][0])
-        scores = outputs[2][0]
         
         # pick
         if pickorsep == 0:
@@ -59,8 +59,23 @@ class PickSepServer(psrpc.PickSepServicer):
         print(pickorsep,action)
         p2bytes = np.ndarray.tobytes(np.array(action))
         return psmsg.ActionCls(pickorsep=pickorsep, action=p2bytes)
-    
+
+    def infer_sepnet(self, resquest, context):
+        """
+        Returns:
+            array (6+16): [pull x,y, hold x,y, vector x,y]
+        """
+        print("[*] Start inference: sepnet") 
+        outputs = self.inference.infer(data_dir=resquest.imgpath, infer_type="sep", save_dir=self.save_dir)
+        
+        scores = np.array(outputs[1][0])
+        max_direction = scores.argmax()
+        pull_v = angle2vector(max_direction*360/16)
+        action = np.array([outputs[0][0][0], outputs[0][0][1], pull_v])
+        return psmsg.Action(action=np.ndarray.tobytes(action))
+
     def infer_picknet_sepnet_pos(self, request, context):
+
         print(f"[*] Start inference: picknet + sepnet-p! ")
         outputs = self.inference.infer(data_dir=request.imgpath, infer_type="pick_sep_pos", save_dir=self.save_dir)
         pickorsep = int(outputs[0][0])
@@ -73,6 +88,13 @@ class PickSepServer(psrpc.PickSepServicer):
         return psmsg.ActionCls(pickorsep=pickorsep, action=np.ndarray.tobytes(action)) 
         
     def infer_picknet_sepnet(self, request, context):
+        """
+        Returns:
+            cls: 0 -> pick, 1 -> sep (tangle)
+            res: when cls = 0, [pick x, y, score_pick, score_sep]
+                 when cls = 1, [pull x, y, hold x, y, vector x, y, score_pick, score_sep]
+
+        """
         print(f"[*] Start inference: pickenet + sepnet")
         outputs = self.inference.infer(data_dir=request.imgpath, infer_type="pick_sep", save_dir=self.save_dir)
         pickorsep = int(outputs[0][0])
@@ -80,7 +102,7 @@ class PickSepServer(psrpc.PickSepServicer):
             scores = np.array(outputs[4][0])
             max_direction = scores.argmax()
             # max_score = scores.max()
-            pull_v = direction2vector(max_direction*360/16)
+            pull_v = angle2vector(max_direction*360/16)
             action = np.array([outputs[2][0][0], outputs[2][0][1], pull_v, outputs[3][0]])
         else: 
             action = np.array([outputs[1][0][0], outputs[3][0]]) # pick 

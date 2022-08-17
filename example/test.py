@@ -107,7 +107,7 @@ o3d.visualization.draw_geometries([mesh_frame, pcd])
 # gripper = Gripper(finger_w=finger_w, 
 #                     finger_h=finger_h, 
 #                     open_w=open_w, 
-#                     gripper_size=template_size)
+#                     tplt_size=template_size)
 
 # point = []
 # def on_click(event,x,y,flags,param):

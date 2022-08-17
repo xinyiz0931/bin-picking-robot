@@ -2,7 +2,7 @@
 A Python scripts to set the workspace size 
 Author: xinyi
 Date: 20210721
-Usage: `python example/example_calib_ws.py dist_margin -z pick_mid`
+Usage: `python example/example_calib_ws.py dist_margin -z pick_drop`
 ---
 Draw a rectangle for inside of the box. 
 If you are happy with the size, hit `enter` or `q`, the config file will be updated. 
@@ -30,12 +30,12 @@ def shape_selection(event, x, y, flags, param):
 parser = argparse.ArgumentParser()
 parser.add_argument("mode", choices=["dist", "margin", "all"])
 
-parser.add_argument("--zone", "-z", help="capture which zone",
-                    choices=["pick", "mid", "pick_mid"], default="pick")
+parser.add_argument("--zone", "-z", help="capture which zone? ",
+                    choices=["pick", "drop", "pick_drop"], default="pick")
 
 args = parser.parse_args()
 
-root_dir = os.path.abspath("./")
+root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 config_path = os.path.join(root_dir, "cfg/config.yaml")
 cfg = BinConfig(config_path)
 min_dist_id, max_dist_id = 1, 10
@@ -48,7 +48,7 @@ gray = pxc.getgrayscaleimg()
 image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 clone = image.copy()
 
-if "dist" in ws_mode and args.zone != "pick_mid":
+if "dist" in ws_mode and args.zone != "pick_drop":
     main_proc_print(f"Detect distances using marker for {args.zone}")
     pcd = pxc.getpcd()
     pcd_r = rotate_point_cloud(pcd)
@@ -74,6 +74,7 @@ if "dist" in ws_mode and args.zone != "pick_mid":
         notice_print(f"max_distance:  {max_distance}")
 
     cfg.data[args.zone]["distance"]["max"] = max_distance
+    # cfg.data[args.zone]["distance"]["max"] = max_distance + 5 
     cfg.data[args.zone]["distance"]["min"] = min_distance - 15
     cfg.write()
     main_proc_print("Successfully defined the max/min distance! ")
@@ -119,15 +120,15 @@ if "margin" in ws_mode:
         else:
             warning_print("Failed to define pick workspace size! ")
 
-    if "mid" in args.zone:
-        cv2.namedWindow("Define mid zone", cv2.WINDOW_NORMAL)
-        cv2.setMouseCallback("Define mid zone", shape_selection)
-        cv2.resizeWindow("Define mid zone", 1920, 1080)
+    if "drop" in args.zone:
+        cv2.namedWindow("Define drop zone", cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback("Define drop zone", shape_selection)
+        cv2.resizeWindow("Define drop zone", 1920, 1080)
 
         while True:
-            cv2.putText(image, "Drag the mouse for mid zone and click enter",
+            cv2.putText(image, "Drag the mouse for drop zone and click enter",
                         (80, 160), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
-            cv2.imshow("Define mid zone", image)
+            cv2.imshow("Define drop zone", image)
             key = cv2.waitKey(1) & 0xFF
             # press r to reset the window
             if key == ord("r"):
@@ -148,12 +149,12 @@ if "margin" in ws_mode:
             notice_print(f"right_margin:  {ref_point[1][0]}")
             notice_print(f"bottom_margin: {ref_point[1][1]}")
 
-            cfg.data["mid"]["margin"]["left"] = ref_point[0][0]
-            cfg.data["mid"]["margin"]["top"] = ref_point[0][1]
-            cfg.data["mid"]["margin"]["right"] = ref_point[1][0]
-            cfg.data["mid"]["margin"]["bottom"] = ref_point[1][1]
+            cfg.data["drop"]["margin"]["left"] = ref_point[0][0]
+            cfg.data["drop"]["margin"]["top"] = ref_point[0][1]
+            cfg.data["drop"]["margin"]["right"] = ref_point[1][0]
+            cfg.data["drop"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
-            main_proc_print("Successfully defined mid workspace size! ")
+            main_proc_print("Successfully defined drop workspace size! ")
         else:
-            warning_print("Failed to define mid workspace size! ")
+            warning_print("Failed to define drop workspace size! ")

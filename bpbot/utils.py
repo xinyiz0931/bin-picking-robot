@@ -499,6 +499,7 @@ def replace_bad_point(img, loc, bounding_size=20):
     x_p = max_xy[1][0] + x-bounding_size
     if gray[y_p, x_p] == gray[y,x]: return (x, y)
     # print(f"({x},{y}) ==> ({x_p},{y_p})")
+
     return (x_p, y_p)
 
 def detect_ar_marker(image, marker_type="DICT_5X5_100", show=True):

@@ -1,31 +1,34 @@
 import os
-from datetime import datetime as dt
-
-from bpbot.binpicking import *
+import argparse
+from bpbot.binpicking import * 
 from bpbot.config import BinConfig
 
 def main():
-    main_proc_print("Start! ")
-    # ========================== define path =============================
-    root_dir = os.path.abspath("./")
-    depth_dir = os.path.join(root_dir, "data/depth/")
-    img_path = os.path.join(root_dir, "data/depth/depth.png")
-    gs_path = os.path.join(root_dir, "data/depth/texture.png")
-    crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
-    config_path = os.path.join(root_dir, "cfg/config.yaml")
-    # ======================= get config info ============================
-    bincfg = BinConfig(config_path)
-    cfg = bincfg.config
-    # ======================== get depth img =============================
-    point_array = get_point_cloud(depth_dir, cfg['mid']['distance'],
-                                  cfg['width'],cfg['height'])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--zone", "-z", help="capture which zone? ", 
+                        choices=["pick", "drop"], default="pick")
+
+    args = parser.parse_args()
+
+    # ----------------- define path and config ---------------------
+    root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+    main_proc_print(f"Start scrip at {root_dir}! ")
     
-    # ======================== crop depth image =============================
-    crop = crop_roi(img_path, cfg['mid']['margin'])
+    depth_dir = os.path.join(root_dir, "data/depth/")
+    img_path = os.path.join(depth_dir, "depth.png") 
+    
+    bincfg = BinConfig()
+    cfg = bincfg.data
+    
+    # ---------------------- get depth img -------------------------
+    get_point_cloud(depth_dir, cfg[args.zone]["distance"],
+                                  cfg["width"],cfg["height"])
+    
+    # ---------------------- visualize -------------------------
+    crop = crop_roi(img_path, cfg[args.zone]["margin"])
     cv2.imshow("cropped image", crop)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    cv2.imwrite(crop_path, crop)
 
 if __name__ == "__main__":
 

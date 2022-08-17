@@ -44,22 +44,18 @@ class Graspability(object):
         return elem[0]
 
     def graspability_map(self, img, hand_open_mask, hand_close_mask):
-        """ generate graspability map and obtain all grasp candidates
-        Parameters
-        ----------
-        img : 3-channel image
-        hand_open_mask : 1-channel image
-        hand_close_mask : 1-channel image
+        """Generate graspability map
 
-        Returns
-        -------
-        candidates : list  
-            a list containing all possible grasp candidates, every candidate -> [g,x,y,z]
+        Args:
+            img (array): W x H x 3
+            hand_open_mask (array): 500 x 500 x 1
+            hand_close_mask (arrau): 500 x 500 x1
+
+        Returns:
+            grasps (array): N * [g_score, x, y, r(degree)]
         """
 
         candidates = []
-        count_a = 0
-        count_b = 0
         start_rotation = 0
         stop_rotation = 180
         start_depth = 0
@@ -78,28 +74,28 @@ class Graspability(object):
             hc_ = hand_open_mask.rotate(r)
             ht_rot.append(np.array(ht_.convert('L')))
             hc_rot.append(np.array(hc_.convert('L'))) 
-            print("xinyi | ", r)
-            plt.imshow(ht_.convert('L')), plt.show()
+            # print("xinyi | ", r)
+            # plt.imshow(ht_.convert('L')), plt.show()
         # print("Computing graspability map... ")
         # img = cv2.GaussianBlur(img,(3,3),0)
 
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         
-        for d in np.arange(start_depth, stop_depth, self.rotation_step):
-            count_a += 1
+        for d_idx, d in enumerate(np.arange(start_depth, stop_depth, self.rotation_step)):
+            # count_a += 1
             
             _, Wc = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
             _, Wt = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
 
-            count_b = 0
-            for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
-                Hc = hc_rot[count_b]
-                Ht = ht_rot[count_b]
+            # count_b = 0
+            for r_idx, r in enumerate(np.arange(start_rotation, stop_rotation, self.rotation_step)):
+                Hc = hc_rot[r_idx]
+                Ht = ht_rot[r_idx]
                 # plt.imshow(cv2.hconcat([Hc, Ht])), plt.show()
                 
                 C = cv2.filter2D(Wc, -1, Hc) #Hc
                 T = cv2.filter2D(Wt, -1, Ht) #Ht
-                count_b += 1
+                # count_b += 1
 
                 C_ = 255-C
                 comb = T & C_
@@ -113,10 +109,10 @@ class Graspability(object):
                 for i in range(res[:,0].shape[0]):
                     y = int(res[:,1][i])
                     x = int(res[:,0][i])
-                    z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
-                    angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
+                    # z = int(self.depth_step*(d_idx-1)+self.hand_depth/2)
+                    # angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
                     #candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
-                    candidates.append([G[y][x],x,y,z,angle])
+                    candidates.append([G[y][x],x,y,r])
         candidates.sort(key=self.takefirst, reverse=True)
         return candidates
     
@@ -418,7 +414,7 @@ class Graspability(object):
             _dismiss {int} -- distance that will not collide with the box (default: {25})
 
         Returns:
-            [list] -- a list of executable including [g,x,y,z,a,rot_step, depth_step]
+            [array] -- an array of sorted grasps [[x,y,r (degree)], ...]
         """
 
         candidates.sort(key=self.takefirst, reverse=True)
@@ -450,5 +446,5 @@ class Graspability(object):
             i += 1
             if k > n:
                 break
-        return grasps
+        return np.asarray(grasps)[:,1:]
 

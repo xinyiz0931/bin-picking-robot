@@ -1,26 +1,27 @@
 exp_mode: 0
 height: 1544
 width: 2064
+obj_height: 5
 author: xinyi
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
 pick:
   distance:
-    max: 1128
+    max: 1120
     min: 1074
   margin:
-    left: 1075
-    top: 430
-    right: 1528
-    bottom: 934
-mid:
+    left: 652
+    top: 358
+    right: 1080
+    bottom: 851
+drop:
   distance:
-    max: 1125
+    max: 1135
     min: 1074
   margin:
-    left: 1149
-    top: 407
-    right: 1617
-    bottom: 911
+    left: 1183
+    top: 366
+    right: 1651
+    bottom: 866
 graspability:
   rotation_step: 22.5
   depth_step: 10

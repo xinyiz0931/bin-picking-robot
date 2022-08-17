@@ -74,7 +74,7 @@ class PhxClient(object):
             gsarray[gsarray > 255] = 255
             return gsarray.astype(np.uint8)
         except grpc.RpcError as rpc_error:
-            print(f"Failed with {rpc_error.code()}")
+            print(f"[!] Failed with {rpc_error.code()}")
             return None
 
     def getdepthimg(self):
@@ -111,7 +111,7 @@ class PhxClient(object):
             pcd = self.stub.getpcd(pxmsg.Null())
             return np.frombuffer(pcd.points).reshape((-1,3))
         except grpc.RpcError as rpc_error:
-            print(f"Failed with {rpc_error.code()}")
+            print(f"[!] Failed with {rpc_error.code()}")
             return None 
 
     def getnormals(self):
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     pxc = pclt.PhxClient(host ="127.0.0.1:18300")
 
     pxc.triggerframe()
-    # pcd = pxc.getpcd()
+    pcd = pxc.getpcd()
     # img = pxc.getgrayscaleimg()
     # print(img.max())
     import cv2
