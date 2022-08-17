@@ -14,13 +14,21 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rpicksep.proto\"\x1a\n\x07ImgPath\x12\x0f\n\x07imgpath\x18\x01 \x01(\t\".\n\tActionCls\x12\x11\n\tpickorsep\x18\x01 \x01(\x05\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x0c\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x0c\x32\xbb\x01\n\x07PickSep\x12\'\n\rinfer_picknet\x12\x08.ImgPath\x1a\n.ActionCls\"\x00\x12\x32\n\x18infer_picknet_sepnet_pos\x12\x08.ImgPath\x1a\n.ActionCls\"\x00\x12#\n\x0cinfer_sepnet\x12\x08.ImgPath\x1a\x07.Action\"\x00\x12.\n\x14infer_picknet_sepnet\x12\x08.ImgPath\x1a\n.ActionCls\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rpicksep.proto\"\x12\n\x03Ret\x12\x0b\n\x03ret\x18\x01 \x01(\x0c\"\x1a\n\x07ImgPath\x12\x0f\n\x07imgpath\x18\x01 \x01(\t\".\n\tActionCls\x12\x11\n\tpickorsep\x18\x01 \x01(\x05\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x0c\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x0c\x32\xa6\x01\n\x07PickSep\x12!\n\rinfer_picknet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12,\n\x18infer_picknet_sepnet_pos\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12 \n\x0cinfer_sepnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12(\n\x14infer_picknet_sepnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x62\x06proto3')
 
 
 
+_RET = DESCRIPTOR.message_types_by_name['Ret']
 _IMGPATH = DESCRIPTOR.message_types_by_name['ImgPath']
 _ACTIONCLS = DESCRIPTOR.message_types_by_name['ActionCls']
 _ACTION = DESCRIPTOR.message_types_by_name['Action']
+Ret = _reflection.GeneratedProtocolMessageType('Ret', (_message.Message,), {
+  'DESCRIPTOR' : _RET,
+  '__module__' : 'picksep_pb2'
+  # @@protoc_insertion_point(class_scope:Ret)
+  })
+_sym_db.RegisterMessage(Ret)
+
 ImgPath = _reflection.GeneratedProtocolMessageType('ImgPath', (_message.Message,), {
   'DESCRIPTOR' : _IMGPATH,
   '__module__' : 'picksep_pb2'
@@ -46,12 +54,14 @@ _PICKSEP = DESCRIPTOR.services_by_name['PickSep']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _IMGPATH._serialized_start=17
-  _IMGPATH._serialized_end=43
-  _ACTIONCLS._serialized_start=45
-  _ACTIONCLS._serialized_end=91
-  _ACTION._serialized_start=93
-  _ACTION._serialized_end=117
-  _PICKSEP._serialized_start=120
-  _PICKSEP._serialized_end=307
+  _RET._serialized_start=17
+  _RET._serialized_end=35
+  _IMGPATH._serialized_start=37
+  _IMGPATH._serialized_end=63
+  _ACTIONCLS._serialized_start=65
+  _ACTIONCLS._serialized_end=111
+  _ACTION._serialized_start=113
+  _ACTION._serialized_end=137
+  _PICKSEP._serialized_start=140
+  _PICKSEP._serialized_end=306
 # @@protoc_insertion_point(module_scope)

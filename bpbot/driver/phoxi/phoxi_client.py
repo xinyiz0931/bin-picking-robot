@@ -26,7 +26,7 @@ class PhxClient(object):
         try: 
             self.stub.triggerframe(pxmsg.Null())
         except grpc.RpcError as rpc_error:
-            print(f'Failed with {rpc_error.code()}')
+            print(f'[!] Phoxi failed with {rpc_error.code()}')
     
     def saveplyauto(self):
         """
@@ -37,7 +37,7 @@ class PhxClient(object):
         try:
             self.stub.saveplyauto(pxmsg.Null())
         except grpc.RpcError as rpc_error:
-           print(f'Failed with {rpc_error.code()}') 
+            print(f'[!] Phoxi failed with {rpc_error.code()}')
     
     def saveply(self, save_dir):
         """
@@ -48,7 +48,7 @@ class PhxClient(object):
         try:
             self.stub.saveply(pxmsg.SaveDir(path=save_dir))
         except grpc.RpcError as rpc_error:
-            print(f'Failed with {rpc_error.code()}')
+            print(f'[!] Phoxi failed with {rpc_error.code()}')
 
     def gettextureimg(self):
         """
@@ -74,7 +74,7 @@ class PhxClient(object):
             gsarray[gsarray > 255] = 255
             return gsarray.astype(np.uint8)
         except grpc.RpcError as rpc_error:
-            print(f"[!] Failed with {rpc_error.code()}")
+            print(f"[!] Phoxi failed with {rpc_error.code()}")
             return None
 
     def getdepthimg(self):
@@ -111,7 +111,7 @@ class PhxClient(object):
             pcd = self.stub.getpcd(pxmsg.Null())
             return np.frombuffer(pcd.points).reshape((-1,3))
         except grpc.RpcError as rpc_error:
-            print(f"[!] Failed with {rpc_error.code()}")
+            print(f"[!] Phoxi failed with {rpc_error.code()}")
             return None 
 
     def getnormals(self):

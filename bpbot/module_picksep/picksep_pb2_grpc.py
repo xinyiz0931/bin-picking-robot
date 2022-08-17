@@ -17,22 +17,22 @@ class PickSepStub(object):
         self.infer_picknet = channel.unary_unary(
                 '/PickSep/infer_picknet',
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
-                response_deserializer=picksep__pb2.ActionCls.FromString,
+                response_deserializer=picksep__pb2.Ret.FromString,
                 )
         self.infer_picknet_sepnet_pos = channel.unary_unary(
                 '/PickSep/infer_picknet_sepnet_pos',
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
-                response_deserializer=picksep__pb2.ActionCls.FromString,
+                response_deserializer=picksep__pb2.Ret.FromString,
                 )
         self.infer_sepnet = channel.unary_unary(
                 '/PickSep/infer_sepnet',
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
-                response_deserializer=picksep__pb2.Action.FromString,
+                response_deserializer=picksep__pb2.Ret.FromString,
                 )
         self.infer_picknet_sepnet = channel.unary_unary(
                 '/PickSep/infer_picknet_sepnet',
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
-                response_deserializer=picksep__pb2.ActionCls.FromString,
+                response_deserializer=picksep__pb2.Ret.FromString,
                 )
 
 
@@ -69,22 +69,22 @@ def add_PickSepServicer_to_server(servicer, server):
             'infer_picknet': grpc.unary_unary_rpc_method_handler(
                     servicer.infer_picknet,
                     request_deserializer=picksep__pb2.ImgPath.FromString,
-                    response_serializer=picksep__pb2.ActionCls.SerializeToString,
+                    response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
             'infer_picknet_sepnet_pos': grpc.unary_unary_rpc_method_handler(
                     servicer.infer_picknet_sepnet_pos,
                     request_deserializer=picksep__pb2.ImgPath.FromString,
-                    response_serializer=picksep__pb2.ActionCls.SerializeToString,
+                    response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
             'infer_sepnet': grpc.unary_unary_rpc_method_handler(
                     servicer.infer_sepnet,
                     request_deserializer=picksep__pb2.ImgPath.FromString,
-                    response_serializer=picksep__pb2.Action.SerializeToString,
+                    response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
             'infer_picknet_sepnet': grpc.unary_unary_rpc_method_handler(
                     servicer.infer_picknet_sepnet,
                     request_deserializer=picksep__pb2.ImgPath.FromString,
-                    response_serializer=picksep__pb2.ActionCls.SerializeToString,
+                    response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -109,7 +109,7 @@ class PickSep(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/PickSep/infer_picknet',
             picksep__pb2.ImgPath.SerializeToString,
-            picksep__pb2.ActionCls.FromString,
+            picksep__pb2.Ret.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -126,7 +126,7 @@ class PickSep(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/PickSep/infer_picknet_sepnet_pos',
             picksep__pb2.ImgPath.SerializeToString,
-            picksep__pb2.ActionCls.FromString,
+            picksep__pb2.Ret.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -143,7 +143,7 @@ class PickSep(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/PickSep/infer_sepnet',
             picksep__pb2.ImgPath.SerializeToString,
-            picksep__pb2.Action.FromString,
+            picksep__pb2.Ret.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -160,6 +160,6 @@ class PickSep(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/PickSep/infer_picknet_sepnet',
             picksep__pb2.ImgPath.SerializeToString,
-            picksep__pb2.ActionCls.FromString,
+            picksep__pb2.Ret.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

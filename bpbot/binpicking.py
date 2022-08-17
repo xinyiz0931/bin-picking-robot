@@ -20,8 +20,8 @@ def capture_pc():
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
     pxc.triggerframe()
     pc = pxc.getpcd()
-    gs = pxc.getgrayscaleimg()
-    return pc.copy()
+    # gs = pxc.getgrayscaleimg()
+    return pc.copy() if pc is not None else None
 
 def pc2depth(pc, distance, width, height):
     """Convert point cloud to depth image
@@ -214,67 +214,61 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
     if bin == "pick":
         if is_bin_empty(img_path): 
             warning_print("Pick zone is empty! ")
-            return None
-        pickorsep_pz, res_pz = psc.infer_picknet(imgpath=img_path)
-        warning_print(f"Pick zone scores: {res_pz[2]:.3f}, {res_pz[3]:.3f}")
-        p_pick = [int(res_pz[0] * crop_w / 512), int(res_pz[1] * crop_h / 512)]
+            return
+        ret = psc.infer_picknet(imgpath=img_path)
+        if not ret:
+            return
+        p_pick = ret[1]
+        scores_pn = ret[-1]
+        warning_print(f"Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
         g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
-        # theta_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
-        # g_pick = [*p_pick, theta_pick]
         if g_pick is None:
             warning_print("Grasp detection failed for pick zone ...")
-            return None
-        else: 
-            if res_pz[2] >= 0.3 and res_pz[2] > res_pz[3]: return 0, g_pick
-            else: return 1, g_pick
-        # return pickorsep_pz, grasp_pz
+            return
+        # else: 
+        #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
+            # else: return 1, g_pick
+        return ret[0], g_pick
+
 
     elif bin == "drop": 
-        pickorsep_mz, res_mz = psc.infer_picknet_sepnet(imgpath=img_path)
-        # pickorsep_mz, action_mz = psc.infer_picknet(imgpath=img_path)
-        # detect if drop zone contains objects  
-        # if drop zone has objects? sr -> 6000 
-        # if (img > 40).sum() < 3000: return None 
-        # print((img>20).sum())
-
-        # check if the bin is empty 
-        # if (img > 20).sum() < 2000: return None 
         if is_bin_empty(img_path): 
             warning_print("Drop zone is empty! ")
-            return None
-        elif pickorsep_mz == 0:
-            warning_print(f"drop zone scores: {res_mz[2]:.3f}, {res_mz[3]:.3f}")
-            # if action_mz[2] < 0.35 and action_mz[3] < 0.35: return None
-            p_pick = [int(res_mz[0] * crop_w / 512), int(res_mz[1] * crop_h / 512)]
-            
-            g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
-            # theta_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
-            # g_pick = [*p_pick, theta_pick]
+            return
+        
+        ret = psc.infer_picknet_sepnet(img_path, sep_motion=True)
+        if not ret: 
+            return
 
+        if ret[0] == 0:
+            p_pick = ret[1]
+            scores_pn = ret[-1]
+            warning_print(f"Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+            g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
             if g_pick is None:
                 warning_print("Grasp detection failed for pick zone ...")
-                return None
+                return
             else:
-                return pickorsep_mz, g_pick
+                return ret[0], g_pick
         else: 
-            warning_print(f"drop zone scores: {res_mz[6]:.3f}, {res_mz[7]:.3f}")
-            p_pull = [int(res_mz[0] * crop_w / 512), int(res_mz[1] * crop_h / 512)]
+            scores_pn = ret[1]
+            p_pull = ret[2][0]
+            p_hold = ret[2][1]
+            v_pull = ret[3]
+            score_snd = ret[-1]
+            warning_print(f"Drop zone scores: {score_snd[0]:.3f}, {score_snd[1]:.3f}")
             g_pull = gripper_schunk.point_oriented_grasp(img, p_pull)
-            # theta_pull = gripper_schunk.point_oriented_grasp(img, p_pull)
             
-            p_hold = [int(res_mz[2] * crop_w / 512), int(res_mz[3] * crop_h / 512)]
             g_hold = gripper_smc.point_oriented_grasp(img, p_hold)
             g_hold[2] = 90 
-            # theta_hold = gripper_smc.point_oriented_grasp(img, p_hold)
 
-            v_pull = [res_mz[4], res_mz[5]]
             if g_hold is None: 
                 g_hold = [*p_hold, 90]
             if g_pull is not None: 
                 g_sep = [*g_pull, *g_hold, *v_pull]
-                return pickorsep_mz, g_sep 
-    return None
+                return ret[0], g_sep 
+    return
 
 def gen_motion_pickorsep(mf_path, pose_left, dest=None, pose_right=None, pulling=None):
     """ Generate motions in motion file format

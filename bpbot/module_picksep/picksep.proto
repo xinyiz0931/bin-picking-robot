@@ -1,13 +1,15 @@
 syntax = "proto3";
 
 service PickSep {
-    rpc infer_picknet (ImgPath) returns (ActionCls) {}
-    rpc infer_picknet_sepnet_pos (ImgPath) returns (ActionCls) {}
-    rpc infer_sepnet(ImgPath) returns (Action) {}
-    rpc infer_picknet_sepnet (ImgPath) returns (ActionCls) {}
+    rpc infer_picknet (ImgPath) returns (Ret) {}
+    rpc infer_picknet_sepnet_pos (ImgPath) returns (Ret) {}
+    rpc infer_sepnet(ImgPath) returns (Ret) {}
+    rpc infer_picknet_sepnet (ImgPath) returns (Ret) {}
 
 }
-
+message Ret {
+    bytes ret = 1;
+}
 message ImgPath {
     string imgpath = 1;
 }

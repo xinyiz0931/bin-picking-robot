@@ -10,55 +10,85 @@ class PickSepClient(object):
         self.stub = psrpc.PickSepStub(channel)
     
     def infer_picknet(self, imgpath):
-        """Infer grasp/action using PickNet
+        """
+        Args:
+            imgpath (str): path to one image
+
         Returns:
-            cls, res: cls -> 0/1, res -> [x, y, score_pick, score_sep]
+            pickorsep: 0->pick/1->sep
+            pick_sep_p: [x,y]
+            pn_score: [s_pick,s_sep]
         """
         try: 
-            outputs = self.stub.infer_picknet(psmsg.ImgPath(imgpath=imgpath))
-            return outputs.pickorsep, np.frombuffer(outputs.action, dtype=float)
+            out_buffer = self.stub.infer_picknet(psmsg.ImgPath(imgpath=imgpath))
         except grpc.RpcError as rpc_error: 
-            print(f"[!] PickSep failed with {rpc_error.code()}")
+            print(f"[!] PickNet failed with {rpc_error.code()}")
             return
+        out = np.frombuffer(out_buffer.ret, dtype=float)
+        return out[0].astype(int), out[1:3].astype(int), out[3:]
     
     def infer_sepnet(self, imgpath):
+        """
+        Args:
+            imgpath (str): path to one image
+
+        Returns:
+            pull_hold_p: [[x,y],[x,y]]
+            pull_v: [x,y]
+            snd_score: [s] * # directions
+        """
         try: 
-            outputs = self.stub.infer_sepnet(psmsg.ImgPath(imgpath=imgpath))
+            out_buffer = self.stub.infer_sepnet(psmsg.ImgPath(imgpath=imgpath))
             
-            return np.frombuffer(outputs.action, dtype=float) 
+            out = np.frombuffer(out_buffer.ret, dtype=float) 
+            return np.reshape(out[:4], (2,2),).astype(int), out[4:6], out[6:]
 
         except grpc.RpcError as rpc_error:
-            print(f"[!] PickSep failed with {rpc_error.code()}")
-
-    def infer_picknet_sepnet(self, imgpath):
-        """Infer grasp/action using both PickNet and SepNet
-        Returns:
-            cls: 0 -> pick, 1 -> sep
-            res: when cls=0 -> [p_pick_x,p_pick_y,score_pick,score_sep] 
-                 when cls=1 -> [p_pull_x,p_pull_y,p_hold_x,p_hold_y,v_pull_x,v_pull_y,scores]
-        """
-        try:
-            outputs = self.stub.infer_picknet_sepnet(psmsg.ImgPath(imgpath=imgpath))
-            return outputs.pickorsep, np.frombuffer(outputs.action, dtype=float)
-        except grpc.RpcError as rpc_error: 
-            print(f"[!] PickSep failed with {rpc_error.code()}")
+            print(f"[!] SepNet failed with {rpc_error.code()}")
             return
-    
-    def infer_picknet_sepnet_pos(self, imgpath):
 
-        outputs = self.stub.infer_picknet_sepnet_pos(psmsg.ImgPath(imgpath=imgpath))
-        return outputs.pickorsep, np.frombuffer(outputs.action, dtype=np.int0)
+    def infer_picknet_sepnet(self, imgpath, sep_motion):
+        """
+        Args:
+            imgpath (str): path to one image
+            sep_motion (bool): separation motions is needed?  
+
+        Returns:
+            if sep_motion: 
+                case 1. 0->pick => pickorsep: 0
+                                pick_sep_p: [x,y]
+                                pn_score: [s_pick,s_sep] 
+                case 2. 1->sep  => pickorsep: 1
+                                pn_score: [s_pick,s_sep] 
+                                pull_hold_p: [[x,y],[x,y]]
+                                pull_v: [x,y]
+                                snd_score: [s] * # directions
+            elif not sep_motion: 
+                pickorsep: 0->pick/1->sep
+                pick_sep_p: [x,y]
+                pn_score: [s_pick,s_sep] 
+        """
+        
+        pn_out = self.infer_picknet(imgpath)
+        if not pn_out:  
+            print("[!] PickNet + SepNet failed! ")
+            return
+        if sep_motion and pn_out[0] == 1:
+            sn_out = self.infer_sepnet(imgpath)
+            return pn_out[0], pn_out[-1], *sn_out
+        else:
+            return pn_out
 
 if __name__ == "__main__":
     import timeit
     start = timeit.default_timer()
     
     psc = PickSepClient()
-    # img_path = "D:\\Dataset\\sepnet\\test\\depth10.png"
-    img_path = "/home/hlab/bpbot/data/test/depth0.png"
-    # cls, grasp = psc.infer_picknet(imgpath=img_path)
-    # cls, grasp = psc.infer_picknet_sepnet(imgpath=img_path)
-    res = psc.infer_sepnet(imgpath=img_path)
-    
-    print(res)
+    img_path = "/home/hlab/bpbot/data/test/depth10.png"
+    # res = psc.infer_sepnet(imgpath=img_path)
+    # res = psc.infer_picknet(imgpath=img_path)
+    res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
+    for r in res:
+        print(r)
+
     print("Time cost: ", timeit.default_timer() - start)
