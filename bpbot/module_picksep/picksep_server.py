@@ -31,7 +31,6 @@ class PickSepServer(psrpc.PickSepServicer):
         }
         
         cfg = Config(config_type="infer", config_data=config_data)
-        self.save_dir = "/home/hlab/bpbot/data/depth/"
         self.inference = Inference(config=cfg)
      
     def infer_picknet(self, request, context): 
@@ -39,7 +38,7 @@ class PickSepServer(psrpc.PickSepServicer):
         Returns:
             array (5): [pickorsep, x, y score * 2]
         """
-        ret = self.inference.infer(data_dir=request.imgpath, infer_type="pick", save_dir=self.save_dir)
+        ret = self.inference.infer(data_dir=request.imgpath, infer_type="pick")
         pickorsep = ret[0][0]
         pn_points = np.array(ret[1][0])
         pn_scores = np.array(ret[2][0])
@@ -54,7 +53,7 @@ class PickSepServer(psrpc.PickSepServicer):
         Returns:
             array (6+#directions): [pull x,y, hold x,y, vector x,y + score * #directions]
         """
-        ret = self.inference.infer(data_dir=resquest.imgpath, infer_type="sep", save_dir=self.save_dir)
+        ret = self.inference.infer(data_dir=resquest.imgpath, infer_type="sep")
         snp_points = np.array(ret[0][0])
         snd_scores = np.array(ret[1][0])
         vector_idx = np.argmax(snd_scores)
