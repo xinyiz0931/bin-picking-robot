@@ -25,7 +25,7 @@ class TangleObjSke(object):
             jf.close()
             return graph
         except IOError:
-            warning_print("Not a json file")
+            warn_print("Not a json file")
 
     def write_obj_to_json(self, json_path, graph):
         """
@@ -34,10 +34,10 @@ class TangleObjSke(object):
         try:
             with open(json_path, 'w', encoding='utf-8') as jf:
                 json.dump(graph, jf, ensure_ascii=False)
-            main_proc_print("Wrote to json file")    
+            main_print("Wrote to json file")    
             jf.close()
         except IOError:
-            warning_print("Fail to write")
+            warn_print("Fail to write")
       
     def draw_obj_skeleton(self, graph, ax, color, alpha=1):
         """
@@ -184,7 +184,7 @@ class TangleObjSke(object):
             print(" ".join(str(r_) for r_ in c_rot_mat[2]), file=fp)
 
         fp.close()
-        main_proc_print("Wrote collision file... ")
+        main_print("Wrote collision file... ")
         return vertices
 
     def write_decomposed_to_wrl(self, vertices, wrl_path):
@@ -244,7 +244,7 @@ class TangleObjSke(object):
 	    # 1,  2,  6,  5, -1,
 
         fp.close()
-        main_proc_print("Wrote decomposed object to a wrl file... ")
+        main_print("Wrote decomposed object to a wrl file... ")
 
 def create_obj():
     """
@@ -339,6 +339,6 @@ if __name__ == "__main__":
     decompose_obj("st")
 
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))
     
 

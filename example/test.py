@@ -127,6 +127,6 @@ o3d.visualization.draw_geometries([mesh_frame, pcd])
 # angle_degree = gripper.point_oriented_grasp(img, [point[0], point[1]])
 
 # grasp = [[point[0], point[1], angle_degree*math.pi/180]]
-# drawn = draw_grasps(grasp, img_path, h_params, top_color=(0,255,0), top_only=True)
+# drawn = draw_grasp(grasp, img_path, h_params, top_color=(0,255,0), top_only=True)
 # plt.imshow(drawn), plt.show()
 # # cv2.imwrite(draw_path, crop_grasp_pz)

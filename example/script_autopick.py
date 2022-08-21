@@ -25,7 +25,7 @@ start = timeit.default_timer()
 
 root_dir = os.path.join(topdir, "ext/bpbot/")
 #root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-main_proc_print(f"Execute script at {root_dir} ")
+main_print(f"Execute script at {root_dir} ")
 
 img_pb_path = os.path.join(root_dir, "data/depth/depth_pick_zone.png")
 img_db_path = os.path.join(root_dir, "data/depth/depth_drop_zone.png")
@@ -44,7 +44,7 @@ def pick():
     success = False
     # ---------------------- get depth img --------------------------
     start_t = timeit.default_timer()
-    main_proc_print("Capture point cloud ... ")
+    main_print("Capture point cloud ... ")
     point_array = capture_pc()
     # if not point_array: return
 
@@ -72,7 +72,7 @@ def pick():
         
             pickorsep, g_pick = res_pickbin
             
-            crop_grasp = draw_grasps(g_pick, crop_pb, cfg["hand"]["schunk"], top_color=(0,255,0), top_only=True)
+            crop_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["schunk"], top_color=(0,255,0), top_only=True)
             cv2.imwrite(draw_path, crop_grasp)
 
             _, g_r_pick = transform_image_to_robot(g_pick, point_array, cfg, 
@@ -89,14 +89,14 @@ def pick():
             success = True
 
         else: 
-            warning_print("Pick bin detection failed! ")
+            warn_print("Pick bin detection failed! ")
     else:
         pickorsep, action = ret_dropbin
 
         if pickorsep == 0:
             notice_print("Untangled! drop zone to goal zone! ") 
             g_pick = action 
-            crop_grasp = draw_grasps(g_pick, crop_db, cfg["hand"]["schunk"], top_only=True)
+            crop_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["schunk"], top_only=True)
             cv2.imwrite(draw_path, crop_grasp)
 
             _, g_r_pick = transform_image_to_robot(g_pick, point_array, cfg, 
@@ -125,7 +125,7 @@ def pick():
             notice_print("Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
 
             # # draw grasp
-            # img_grasp = draw_grasps([g_pull,g_hold], crop_db.copy())
+            # img_grasp = draw_grasp([g_pull,g_hold], crop_db.copy())
             img_grasp = draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, crop_db.copy())
             cv2.imwrite(draw_path, img_grasp)
             gen_motion_pickorsep(mf_path, g_r_pull, pose_right=g_r_hold, pulling=[*v_r_pull, v_len])
@@ -139,14 +139,14 @@ def pick():
         plan_success = load_motionfile(mf_path, dual_arm=dual_arm)
         # second motion: down the gripper
         if plan_success[1] == False: 
-            warning_print(f"Approaching the target failed! ")
+            warn_print(f"Approaching the target failed! ")
 
         if dual_arm == True and plan_success.count(True) != len(plan_success):
-            warning_print(f"Dual arm planning failed! Single-arm replanning! ")
+            warn_print(f"Dual arm planning failed! Single-arm replanning! ")
             gen_motion_pickorsep(mf_path, g_r_pull, pulling=[*v_r_pull, v_len])
             plan_success = load_motionfile(mf_path, dual_arm=False)
 
-        main_proc_print(f"Motion planning succeed? ==> {plan_success.count(True) == len(plan_success)}")
+        main_print(f"Motion planning succeed? ==> {plan_success.count(True) == len(plan_success)}")
         
         if plan_success:
             nxt = NxtRobot(host='[::]:15005')
@@ -157,7 +157,7 @@ def pick():
             nxt.playMotionSeq(motion_seq) 
 
         else:
-            warning_print("Motion plannin failed ...")
+            warn_print("Motion plannin failed ...")
 
         # tdatetime = dt.now()
         # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
@@ -175,7 +175,7 @@ def pick():
         #     shutil.copyfile(f"{root_dir}/data/depth/out_depth_cropped_pick_zone.png", f"{root_dir}/exp/{tstr}/out_depth_pick_zone.png")
 
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))
 
 # --------------------------------------------------------------------------------
 if found_cnoid:

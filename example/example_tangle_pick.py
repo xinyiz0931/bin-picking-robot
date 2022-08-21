@@ -6,38 +6,51 @@ from bpbot.binpicking import *
 from bpbot.config import BinConfig
 
 def main():
-    root_dir = os.path.abspath("./")
-    config_path = os.path.join(root_dir, "cfg/config.yaml")
-
-    bincfg = BinConfig(config_path)
-    cfg = bincfg.data
-    img_path = os.path.join("./data", "test", "depth4.png")
-    # img_path = os.path.join("./data", "depth", "depth_cropped_2.png") 
-
-    img_edge, num_edge = detect_edge(img_path, cfg["tangle"])
-
-    _, emap = get_entanglement_map(img_path, cfg["tangle"])
-
+    h_params = {
+        "finger_height": 40,
+        "finger_width":  13, 
+        "open_width":    50
+    }
+    g_params = {
+        "rotation_step": 22.5, 
+        "depth_step":    50,
+        "hand_depth":    50
+    }
+    t_params = {
+        "compressed_size": 250,
+        "len_thld": 15,
+        "dist_thld": 3,
+        "sliding_size": 125,
+        "sliding_stride": 25
+    }
     
-    grasps, img_input= detect_grasp_point(n_grasp=10, 
-                                                    img_path=img_path, 
-                                                    g_params=cfg["graspability"], 
-                                                    h_params=cfg["hand"])
-    img_grasp = draw_grasps(grasps, img_path, cfg["hand"])
+    bincfg = BinConfig()
+    cfg = bincfg.data
+    # img_path = os.path.join("./data", "test", "depth4.png")
 
+    img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    img = cv2.imread(img_path)
+    img_edge, num_edge = detect_edge(img, t_params)
 
-    t_grasps, t_img_input = detect_nontangle_grasp_point(n_grasp=10, 
-                                                        img_path=img_path, 
-                                                        g_params=cfg["graspability"], 
-                                                        h_params=cfg["hand"],
-                                                        t_params=cfg["tangle"])
-    t_img_grasp = draw_grasps(t_grasps, img_path, cfg["hand"])
+    emap = get_entanglement_map(img, t_params)
 
+    grasps= detect_grasp(n_grasp=10, img_path=img_path, 
+                                    g_params=g_params, 
+                                    h_params=h_params)
+    img_grasp = draw_grasp(grasps, img.copy())
+
+    t_grasps = detect_nontangle_grasp(n_grasp=10, img_path=img_path, 
+                                    g_params=g_params, 
+                                    h_params=h_params,
+                                    t_params=t_params)
+                                    
+
+    t_img_grasp = draw_grasp(t_grasps, img.copy())
     # # visulization
     fig = plt.figure()
 
     fig.add_subplot(231)
-    plt.imshow(img_input, cmap='gray')
+    plt.imshow(img, cmap='gray')
     plt.title("Depth")
 
     fig.add_subplot(232)
@@ -46,8 +59,8 @@ def main():
     plt.title("Edge")
 
     fig.add_subplot(233)
-    plt.imshow(img_input)
-    plt.imshow(cv2.resize(emap, (img_input.shape[1], img_input.shape[0])), interpolation='bilinear', alpha=0.4, cmap='jet')
+    plt.imshow(img)
+    plt.imshow(cv2.resize(emap, (img.shape[1], img.shape[0])), interpolation='bilinear', alpha=0.4, cmap='jet')
     plt.title("Depth + EMap")
 
     fig.add_subplot(234)
@@ -63,7 +76,7 @@ def main():
     # grasp related
     fig.add_subplot(236)
     plt.imshow(t_img_grasp)
-    plt.imshow(cv2.resize(emap, (img_input.shape[1], img_input.shape[0])), interpolation='bilinear', alpha=0.3, cmap='jet')
+    plt.imshow(cv2.resize(emap, (img.shape[1], img.shape[0])), interpolation='bilinear', alpha=0.3, cmap='jet')
     plt.axis("off")
     plt.title("FGE + EMap (EMap shown)")
     
@@ -81,4 +94,4 @@ if __name__ == "__main__":
     main()
 
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))

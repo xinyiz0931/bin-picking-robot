@@ -19,12 +19,12 @@ colorama.init()
 # ============================ PRINT UTILS ============================
 
 
-def main_proc_print(main_proc_str):
+def main_print(proc_str):
     # (lambda x: cprint(x, 'white'))("[ MAIN PROCESS ] "+str(main_proc_str))
-    print("[ MAIN PROCESS ] "+str(main_proc_str))
+    print("[     MAIN     ] "+str(proc_str))
 
 
-def warning_print(warning_str):
+def warn_print(warning_str):
     (lambda x: cprint(x, 'red'))("[   WARNINGS   ] "+str(warning_str))
 
 

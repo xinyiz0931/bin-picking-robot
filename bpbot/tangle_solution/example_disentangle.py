@@ -45,7 +45,7 @@ def view(tc6d, pose, proj_ea=[0,0,0]):
                 ax2.scatter(cpoint[0],cpoint[2],color=cmap(other_index),zorder=2)
         undercrossings.append(under_num)
     min_under_idx = undercrossings.index(min(undercrossings))
-    main_proc_print(f"Grasp object index: {min_under_idx}")
+    main_print(f"Grasp object index: {min_under_idx}")
 
     # plot the view direction
     viewpoint = np.dot(rpy2mat(proj_view_ea), [0,1,0])
@@ -107,4 +107,4 @@ if __name__ == "__main__":
     main()
 
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))

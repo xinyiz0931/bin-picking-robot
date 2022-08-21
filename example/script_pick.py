@@ -28,7 +28,7 @@ start = timeit.default_timer()
 #root_dir = os.path.abspath("./")
 root_dir = os.path.join(topdir, "ext/bpbot")
 #root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-main_proc_print(f"Execute script at {root_dir} ")
+main_print(f"Execute script at {root_dir} ")
 
 img_path = os.path.join(root_dir, "data/depth/depth.png")
 crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
@@ -45,7 +45,7 @@ cfg = bincfg.data
 # ---------------------- get depth img -------------------------
 bin = "pick"
 
-main_proc_print("Capture point cloud ... ")
+main_print("Capture point cloud ... ")
 point_array = capture_pc()
 img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
 crop = crop_roi(img_path, cfg[bin]["margin"])
@@ -58,13 +58,13 @@ point_array /= 1000
 # point_array = pcd.points
 
 # ---------------------- compute grasps -------------------------
-main_proc_print("Compute grasps... ")
-grasps = detect_grasp_point(n_grasp=10, 
+main_print("Compute grasps... ")
+grasps = detect_grasp(n_grasp=10, 
                             img_path=crop_path, 
                             g_params=cfg['graspability'],
                             h_params=cfg["hand"]["schunk"])
 
-# grasps, img_input = detect_nontangle_grasp_point(n_grasp=10, 
+# grasps, img_input = detect_nontangle_grasp(n_grasp=10, 
 #                                 img_path=img_path, 
 #                                 margins=cfg["pick"]["margin"],
 #                                 g_params=cfg["graspability"], 
@@ -101,8 +101,8 @@ else:
     notice_print("Grasp (pick) : (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                  % (*best_grasp, *best_grasp_r)) 
 
-    # img_grasp = draw_grasps(grasps, crop.copy(),  cfg["hand"]["schunk"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
-    img_grasp = draw_grasps(grasps, crop.copy(), top_only=True, top_idx=best_grasp_idx)
+    # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["schunk"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
+    img_grasp = draw_grasp(grasps, crop.copy(), top_only=True, top_idx=best_grasp_idx)
     cv2.imwrite(draw_path, img_grasp)
 
 # ---------------------- execute on robot -------------------------
@@ -130,4 +130,4 @@ if found_cnoid:
         # cv2.imwrite(f"{root_dir}/exp/{tstr}/depth.png", img_input)
 
 end = timeit.default_timer()
-main_proc_print("Time: {:.2f}s".format(end - start))
+main_print("Time: {:.2f}s".format(end - start))

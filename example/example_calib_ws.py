@@ -49,15 +49,15 @@ image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 clone = image.copy()
 
 if "dist" in ws_mode and args.zone != "pick_drop":
-    main_proc_print(f"Detect distances using marker for {args.zone}")
+    main_print(f"Detect distances using marker for {args.zone}")
     pcd = pxc.getpcd()
     pcd_r = rotate_point_cloud(pcd)
     id_locs = detect_ar_marker(image.copy())
 
     if id_locs == {}:
-        warning_print("[*] No markers! Failed to define distances! ")
+        warn_print("[*] No markers! Failed to define distances! ")
     else:
-        main_proc_print(f"[*] Detected markers: {id_locs}")
+        main_print(f"[*] Detected markers: {id_locs}")
 
     if min_dist_id in id_locs.keys():
         w = image.shape[1]
@@ -77,10 +77,10 @@ if "dist" in ws_mode and args.zone != "pick_drop":
     # cfg.data[args.zone]["distance"]["max"] = max_distance + 5 
     cfg.data[args.zone]["distance"]["min"] = min_distance - 15
     cfg.write()
-    main_proc_print("Successfully defined the max/min distance! ")
+    main_print("Successfully defined the max/min distance! ")
 
 if "margin" in ws_mode:
-    main_proc_print(f"Generating workspace for {args.zone}")
+    main_print(f"Generating workspace for {args.zone}")
     if "pick" in args.zone:
         cv2.namedWindow("Define pick zone", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("Define pick zone", shape_selection)
@@ -116,9 +116,9 @@ if "margin" in ws_mode:
             cfg.data["pick"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
-            main_proc_print("Successfully defined pick workspace size! ")
+            main_print("Successfully defined pick workspace size! ")
         else:
-            warning_print("Failed to define pick workspace size! ")
+            warn_print("Failed to define pick workspace size! ")
 
     if "drop" in args.zone:
         cv2.namedWindow("Define drop zone", cv2.WINDOW_NORMAL)
@@ -155,6 +155,6 @@ if "margin" in ws_mode:
             cfg.data["drop"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
-            main_proc_print("Successfully defined drop workspace size! ")
+            main_print("Successfully defined drop workspace size! ")
         else:
-            warning_print("Failed to define drop workspace size! ")
+            warn_print("Failed to define drop workspace size! ")

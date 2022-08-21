@@ -144,7 +144,7 @@ class Gripper(object):
                 ho_line_ = ho_line.rotate(theta, center=(x,y))
                 return np.array(ho_line_.convert('L'))
             else:
-                warning_print("Wrong input hand type")
+                warn_print("Wrong input hand type")
                 return None
         cv2.imshow("window", np.array(ho_.convert('L')))
         cv2.waitKey()

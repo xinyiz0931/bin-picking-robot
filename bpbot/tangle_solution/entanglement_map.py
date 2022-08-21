@@ -12,25 +12,25 @@ from bpbot.utils import *
 from bpbot.tangle_solution import TopoCoor, LineDetection
 
 class EntanglementMap(object):
-    def __init__(self, length_thre, distance_thre, sliding_size, sliding_stride, 
+    def __init__(self, len_thld, dist_thld, sliding_size, sliding_stride, 
                  weight_w=0.8, weight_d=0.199, weight_c=0.001):
         """
         Initialize EntanglementMap class with following four parameters
         Arguments:
-            length_thre {int} -- length threshold when fitting line segments
-            distance_thre {int} -- distance threshold when fitting line segments
+            len_thld {int} -- length threshold when fitting line segments
+            dist_thld {int} -- distance threshold when fitting line segments
             sliding_size {int} -- sliding window size !Must larger than object
             sliding_stride {int} -- sliding window stride
         """
-        self.length_thre = length_thre
-        self.distance_thre = distance_thre
+        self.len_thld = len_thld
+        self.dist_thld = dist_thld
         self.sliding_size = sliding_size
         self.sliding_stride = sliding_stride
         self.weight_w = weight_w
         self.weight_d = weight_d
         self.weight_c = weight_c
 
-        self.ld = LineDetection(self.length_thre, self.distance_thre)
+        self.ld = LineDetection(self.len_thld, self.dist_thld)
         self.tc = TopoCoor()
 
     def entanglement_map(self, src):
@@ -53,7 +53,7 @@ class EntanglementMap(object):
         for y in range(0,height-self.sliding_size + 1, self.sliding_stride): 
             for x in range(0,width-self.sliding_size + 1, self.sliding_stride): 
                 cropped = src[y:y + self.sliding_size , x:x + self.sliding_size]
-                wmat, w, d = self.tc.topo_coor_from_img(cropped,self.length_thre,self.distance_thre,cmask=False)
+                wmat, w, d = self.tc.topo_coor_from_img(cropped,self.len_thld,self.dist_thld,cmask=False)
                 wmap = np.append(wmap, w)
                 dmap = np.append(dmap, d)
 
@@ -63,8 +63,7 @@ class EntanglementMap(object):
         dmap = (dmap.reshape(hnum, wnum)).astype(float)
         
         # calculate weights
-        wmat, w, d, cmask = self.tc.topo_coor_from_img(src,self.length_thre,self.distance_thre,cmask=True)
-        notice_print("w: {:.2}, d: {:.2}".format(w,d))
+        wmat, w, d, cmask = self.tc.topo_coor_from_img(src,self.len_thld,self.dist_thld,cmask=True)
         cmask = cv2.resize(cmask,(hnum, wnum))
         wmat /= (wmat.max() / 255.0) # real writhe value
         wmat_vis = np.uint8(wmat) # normalize to [0,255]
@@ -122,4 +121,5 @@ class EntanglementMap(object):
         bmap = bmap.reshape(hnum, wnum)
         return bmap
 
+        
     

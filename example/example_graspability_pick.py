@@ -6,6 +6,7 @@ def main():
 
     root_dir = os.path.abspath("./")
     img_path = os.path.join(root_dir, "data/test/depth4.png")
+    img_path = os.path.join(root_dir, "./roi.png")
     config_path = os.path.join(root_dir, "cfg/config.yaml")
 
     bincfg = BinConfig(config_path)
@@ -17,9 +18,9 @@ def main():
     # open_w = 48
     # tplt_size = 250
     # ============== DEPTH SETUP (500x500)==============
-    h_params = {"finger_height": 40,
-                "finger_width":  13, 
-                "open_width":    60}
+    h_params = {"finger_height": 30,
+                "finger_width":  12, 
+                "open_width":    40}
     # h_params = cfg["hand"] 
     g_params = {"rotation_step": 22.5, 
                 "depth_step":    50,
@@ -32,20 +33,20 @@ def main():
     # open_w = 43.2
     # tplt_size = 225
 
-    main_proc_print("Hand params: {}".format(h_params))
-    main_proc_print("FGE params: {}".format(g_params))
+    main_print("Hand params: {}".format(h_params))
+    main_print("FGE params: {}".format(g_params))
 
     # g_params = (rotation_step, depth_step, hand_depth)
     # h_params = (finger_w, finger_h, open_w, tplt_size)
     # g_params = cfg.g_params
     # h_params = cfg.h_params
 
-    grasps = detect_grasp_point(n_grasp=5, img_path=img_path, 
+    grasps = detect_grasp(n_grasp=5, img_path=img_path, 
                             g_params=g_params,
                             h_params=h_params)
     img = cv2.imread(img_path)
-    img_grasp = draw_grasps(grasps, img, h_params)
-    # grasps, img_input, img_grasp = detect_grasp_point(n_grasp=5, img_path=img_path, g_params=g_params, h_params=h_params)
+    img_grasp = draw_grasp(grasps, img, h_params)
+    # grasps, img_input, img_grasp = detect_grasp(n_grasp=5, img_path=img_path, g_params=g_params, h_params=h_params)
     # grasps, input_img, full_image = detect_target_oriented_grasp(10, ROOT_DIR, margins, g_params, h_params)
 
     # temporal printing
@@ -65,6 +66,6 @@ if __name__ == "__main__":
     main()
     
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))
 
     

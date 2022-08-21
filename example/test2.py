@@ -52,7 +52,7 @@ plt.show()
 # g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
 # print("[*] Best grasp: ", g_pick)
 # if g_pick is not None: 
-#     img = draw_grasps(g_pick, img)
+#     img = draw_grasp(g_pick, img)
 #     plt.imshow(img, cmap='gray')
 #     plt.show()
 # else:

@@ -33,7 +33,7 @@ gripper:
   open_width: 40
 tangle:
   compressed_size: 250
-  length_thre: 15
-  distance_thre: 3
+  len_thld: 15
+  dist_thld: 3
   sliding_size: 125
   sliding_stride: 25

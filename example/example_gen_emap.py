@@ -7,8 +7,8 @@ from bpbot.utils import *
 def main():
 
     # tunable parameter
-    length_thre = 15
-    distance_thre = 3
+    len_thld = 15
+    dist_thld = 3
     sliding_size = 125
     sliding_stride = 25
 
@@ -17,11 +17,11 @@ def main():
     img = cv2.imread(img_path)
     norm_img = cv2.resize(adjust_grayscale(img), (250,250))
 
-    ld = LineDetection(length_thre=length_thre,distance_thre=distance_thre)
+    ld = LineDetection(len_thld=len_thld,dist_thld=dist_thld)
     lines_2d, lines_3d, lines_num, drawn = ld.detect_line(norm_img, vis=True)
 
     # topology coordinate
-    em = EntanglementMap(length_thre, distance_thre, sliding_size, sliding_stride)
+    em = EntanglementMap(len_thld, dist_thld, sliding_size, sliding_stride)
     emap, wmat_vis,w,d = em.entanglement_map(norm_img)
 
     # control group
@@ -39,7 +39,7 @@ def main():
     fig.add_subplot(242)
     plt.imshow(drawn)
     drawn = cv2.cvtColor(drawn, cv2.COLOR_BGR2RGB) 
-    cv2.imwrite(f"./vision/res/distance_{distance_thre}.png", drawn)
+    cv2.imwrite(f"./vision/res/distance_{dist_thld}.png", drawn)
     plt.title("edges")
 
     # fig.add_subplot(243)
@@ -60,7 +60,7 @@ def main():
     extent = ax1.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     plt.title("entanglement map")
     # fig.savefig(f"./vision/res/emap_size_{sliding_size}.png", bbox_inches=extent)
-    # fig.savefig(f"./vision/res/emap_distance_{distance_thre}.png", bbox_inches=extent)
+    # fig.savefig(f"./vision/res/emap_distance_{dist_thld}.png", bbox_inches=extent)
 
     fig.add_subplot(245)
     plt.imshow(lmap, cmap='jet')
@@ -100,8 +100,8 @@ def main():
 def show_writhe_matrix():
     """Additional function for only showing edges and writhe matrix"""
     # tunable parameter
-    length_thre = 15
-    distance_thre = 2
+    len_thld = 15
+    dist_thld = 2
     sliding_size = 125
     sliding_stride = 25
     
@@ -112,12 +112,12 @@ def show_writhe_matrix():
     # norm_img = cv2.medianBlur(norm_img,5)
 
     ld = LineDetection()
-    lines_2d, lines_3d, lines_num, drawn = ld.detect_line(norm_img,length_thre, distance_thre,vis=True)
+    lines_2d, lines_3d, lines_num, drawn = ld.detect_line(norm_img,len_thld, dist_thld,vis=True)
     print("line num: ", lines_num)
 
 
-    em = EntanglementMap(length_thre, distance_thre,sliding_size, sliding_stride)
-    # tc = TopoCoor(length_thre, distance_thre)
+    em = EntanglementMap(len_thld, dist_thld,sliding_size, sliding_stride)
+    # tc = TopoCoor(len_thld, dist_thld)
     emap, wmat_vis,w,d = em.entanglement_map(norm_img)
 
     fig = plt.figure()
@@ -137,4 +137,4 @@ if __name__ == "__main__":
     # show_writhe_matrix()
 
     end = timeit.default_timer()
-    main_proc_print("Time: {:.2f}s".format(end - start))
+    main_print("Time: {:.2f}s".format(end - start))

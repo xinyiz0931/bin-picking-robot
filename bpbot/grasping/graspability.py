@@ -87,7 +87,6 @@ class Graspability(object):
             _, Wc = cv2.threshold(gray, d, 255, cv2.THRESH_BINARY)
             _, Wt = cv2.threshold(gray, d + self.hand_depth, 255, cv2.THRESH_BINARY)
 
-            # count_b = 0
             for r_idx, r in enumerate(np.arange(start_rotation, stop_rotation, self.rotation_step)):
                 Hc = hc_rot[r_idx]
                 Ht = ht_rot[r_idx]
@@ -95,7 +94,6 @@ class Graspability(object):
                 
                 C = cv2.filter2D(Wc, -1, Hc) #Hc
                 T = cv2.filter2D(Wt, -1, Ht) #Ht
-                # count_b += 1
 
                 C_ = 255-C
                 comb = T & C_
@@ -114,7 +112,7 @@ class Graspability(object):
                     #candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
                     candidates.append([G[y][x],x,y,r])
         candidates.sort(key=self.takefirst, reverse=True)
-        return candidates
+        return np.asarray(candidates)
     
     def width_adjusted_graspability_map(self, img, hand_open_mask, hand_close_mask, width_count):
         """ generate graspability map and obtain all grasp candidates
@@ -365,9 +363,9 @@ class Graspability(object):
 
             Wt = cv2.bitwise_and(merge_mask,_Wt)
             count_b = 0
-            for r in np.arange(start_rotation, stop_rotation, self.rotation_step):
-                Hc = hc_rot[count_b]
-                Ht = ht_rot[count_b]
+            for r_idx, r in enumerate(np.arange(start_rotation, stop_rotation, self.rotation_step)):
+                Hc = hc_rot[r_idx]
+                Ht = ht_rot[r_idx]
 
                 HtMask = np.array(Ht/255000, dtype="float32")
                 T = cv2.filter2D(Wt, -1, HtMask) 
@@ -382,11 +380,8 @@ class Graspability(object):
 
                 """Sample points with highest graspability"""
                 _,maxG,_,maxLoc = cv2.minMaxLoc(G)
-                x = maxLoc[0]
-                y = maxLoc[1]
-                z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
-                angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
-                candidates.append([maxG, x, y, z, angle, count_a, count_b])
+                candidates.append([maxG, maxLoc[0], maxLoc[1], r])
+                
                 
                 """Sample points with largest graspability area"""
                 # ret, thresh = cv2.threshold(comb, 122,255, cv2.THRESH_BINARY)
@@ -396,12 +391,11 @@ class Graspability(object):
                 #     y = int(res[:,1][i])
                 #     x = int(res[:,0][i])
                 #     z = int(self.depth_step*(count_a-1)+self.hand_depth/2)
-                #     angle = (start_rotation+self.rotation_step*(count_b-1))*(math.pi)/180
-                #     candidates.append([G[y][x], x, y, z, angle, count_a, count_b])
+                #     candidates.append([G[y][x], x, y, z, r])
 
         return candidates
 
-    def grasp_detection(self, candidates, w, h, n=10, _dismiss=50, _distance=50):
+    def grasp_ranking(self, candidates, w, h, n=10, _dismiss=50, _distance=50):
         """Detect grasp with graspability
 
         Arguments:
@@ -416,15 +410,13 @@ class Graspability(object):
         Returns:
             [array] -- an array of sorted grasps [[x,y,r (degree)], ...]
         """
-
-        candidates.sort(key=self.takefirst, reverse=True)
+        # candidates.sort(key=self.takefirst, reverse=True)
         i = 0
         k = 0
         grasps = []
         # print("Computing grasps! ")
         if len(candidates) < n:
             n = len(candidates)
-        # while (len(candidates) and i <= n):
         while (len(candidates) and i < n):
             x = candidates[i][1]
             y = candidates[i][2]
@@ -446,5 +438,8 @@ class Graspability(object):
             i += 1
             if k > n:
                 break
+        if grasps == []: 
+            warn_print("No valid grasps after ranking! ")
+            return grasps 
         return np.asarray(grasps)[:,1:]
 

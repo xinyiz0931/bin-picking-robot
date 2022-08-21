@@ -14,15 +14,15 @@ import matplotlib.pyplot as plt
 from bpbot.utils import *
 
 class LineDetection(object):
-    def __init__(self, length_thre=15, distance_thre=3):
+    def __init__(self, len_thld=15, dist_thld=3):
         # FLD instance, important in accuracy
-        self.length_thre = length_thre
-        self.distance_thre = distance_thre
+        self.len_thld = len_thld
+        self.dist_thld = dist_thld
         self.canny_aperture_size = 3
         self.canny_thre1= 50
         self.canny_thre2 = 50
 
-    def detect_line(self, src, length_thre=None, distance_thre=None, vis=False):
+    def detect_line(self, src, len_thld=None, dist_thld=None, vis=False):
         """
         FLD detector with depth information from depth images
         * If source image has no lines, return all None
@@ -37,11 +37,11 @@ class LineDetection(object):
                                   -- if vis=False, not return drawn
         """
         gray = cv2.cvtColor(src, cv2.COLOR_RGB2GRAY)
-        if length_thre is None: length_thre = self.length_thre
-        if distance_thre is None: distance_thre = self.distance_thre
+        if len_thld is None: len_thld = self.len_thld
+        if dist_thld is None: dist_thld = self.dist_thld
 
-        fld = cv2.ximgproc.createFastLineDetector(length_thre,
-                                                  distance_thre,
+        fld = cv2.ximgproc.createFastLineDetector(len_thld,
+                                                  dist_thld,
                                                   self.canny_thre1,
                                                   self.canny_thre2,
                                                   self.canny_aperture_size)
@@ -209,7 +209,7 @@ class TopoCoor(object):
 
         return writhe_matrix, writhe, density
 
-    def topo_coor_from_img(self, src, length_thre, distance_thre, cmask=False):
+    def topo_coor_from_img(self, src, len_thld, dist_thld, cmask=False):
         """
         Given an image, output the topology coordinates
         Parameters:
@@ -221,7 +221,7 @@ class TopoCoor(object):
             center_mask {array} -- (same size as src) if_center_mask is True
         """
         ld = LineDetection()
-        lines_2d, lines_3d, lines_num = ld.detect_line(src, length_thre, distance_thre)
+        lines_2d, lines_3d, lines_num = ld.detect_line(src, len_thld, dist_thld)
         if lines_num is None:
             if cmask is False:
                 return None, None ,None

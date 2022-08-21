@@ -28,7 +28,7 @@ start = timeit.default_timer()
 #root_dir = os.path.abspath("./")
 root_dir = os.path.join(topdir, "ext/bpbot")
 #root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-main_proc_print(f"Start at {root_dir} ")
+main_print(f"Start at {root_dir} ")
 
 depth_dir = os.path.join(root_dir, "data/depth/")
 
@@ -122,7 +122,7 @@ if found_cnoid:
     nxt = NxtRobot(host='[::]:15005')
     motion_seq = get_motion()
     num_seq = int(len(motion_seq)/20)
-    main_proc_print(f"Total {num_seq} motion sequences! ")
+    main_print(f"Total {num_seq} motion sequences! ")
     motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
     nxt.playMotionSeq(motion_seq)
@@ -143,4 +143,4 @@ if found_cnoid:
 # # ======================= Record the data ===================s=========
 
 # end = timeit.default_timer()
-# main_proc_print("Time: {:.2f}s".format(end - start))
+# main_print("Time: {:.2f}s".format(end - start))
