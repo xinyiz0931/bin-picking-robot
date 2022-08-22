@@ -26,7 +26,7 @@ class PickSepServer(psrpc.PickSepServicer):
                 "pick_ckpt_folder": ["try8","model_epoch_10.pth"],
                 # "pick_ckpt_folder": ["try8","model_epoch_10.pth"],
                 "sepp_ckpt_folder": ["try_38","model_epoch_4.pth"],
-                "sepd_ckpt_folder": ["try_sepnet_d_vector_eight","model_epoch_2.pth"]
+                "sepd_ckpt_folder": ["try_sepnet_d_vector_eight","model_epoch_20.pth"]
             }
         }
         

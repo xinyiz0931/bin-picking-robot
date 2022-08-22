@@ -84,16 +84,14 @@ if __name__ == "__main__":
     # start = timeit.default_timer()
     
     psc = PickSepClient()
-    # img_path = "/home/hlab/bpbot/data/test/depth10.png"
-    img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
-    # res = psc.infer_sepnet(imgpath=img_path)
-    res = psc.infer_picknet(imgpath=img_path)
+    img_path = "/home/hlab/bpbot/data/test"
+    # img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    res = psc.infer_sepnet(imgpath=img_path)
+    # res = psc.infer_picknet(imgpath=img_path)
     # res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
     x, y  = res[1]
-    g_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\grasp.txt"
-    with open(g_path, "w") as f:
-        print("%d %d" % (x,y), file=f)
-    # for i, r in enumerate(res):
-    #     print(i, "=>", r)
+
+    for i, r in enumerate(res):
+        print(i, "=>", r)
 
     # print("Time cost: ", timeit.default_timer() - start)
