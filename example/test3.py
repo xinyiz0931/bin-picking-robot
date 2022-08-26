@@ -3,45 +3,41 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-def kmeans_seg(img):
-    plt.subplot(121),plt.imshow(img,'gray'),plt.title('original')
-    plt.xticks([]),plt.yticks([])
+from tangle.dataset import SepDataset
+from tangle.utils import *
+from tangle import Config
 
-    #change img(2D) to 1D
-    img1 = img.reshape((img.shape[0]*img.shape[1],1))
-    img1 = np.float32(img1)
 
-    #define criteria = (type,max_iter,epsilon)
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,10,1.0)
+cfg = Config(config_type="train")
+# data_folder = cfg.data_dir
 
-    #set flags: hou to choose the initial center
-    #---cv2.KMEANS_PP_CENTERS ; cv2.KMEANS_RANDOM_CENTERS
-    flags = cv2.KMEANS_RANDOM_CENTERS
-    flags = cv2.KMEANS_PP_CENTERS
-    # apply kmenas
-    compactness,labels,centers = cv2.kmeans(img1,2,None,criteria,10,flags)
+# data_inds = random_inds(10,1000)
+data_folder = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEightAugment"
 
-    img2 = labels.reshape((img.shape[0],img.shape[1]))
-    plt.subplot(122),plt.imshow(img2,'gray'),plt.title('kmeans')
-    plt.xticks([]),plt.yticks([])
-    plt.show()
-    return img2
-
-def canny_edge(img):
-    return cv2.Canny(img, 20, 90)
-root_dir = "/home/hlab/bpbot" 
-img_path = os.path.join(root_dir, "data/depth/depth_cropped_pick_zone.png")
-pickimg = cv2.imread(img_path,0)
-img_path = os.path.join(root_dir, "data/depth/depth_cropped_pick_empty.png")
-pickimg_e = cv2.imread(img_path,0)
-
-res = canny_edge(pickimg)
-res_e = canny_edge(pickimg_e)
-
-plt.subplot(221),plt.imshow(pickimg)
-plt.subplot(222),plt.imshow(res)
-plt.subplot(223),plt.imshow(pickimg_e)
-plt.subplot(224),plt.imshow(res_e)
-plt.show()
-
-print(f"Edge: (obj) {np.count_nonzero(res)}, (empty) {np.count_nonzero(res_e)}")
+_search = "C:\\Users\\xinyi\\Documents\\XYBin_Collected\\tangle_scenes_relabel\\U\\**\\depth.png"
+_dest = "C:\\Users\\xinyi\\Documents\\XYBin_Collected\\tangle_scenes_relabel\\_vis"
+import glob
+import shutil
+num_f = 0
+num_p = 0
+for d in glob.glob(_search, recursive=True):
+    j_path = os.path.join(*os.path.split(d)[:-1], "sln.json")
+    print(os.path.exists(j_path))
+    if os.path.exists(j_path): 
+        fp = open(j_path, 'r+')
+        j_file = json.loads(fp.read())
+        num_f += 1
+        if "pull" in j_file and "hold" in j_file:
+            
+            new_d = os.path.join(_dest, d.split('\\')[-2]+'.png')
+            num_p += 1 
+            print(new_d, j_file["pull"], j_file["hold"])
+            # img = cv2.imread(d)
+            # cv2.circle(img, j_file["pull"], 7, (0,255,0), -1)
+            # cv2.circle(img, j_file["hold"], 7, (0,255,255), 2)
+            # cv2.imwrite(new_d, img)
+            
+print("exist: ", num_f)
+print("point: ", num_p)
+            # print(d, '->', new_d)
+        #     shutil.copyfile(d, new_d)

@@ -84,8 +84,10 @@ if __name__ == "__main__":
     # start = timeit.default_timer()
     
     psc = PickSepClient()
-    img_path = "/home/hlab/bpbot/data/test"
-    # img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    # img_path = "/home/hlab/bpbot/data/test"
+    img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    img_path = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEight\\images\\000394.png"
+    # img_path = "D:\\Code\\bpbot\\data\\test\\depth20.png"
     res = psc.infer_sepnet(imgpath=img_path)
     # res = psc.infer_picknet(imgpath=img_path)
     # res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
