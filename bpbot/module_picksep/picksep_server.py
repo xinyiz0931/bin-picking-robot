@@ -18,6 +18,7 @@ class PickSepServer(psrpc.PickSepServicer):
             {
                 "infer_type": "pick_sep",
                 "backbone": "resnet50",
+                "sep_type": "spatial", 
                 "mode": "test",
                 "use_cuda": True,
                 "batch_size": 1,
@@ -25,8 +26,13 @@ class PickSepServer(psrpc.PickSepServicer):
                 "img_width": 512,
                 "pick_ckpt_folder": ["try8","model_epoch_10.pth"],
                 # "pick_ckpt_folder": ["try8","model_epoch_10.pth"],
-                "sepp_ckpt_folder": ["try_38","model_epoch_4.pth"],
-                "sepd_ckpt_folder": ["try_sepnet_d_vector_eight","model_epoch_20.pth"]
+                # "sepp_ckpt_folder": ["try_38","model_epoch_4.pth"],
+                # "sepd_ckpt_folder": ["try_sepnet_d_vector_eight","model_epoch_20.pth"]
+                "sepp_ckpt_folder": ["try_refine","model_epoch_11.pth"],
+                "sepd_ckpt_folder_v": ["try_sepnet_vector_eight","model_epoch_12.pth"],
+                "sepd_ckpt_folder_v": ["try_SR","model_epoch_99.pth"],
+                "sepd_ckpt_folder_s": ["try_action_map","model_epoch_25.pth"]
+
             }
         }
         
@@ -40,8 +46,8 @@ class PickSepServer(psrpc.PickSepServicer):
         """
         ret = self.inference.infer(data_dir=request.imgpath, infer_type="pick")
         pickorsep = ret[0][0]
-        pn_points = np.array(ret[1][0])
-        pn_scores = np.array(ret[2][0])
+        pn_points = ret[1][0]
+        pn_scores = ret[2][0]
 
         l = np.concatenate([[pickorsep], pn_points[pickorsep], pn_scores]) 
         l2bytes = np.ndarray.tobytes(l)
@@ -54,12 +60,14 @@ class PickSepServer(psrpc.PickSepServicer):
             array (6+#directions): [pull x,y, hold x,y, vector x,y + score * #directions]
         """
         ret = self.inference.infer(data_dir=resquest.imgpath, infer_type="sep")
-        snp_points = np.array(ret[0][0])
-        snd_scores = np.array(ret[1][0])
-        vector_idx = np.argmax(snd_scores)
+        snp_points = ret[0][0]
+        snd_vector = ret[1][0]
+        snd_scores = ret[2][0]
+        # snd_scores = np.array(ret[1][0])
+        # vector_idx = np.argmax(snd_scores)
         
-        vector = angle2vector(vector_idx * 360 / len(snd_scores))
-        l = np.concatenate([snp_points.ravel(), vector, snd_scores.ravel()])
+        # vector = angle2vector(vector_idx * 360 / len(snd_scores))
+        l = np.concatenate([snp_points.ravel(), snd_vector.ravel(), snd_scores.ravel()])
          
         l2bytes = np.ndarray.tobytes(l)
         return psmsg.Ret(ret=l2bytes)

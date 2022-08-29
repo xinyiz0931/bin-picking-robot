@@ -713,7 +713,7 @@ def rotate_3d(p, R, origin=(0, 0, 0)):
     return np.squeeze((R @ (p.T - o.T) + o.T).T)
 
 
-def rotate_pixel(h, w, loc, angle, center=None, scale=1.0, cropped=True):
+def rotate_pixel(loc, angle, w, h, center=None, scale=1.0, cropped=True):
     x, y, = loc
 
     if center is None:
@@ -722,7 +722,7 @@ def rotate_pixel(h, w, loc, angle, center=None, scale=1.0, cropped=True):
 
     if cropped == True:
         rot_loc = np.dot(M, [x, y, 1])
-        return rot_loc
+        return rot_loc.astype(int)
     else:
         cosM = np.abs(M[0][0])
         sinM = np.abs(M[0][1])
@@ -734,8 +734,8 @@ def rotate_pixel(h, w, loc, angle, center=None, scale=1.0, cropped=True):
         M[1][2] += (new_h/2) - center[1]
 
         rot_loc = np.dot(M, [x, y, 1])
-
-        return rot_loc*(h/new_h)
+        
+        return rot_loc*(h/new_h).astype(int)
 
 
 def rotate_point(loc, angle, center=None, scale=1.0):

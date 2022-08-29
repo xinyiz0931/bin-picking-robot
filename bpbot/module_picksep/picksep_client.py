@@ -80,20 +80,20 @@ class PickSepClient(object):
             return pn_out
 
 if __name__ == "__main__":
-    # import timeit
-    # start = timeit.default_timer()
+    import timeit
+    start = timeit.default_timer()
     
     psc = PickSepClient()
-    # img_path = "/home/hlab/bpbot/data/test"
-    img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
-    img_path = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEight\\images\\000394.png"
+    img_path = "/home/hlab/Desktop/predicting/tmp1.png"
+    # img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    # img_path = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEight\\images\\000394.png"
     # img_path = "D:\\Code\\bpbot\\data\\test\\depth20.png"
     res = psc.infer_sepnet(imgpath=img_path)
     # res = psc.infer_picknet(imgpath=img_path)
-    # res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
+    res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
     x, y  = res[1]
 
     for i, r in enumerate(res):
         print(i, "=>", r)
-
-    # print("Time cost: ", timeit.default_timer() - start)
+    
+    print("Time cost: ", timeit.default_timer() - start)
