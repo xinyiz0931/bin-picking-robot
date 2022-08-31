@@ -75,6 +75,7 @@ class TangleObjSke(object):
 
     def calc_center_of_mass(self, graph):
         node = np.array(graph["node"])
+        print(node.shape)
         edge = graph["edge"]
         edge_num = len(edge)
         vertice_sum = np.zeros(3)
@@ -140,25 +141,6 @@ class TangleObjSke(object):
             ncx, ncy, ncz = np.dot(c_rot_mat,[cx, cy, cz])
             ncp = np.dot(c_rot_mat,[cx, cy, cz])
 
-            # vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]-ncz])
-            # vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]-ncz])
-            # vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]-ncz])
-            # vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]-ncz])
-            
-            # vertex.append([cp[0]-ncx, cp[1]+ncy, cp[2]+ncz])
-            # vertex.append([cp[0]-ncx, cp[1]-ncy, cp[2]+ncz])
-            # vertex.append([cp[0]+ncx, cp[1]-ncy, cp[2]+ncz])
-            # vertex.append([cp[0]+ncx, cp[1]+ncy, cp[2]+ncz])
-
-            # vertex.append([cp[0]-cx, cp[1]+cy, cp[2]-cz])
-            # vertex.append([cp[0]-cx, cp[1]-cy, cp[2]-cz])
-            # vertex.append([cp[0]+cx, cp[1]-cy, cp[2]-cz])
-            # vertex.append([cp[0]+cx, cp[1]+cy, cp[2]-cz])
-            # vertex.append([cp[0]-cx, cp[1]+cy, cp[2]+cz])
-            # vertex.append([cp[0]-cx, cp[1]-cy, cp[2]+cz])
-            # vertex.append([cp[0]+cx, cp[1]-cy, cp[2]+cz])
-            # vertex.append([cp[0]+cx, cp[1]+cy, cp[2]+cz])
-            
             vertex.append(np.dot(c_rot_mat,[0-cx, 0+cy, 0-cz])+cp)
             vertex.append(np.dot(c_rot_mat,[0-cx, 0-cy, 0-cz])+cp)
             vertex.append(np.dot(c_rot_mat,[0+cx, 0-cy, 0-cz])+cp)
@@ -253,24 +235,23 @@ def create_obj():
     3. Decompose this object using cubes and write to the collision.txt file
     4. Visualize
     """
-    shape = "ed"
+    shape = "sn"
     obj_json_path = os.path.join("./objmodel", f"skeleton_{shape}.json")
     collision_path = os.path.join("./objmodel", f"collision_{shape}.txt")
     wrl_path = os.path.join("./objmodel", f"cube_{shape}.wrl")
 
     # 1. ===================================================
     obj_ske = {}
+    # e.g. 
     # obj_ske["node"] = [[-28, 20, 0], [-28, 49, 0], [11, 49, 0], [11, -49, 0], [11, -49, 39], [11, -20, 39]]
-    obj_ske["node"] = [[0,-79,0],[0,-19,0],[-9.5,-16.454,0],[-16.454,-9.5,0],[-19,0,0],[-16.454,9.5,0],[-9.5,16.454,0],[0,19,0],[9.5,16.454,0],[16.454,9.5,0],[19,0,0],[16.454,-9.5,0],[9.5,-16.454,0]]
-    obj_ske["edge"] = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,1]]
     # obj_ske["edge"] = [[0,1],[1,2],[2,3],[3,4],[4,5]]
-    # obj_ske["node"] = [[-40,-30,0], [-37.321, -40, 0], [-30, -47.321, 0], [-20, -50, 0],
-    #                    [-10,-47.321, 0], [-2.679,-40,0],[0,-30,0],
-    #                    [0, 40, 0], [0, 40, 30]]
-    # obj_ske["edge"] = [[0,1], [1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]]
+    obj_ske["node"] = [[40,30,0],[37.321,40,0],[30,47.321,0],[20,50,0],[10,47.321,0],[2.679,40,0],[0,30,0],
+                       [0,-30,0],[0,-40,2.679],[0,-47.321,10],[0,-50,20],[0,-47.321,30],[0,-40,37.321],[0,-30,40]]
+    obj_ske["edge"] = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]]
+    
     obj_ske["section"] = {}
     obj_ske["section"]["shape"] = "circle"
-    obj_ske["section"]["size"] = 8
+    obj_ske["section"]["size"] = 7
     # graph["section"]["shape"] = "rectangle"
     # graph["section"]["size"] = [2, 10]
 
@@ -281,6 +262,8 @@ def create_obj():
     # 3. ===================================================
     center = tok.calc_center_of_mass(obj_ske)
     vertices=tok.decompose_obj_to_cube(obj_ske, collision_path)
+    # optional: write vertices to the vertex_*.txt
+    tok.write_decomposed_to_wrl(vertices, wrl_path)
 
     # 4. ===================================================
     fig = plt.figure()
@@ -329,14 +312,18 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     tok = TangleObjSke()
-
-    # tok.show_ply(ply_path="./objmodel\\model_cc.ply")
+    import glob
+    for m in glob.glob("./objmodel\\model_cc*"):
+        print(m)
+        tok.show_ply(ply_path=m)
     
     # create_obj()
     # shapes = ["cc", "cr", "e", "eb", "f", "j", "sc", "sr", "st", "u"]
     # for shape in shapes:
     #     decompose_obj(shape)
-    decompose_obj("st")
+    # decompose_obj("st")
+    
+    # create_obj()
 
     end = timeit.default_timer()
     main_print("Time: {:.2f}s".format(end - start))

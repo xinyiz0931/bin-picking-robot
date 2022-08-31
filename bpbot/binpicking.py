@@ -412,8 +412,8 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
                                          hand_close_mask=hand_close_mask)
     # candidates = method.combined_graspability_map(img, hand_open_mask, hand_close_mask, emap)
     # roi -> complete depth map
-    candidates[:,1:3] += roi_left_top
     if candidates != []:
+        candidates[:,1:3] += roi_left_top
         # ranking grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
         main_print(f"Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
