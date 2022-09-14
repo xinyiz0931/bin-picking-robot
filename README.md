@@ -17,7 +17,7 @@ e.g. executing files in `examples`
 ```
 $ python example/example_test_graspability.py
 ```
-## Entanglement Map: A Topological Solution of Entanglement for Complex-shaped Parts in Robotic Bin-picking
+# A Topological Solution of Entanglement for Complex-shaped Parts in Robotic Bin-picking
 
 [Xinyi Zhang](http://xinyiz0931.github.io), [Keisuke Koyama](https://kk-hs-sa.website/), Yukiyasu Domae, [Weiwei Wan](https://wanweiwei07.github.io/) and [Kensuke Harada](https://www.roboticmanipulation.org/members2/kensuke-harada/)    
 Osaka University     
