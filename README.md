@@ -27,7 +27,7 @@ IEEE International Conference on Automation Science and Engineering (CASE 2021)
 
 ## Overview
 
-![teaser](https://xinyiz0931.github.io/images/project_emap_teaser.jpg)
+<img src="https://xinyiz0931.github.io/images/project_emap_teaser.jpg" width="60%" >
 
 This paper addresses the problm of picking up only one object at a time avoiding any entanglement in bin-picking. To cope with a difficult case where the complex-shaped objects are heavily entangled together, we propose a topology-based method that can generate non-tangle grasp positions on a single depth image. The core technique is the entanglement map, which is a feature map to measure the entanglement possibilities obtained from the input image. We use an entanglement map to select probable regions containing graspable objects. The optimum grasping pose is detected from the selected regions considering the collision between robot hand and objects. Experimental results show that our analytic method provides a more comprehensive and intuitive observation of the entanglement and exceeds previous learning-based work in success rates. Especially, our topology-based method does not rely on any object models or time-consuming training process, so that it can be easily adapted to more complex bin-picking scenes.
 
