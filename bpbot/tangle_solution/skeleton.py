@@ -313,7 +313,7 @@ if __name__ == "__main__":
 
     tok = TangleObjSke()
     import glob
-    for m in glob.glob("./objmodel\\model_cc*"):
+    for m in glob.glob("./objmodel\\model_ul*"):
         print(m)
         tok.show_ply(ply_path=m)
     
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     # shapes = ["cc", "cr", "e", "eb", "f", "j", "sc", "sr", "st", "u"]
     # for shape in shapes:
     #     decompose_obj(shape)
-    # decompose_obj("st")
+    decompose_obj("ul")
     
     # create_obj()
 

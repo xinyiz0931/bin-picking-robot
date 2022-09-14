@@ -11,8 +11,13 @@ def detect(img_path, exp_mode):
     h_params = {
         "finger_height": 15,
         "finger_width":  8, 
-        "open_width":    30
+        "open_width":    40
     }
+    # h_params = {
+    #     "finger_height": 15,
+    #     "finger_width":  8, 
+    #     "open_width":    30
+    # }
     g_params = {
         "rotation_step": 22.5, 
         "depth_step":    50,
@@ -75,14 +80,14 @@ if __name__ == "__main__":
         tstr = tdatetime.strftime("%Y%m%d%H%M%S")
         save_path = os.path.join("C:\\Users\\xinyi\\Documents\\XYBin_Collected\\exp_picksim", tstr+".png")
         # ----------- PN save -------------
-        out = cv2.imread("C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\pred\\out_depth.png")
-        ret = cv2.imread("C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\pred\\ret_depth.png")
-        cv2.imwrite(save_path, cv2.hconcat((out, ret)))
+        # out = cv2.imread("C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\pred\\out_depth.png")
+        # ret = cv2.imread("C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\pred\\ret_depth.png")
+        # cv2.imwrite(save_path, cv2.hconcat((out, ret)))
 
         # ----------- FGE/EMap save -------------
-        # img = cv2.imread(img_path)
-        # cv2.circle(img, (int(g[0]),int(g[1])), 7, (0,255,0), -1)
-        # cv2.imwrite(save_path, img)
+        img = cv2.imread(img_path)
+        cv2.circle(img, (int(g[0]),int(g[1])), 7, (0,255,0), -1)
+        cv2.imwrite(save_path, img)
         print("[*] Save in ", save_path)
     else: 
         print("[!] Failed! ")
