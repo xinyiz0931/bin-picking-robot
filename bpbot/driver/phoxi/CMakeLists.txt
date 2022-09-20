@@ -7,6 +7,7 @@ endif()
 project (phoxicontrol)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY .)
 
+find_package(Python 3.8 EXACT REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${phoxicontrol_SOURCE_DIR}) 
 pybind11_add_module (phoxicontrol ./phoxicontrol.cpp)
