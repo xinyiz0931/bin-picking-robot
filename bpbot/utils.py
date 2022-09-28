@@ -459,7 +459,7 @@ def calc_intersection(a1, a2, b1, b2):
     return [x/z, y/z]
 
 
-def replace_bad_point(img, loc, bounding_size=20):
+def replace_bad_point(src, loc, type="max", size=20):
     """
     find the closest meaningful point for top-ranked grasp point
     to avoid some cases where the pixel value is zero or very low
@@ -468,35 +468,39 @@ def replace_bad_point(img, loc, bounding_size=20):
     """
 
     (x, y) = loc
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY) if len(img.shape) > 2 else img
-    if bounding_size > int(gray.shape[0]/2) or bounding_size > int(gray.shape[1]/2):
-        bounding_size = min(int(gray.shape[0]/2), int(gray.shape[1]/2))
+    gray = cv2.cvtColor(src, cv2.COLOR_RGB2GRAY) if len(src.shape) > 2 else src 
+    if size > int(gray.shape[0]/2) or size > int(gray.shape[1]/2):
+        size = min(int(gray.shape[0]/2), int(gray.shape[1]/2))
     
     # background_pixel = 10
     # if gray[y,x] < background_pixel:
     #     h, w = gray.shape
-    #     mat = gray[(y-bounding_size):(y+bounding_size+1),
-    #             (x-bounding_size):(x+bounding_size+1)]
+    #     mat = gray[(y-size):(y+size+1),
+    #             (x-size):(x+size+1)]
     #     max_xy = np.where(mat == mat.max())
-    #     # y_p = max_xy[0][0] + y-bounding_size
-    #     # x_p = max_xy[1][0] + x-bounding_size
-    #     x_p = max_xy[0][0] + y-bounding_size
-    #     y_p = max_xy[1][0] + x-bounding_size
+    #     # y_p = max_xy[0][0] + y-size
+    #     # x_p = max_xy[1][0] + x-size
+    #     x_p = max_xy[0][0] + y-size
+    #     y_p = max_xy[1][0] + x-size
 
     #     return (x_p, y_p)
     # else:
     #     return loc
     h, w = gray.shape
-    # mat = gray[(y-bounding_size):(y+bounding_size+1),
-    #            (x-bounding_size):(x+bounding_size+1)]
-    mat = gray[(y-bounding_size):(y+bounding_size),
-               (x-bounding_size):(x+bounding_size)]
+    # mat = gray[(y-size):(y+size+1),
+    #            (x-size):(x+size+1)]
+    mat = gray[(y-size):(y+size),
+               (x-size):(x+size)]
     # plt.imshow(mat), plt.show()
-    max_xy = np.where(mat == mat.max())
-    # y_p = max_xy[0][0] + y-bounding_size
-    # x_p = max_xy[1][0] + x-bounding_size
-    y_p = max_xy[0][0] + y-bounding_size
-    x_p = max_xy[1][0] + x-bounding_size
+    if type == "max": 
+        xy = np.where(mat == mat.max())
+    elif type == "min":
+        new_mat = np.where(mat==0, 9999, mat)
+        xy = np.where(new_mat == new_mat.min())
+    # y_p = max_xy[0][0] + y-size
+    # x_p = max_xy[1][0] + x-size
+    y_p = xy[0][0] + y-size
+    x_p = xy[1][0] + x-size
     if gray[y_p, x_p] == gray[y,x]: return (x, y)
     # print(f"({x},{y}) ==> ({x_p},{y_p})")
 
@@ -750,7 +754,7 @@ def rotate_point(loc, angle, center=None, scale=1.0):
     return rot_loc
 
 
-def get_neighbor_bounding(gray, loc, bounding_size=10, bounding_draw=False):
+def get_neighbor_bounding(gray, loc, size=10, bounding_draw=False):
     """Give a mat and a location, return the max neighobor pixel value
        Xinyi
 
@@ -759,7 +763,7 @@ def get_neighbor_bounding(gray, loc, bounding_size=10, bounding_draw=False):
         loc {(int, int)} -- location, (left,top), (from width,from height) 
 
     Keyword Arguments:
-        bounding_size {int} -- [neighbor bounding size] (default: {10})
+        size {int} -- [neighbor bounding size] (default: {10})
         bounding_draw {bool} -- [if draw rectangle to verify position] (default: {False})
 
     Returns:
@@ -769,9 +773,9 @@ def get_neighbor_bounding(gray, loc, bounding_size=10, bounding_draw=False):
     h, w = gray.shape
 
     # construct the refined matrix, first row then column
-    r_con = np.zeros((bounding_size, w), dtype=np.uint8)
+    r_con = np.zeros((size, w), dtype=np.uint8)
     mat_tmp = np.r_[np.r_[r_con, gray], r_con]
-    c_con = np.zeros((h+bounding_size*2, bounding_size), dtype=np.uint8)
+    c_con = np.zeros((h+size*2, size), dtype=np.uint8)
     mat_tmp = np.c_[np.c_[c_con, mat_tmp], c_con]
 
     if bounding_draw:
@@ -779,16 +783,16 @@ def get_neighbor_bounding(gray, loc, bounding_size=10, bounding_draw=False):
         # copy the image for draw
         for_draw = cv2.cvtColor(gray.copy(), cv2.COLOR_GRAY2RGB)
         cv2.circle(for_draw, (x, y), 6, (255, 0, 0), -1)
-        cv2.rectangle(for_draw, ((x-bounding_size), (y-bounding_size)), ((x+bounding_size+1), (y+bounding_size+1)), (255, 0,0),2)
+        cv2.rectangle(for_draw, ((x-size), (y-size)), ((x+size+1), (y+size+1)), (255, 0,0),2)
         plt.figure(figsize=(15, 15))
         plt.imshow(for_draw, cmap='gray'), plt.show()
 
-    x = x+bounding_size
-    y = y+bounding_size
-    return mat_tmp[(y-bounding_size):(y+bounding_size+1), (x-bounding_size):(x+bounding_size+1)]
+    x = x+size
+    y = y+size
+    return mat_tmp[(y-size):(y+size+1), (x-size):(x+size+1)]
 
 
-def get_max_neighbor_pixel(gray, loc, bounding_size=10, bounding_draw=False):
+def get_max_neighbor_pixel(gray, loc, size=10, bounding_draw=False):
     """Give a mat and a location, return the max neighobor pixel value
        Xinyi
 
@@ -797,7 +801,7 @@ def get_max_neighbor_pixel(gray, loc, bounding_size=10, bounding_draw=False):
         loc {(int, int)} -- location, (left,top), (from width,from height) 
 
     Keyword Arguments:
-        bounding_size {int} -- [neighbor bounding size] (default: {10})
+        size {int} -- [neighbor bounding size] (default: {10})
         bounding_draw {bool} -- [if draw rectangle to verify position] (default: {False})
 
     Returns:
@@ -807,9 +811,9 @@ def get_max_neighbor_pixel(gray, loc, bounding_size=10, bounding_draw=False):
     h, w = gray.shape
 
     # construct the refined matrix, first row then column
-    r_con = np.zeros((bounding_size, w), dtype=np.uint8)
+    r_con = np.zeros((size, w), dtype=np.uint8)
     mat_tmp = np.r_[np.r_[r_con, gray], r_con]
-    c_con = np.zeros((h+bounding_size*2, bounding_size), dtype=np.uint8)
+    c_con = np.zeros((h+size*2, size), dtype=np.uint8)
     mat_tmp = np.c_[np.c_[c_con, mat_tmp], c_con]
 
     if bounding_draw:
@@ -817,28 +821,28 @@ def get_max_neighbor_pixel(gray, loc, bounding_size=10, bounding_draw=False):
         # copy the image for draw
         for_draw = cv2.cvtColor(gray.copy(), cv2.COLOR_GRAY2RGB)
         cv2.circle(for_draw, (x, y), 6, (255, 0, 0), -1)
-        cv2.rectangle(for_draw, ((x-bounding_size), (y-bounding_size)), ((x+bounding_size+1), (y+bounding_size+1)), (255, 0,0),2)
+        cv2.rectangle(for_draw, ((x-size), (y-size)), ((x+size+1), (y+size+1)), (255, 0,0),2)
         plt.figure(figsize=(15, 15))
         plt.imshow(for_draw, cmap='gray'), plt.show()
 
-    x = x+bounding_size
-    y = y+bounding_size
-    return np.max(mat_tmp[(y-bounding_size):(y+bounding_size+1), (x-bounding_size):(x+bounding_size+1)])
+    x = x+size
+    y = y+size
+    return np.max(mat_tmp[(y-size):(y+size+1), (x-size):(x+size+1)])
 
 
-def get_neighbor_pixel(gray, loc, bounding_size=10):
+def get_neighbor_pixel(gray, loc, size=10):
     (x, y) = loc
     h, w = gray.shape
-    mat = gray[(y-bounding_size):(y+bounding_size+1),
-               (x-bounding_size):(x+bounding_size+1)]
-    left_margin = x-bounding_size
-    top_margin = y-bounding_size
+    mat = gray[(y-size):(y+size+1),
+               (x-size):(x+size+1)]
+    left_margin = x-size
+    top_margin = y-size
 
     # index = w * Y + X
     max_xy = np.where(mat == mat.max())
 
-    y_p = max_xy[0][0] + y-bounding_size
-    x_p = max_xy[1][0] + x-bounding_size
+    y_p = max_xy[0][0] + y-size
+    x_p = max_xy[1][0] + x-size
     return (x_p, y_p), mat.max()
 
 

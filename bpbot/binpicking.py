@@ -72,6 +72,7 @@ def get_point_cloud(save_dir, distance, width, height):
     # [3] ----------------------------------------------------
     max_distance, min_distance = distance["max"], distance['min']
     img = normalize_depth_map(gray_array, max_distance, min_distance, width, height)
+    # temp: 5 -> 3
     img_blur = cv2.medianBlur(img,5)
     cv2.imwrite(os.path.join(save_dir, "depth_raw.png"), img)
     cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
@@ -106,7 +107,7 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     Args:
         grasps (array): N * [x,y,r(degree)]
         img (array): source image
-        h_params (dictionary, optional): {"finger_width": _, "finger_height":_,"open_width":_}. Defaults to None.
+        h_params (dictionary, optional): {"finger_width": _, "finger_length":_,"open_width":_}. Defaults to None.
         top_idx (int, optional): top grasp index among grasps. Defaults to 0.
         top_only (bool, optional): only draw top grasp or not. Defaults to False.
         color (tuple, optional): red. Defaults to (255,0,0).
@@ -117,7 +118,7 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     """
     if h_params is not None: 
         finger_w = h_params["finger_width"]
-        finger_h = h_params["finger_height"]
+        finger_h = h_params["finger_length"]
         open_w = h_params["open_width"]
     else: 
         # default
@@ -132,7 +133,7 @@ def draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, img, h_params=None):
     
     if h_params is not None: 
         finger_w = h_params["finger_width"]
-        finger_h = h_params["finger_height"]
+        finger_h = h_params["finger_length"]
         open_w = h_params["open_width"]
     else: 
         # default
@@ -196,11 +197,11 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
     # img = adjust_grayscale(img)
     crop_h, crop_w, _ = img.shape
 
-    schunk_attr = [hand_config["schunk"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
-    smc_attr = [hand_config["smc"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
+    left_attr = [hand_config["left"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
+    right_attr = [hand_config["right"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
 
-    gripper_schunk = Gripper(*schunk_attr)
-    gripper_smc = Gripper(*smc_attr)
+    gripper_left = Gripper(*left_attr)
+    gripper_right = Gripper(*right_attr)
 
     from bpbot.module_picksep import PickSepClient
     psc = PickSepClient()
@@ -216,7 +217,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         scores_pn = ret[-1]
         warn_print(f"Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
-        g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
+        g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
         if g_pick is None:
             warn_print("Grasp detection failed for pick zone ...")
             return
@@ -234,12 +235,13 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         ret = psc.infer_picknet_sepnet(img_path, sep_motion=True)
         if not ret: 
             return
-
+        print("class: ", ret[0])
+        print("score: ", ret[-1])
         if ret[0] == 0:
             p_pick = ret[1]
             scores_pn = ret[-1]
             warn_print(f"Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
-            g_pick = gripper_schunk.point_oriented_grasp(img, p_pick) # degree
+            g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
             if g_pick is None:
                 warn_print("Grasp detection failed for pick zone ...")
                 return
@@ -252,10 +254,10 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
             v_pull = ret[3]
             score_snd = ret[-1]
             warn_print(f"Drop zone scores: {score_snd[0]:.3f}, {score_snd[1]:.3f}")
-            g_pull = gripper_schunk.point_oriented_grasp(img, p_pull)
+            g_pull = gripper_left.point_oriented_grasp(img, p_pull)
             
-            g_hold = gripper_smc.point_oriented_grasp(img, p_hold)
-            g_hold[2] = 90 
+            g_hold = gripper_right.point_oriented_grasp(img, p_hold)
+            # g_hold[2] = 90 
 
             if g_hold is None: 
                 g_hold = [*p_hold, 90]
@@ -264,7 +266,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
                 return ret[0], g_sep 
     return
 
-def gen_motion_pickorsep(mf_path, pose_left, dest=None, pose_right=None, pulling=None):
+def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=None):
     """ Generate motions in motion file format
 
     Args:
@@ -277,14 +279,14 @@ def gen_motion_pickorsep(mf_path, pose_left, dest=None, pose_right=None, pulling
     generator = Motion(filepath=mf_path)
     
     # pick
-    if pose_right is None and pulling is None and dest is not None:
-        generator.gen_motion_picking(pose_left, dest)
+    if pose_rgt is None and pulling is None and dest is not None:
+        generator.gen_motion_picking(pose_lft, dest)
     # single-arm separation
-    elif pose_right is None and pulling is not None:
-        generator.gen_motion_separation(pose_left, pulling)
+    elif pose_rgt is None and pulling is not None:
+        generator.gen_motion_separation(pose_lft, pulling)
     # dual-arm separation
-    elif pose_right is not None and pulling is not None:
-        generator.gen_motion_separation(pose_left, pulling, pose_right)
+    elif pose_rgt is not None and pulling is not None:
+        generator.gen_motion_separation(pose_lft, pulling, pose_rgt)
     else:
         warn_print("Wrong type for motion generator ...")    
 
@@ -306,13 +308,17 @@ def gen_motion_pick(mf_path, pose_left, sub_action):
         main_print(f"Generate motion for {sub_action_name[sub_action]} ... ")
         generator.gen_motion_circular(pose_left, sub_action)
 
+def gen_motion_test(mf_path, pose_lft, pose_rgt, pulling):
+    generator = Motion(filepath=mf_path)
+    generator.gen_motion_test(pose_lft, pulling, pose_rgt)
+
 def detect_grasp(n_grasp, img_path, g_params, h_params):
     """Detect grasp point using fast graspability evaluation
 
     Args:
         n_grasp (int): number of grasps you want to output
         img_path (str): image path 
-        g_params (dict): {"finger_width":0, "finger_height":0, "open_width":0}
+        g_params (dict): {"finger_width":0, "finger_length":0, "open_width":0}
         h_params (dict): {"rotation_step":0, "depth_step": 0, "hand_depth":0}
 
     Returns:
@@ -322,9 +328,9 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
     img_adj = adjust_grayscale(img)
     # img_adj = img
     height, width, _ = img.shape
-
+    
     finger_w = h_params["finger_width"]
-    finger_h = h_params["finger_height"]
+    finger_h = h_params["finger_length"]
     # open_w = h_params["open_width"] + random.rand'int(0, 5)
     open_w = h_params["open_width"]
 
@@ -361,7 +367,7 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
     Args:
         n_grasp (int): number of grasps you want to output
         img_path (str): image path 
-        g_params (dict): {"finger_width":0, "finger_height":0, "open_width":0}
+        g_params (dict): {"finger_width":0, "finger_length":0, "open_width":0}
         h_params (dict): {"rotation_step":0, "depth_step": 0, "hand_depth":0}
         t_params (dict): {"compressed_size":0, "len_thld": 0, "dist_thld":0, "sliding_size":0, "sliding_stride":0}
 
@@ -389,7 +395,7 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
                 region_oi = cropped
                 roi_left_top = [x, y]
     finger_w = int(h_params["finger_width"] * _ssz / width)
-    finger_h = int(h_params["finger_height"] * _ssz / width)
+    finger_h = int(h_params["finger_length"] * _ssz / width)
     open_w = int(h_params["open_width"] * _ssz / width)
     
     gripper = Gripper(finger_w=finger_w, 
@@ -420,7 +426,7 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         return grasps 
     return
 
-def predict_action_grasp(grasps, crop_path):
+def predict_action_grasp(grasps, imgpath):
     """Predict the best action grasp from candidates pairs
 
     Args:
@@ -432,10 +438,14 @@ def predict_action_grasp(grasps, crop_path):
     """
     from bpbot.module_asp import asp_client as aspclt
     aspc = aspclt.ASPClient()
-    grasps2bytes=np.ndarray.tobytes(np.array(grasps))
-    predict_result= aspc.predict(imgpath=crop_path, grasps=grasps2bytes)
-    best_action = predict_result.action
-    best_graspno = predict_result.graspno
+    
+    res_p = aspc.predict(imgpath=imgpath, grasps=grasps)
+
+    best_action,best_graspno = aspc.infer(imgpath=imgpath, grasps=grasps)
+    #grasps2bytes=np.ndarray.tobytes(np.array(grasps))
+    #predict_result= aspc.predict(imgpath=crop_path, grasps=grasps2bytes)
+    #best_action = predict_result.action
+    #best_graspno = predict_result.graspno
     return best_action, best_graspno
 
 ##################### TODO: test following code ##################
@@ -642,7 +652,7 @@ def transform_image_to_camera(image_locs, image_width, pc, margins=None):
         camera_locs.append(pc[offset]) # unit: m
     return camera_locs
 
-def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=None, tilt=None, dualarm=None):
+def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=None, tilt=None, dualarm=None):
     """
     Transform image locs to robot locs (5-th joint pose in robot coordinate)
     1. p_r_ft -> p_r_j: position of 5-th joint of the arm in robot coordinate
@@ -656,11 +666,9 @@ def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=N
         robot_locs {array} -- N * (rx,ry,rz,ra) at robot coordinate, angle in degree
     """
     _obj_h = cfg["obj_height"] / 1000
-    _obj_h += 0.002
-    # _obj_h = 0.005 
-    # _obj_h = 0.01 
+    # _obj_h += 0.005 
+    # _obj_h += 0.01 
     g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
-
 
     if len(image_locs) == 3: 
         # including calculate euler angle 
@@ -669,7 +677,7 @@ def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=N
         # [1]
         if tilt == None: tilt = 90
         if hand == "left":
-            g_jf = np.array([[1,0,0,-(cfg["hand"]["schunk_length"])],
+            g_jf = np.array([[1,0,0,-(cfg["hand"]["left"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
@@ -682,7 +690,7 @@ def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=N
 
         elif hand == "right":
             rpy_r_j = [(theta + 90) % 180, -tilt, -90]
-            g_jf = np.array([[1,0,0,-(cfg["hand"]["smc_length"])],
+            g_jf = np.array([[1,0,0,-(cfg["hand"]["right"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
@@ -693,10 +701,20 @@ def transform_image_to_robot(image_locs, point_cloud, cfg, hand="left", margin=N
         u += cfg[margin]["margin"]["left"]
         v += cfg[margin]["margin"]["top"]
     
+    u = int(u)
+    v = int(v)
     # [2]
-
-    p_c = point_cloud[int(v * cfg["width"] + u)] # unit: m
-
+    point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
+    p_c = point_mat[v,u]
+    print("camera_pose", p_c)
+    #p_c = point_array[int(v * cfg["width"] + u)] # unit: m
+    u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 30)
+    p_c = point_mat[v,u]
+    #if np.count_nonzero(p_c) == 0:
+    #    print("replace bad point! ")
+    #    u,v = replace_bad_point(point_mat[:,:,2], [u,v])
+    #    p_c = point_mat[v,u]
+    print("new camera_pose", p_c)
     # [3] 
     p_r_f = np.dot(g_rc, [*p_c, 1])  # unit: m
     p_r_f = p_r_f[:3]
@@ -725,3 +743,173 @@ def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min
     #     return False
     else:
         return True
+
+def check_force_file():
+    threshold = 0.07
+    init = [7946,8256,8563]
+    N = 20
+    force = np.loadtxt(open('/home/hlab/bpbot/bpbot/driver/dynpick/out.txt','rt').readlines()[:-1])
+    #force = np.loadtxt("/home/hlab/bpbot/bpbot/driver/dynpick/out.txt")
+    f = (force[-N:][:,1:4]-init) / 1000
+    print(f)
+    for i in range(N-1):
+        if (f[i+1][2] - f[i][2]) > 0.01 and f[i+1][2] > threshold: 
+            print("tangle!!!")
+            return True
+    return False
+    
+def check_force(duration=30000, threshold=0.1):
+    # find port of sensor and open
+    import glob
+    import termios
+    import time
+    try:
+        port = (glob.glob(r'/dev/ttyUSB*'))[0]
+        #os.system("sudo chmod a+rw " + port)
+        fdc = os.open(port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+        print("Open port "+port)
+    except BlockingIOError as e:
+        print("Can't open port! ")
+        fdc = -1
+
+    if (fdc < 0):
+        os.close(fdc)
+    ############# tty control ################
+    term_ = termios.tcgetattr(fdc)
+    term_[0] = termios.IGNPAR #iflag
+    term_[1] = 0 # oflag
+    term_[2] = termios.B921600 | termios.CS8 | termios.CLOCAL | termios.CREAD # cflag
+    term_[3] = 0 # lflag -> ICANON
+    term_[4] = 4103 # ispeed
+    term_[5] = 4103 # ospeed
+    # # cc
+    o_ = bytes([0])
+    term_[6][termios.VINTR] = o_ # Ctrl-c
+    term_[6][termios.VQUIT] = o_ # Ctrl-?
+    term_[6][termios.VERASE] = o_ # del
+    term_[6][termios.VKILL] = o_ # @
+    term_[6][termios.VEOF] =  bytes([4])# Ctrl-d
+    term_[6][termios.VTIME] = 0
+    term_[6][termios.VMIN] = 0
+    term_[6][termios.VSWTC] = o_ # ?0
+    term_[6][termios.VSTART] = o_ # Ctrl-q
+    term_[6][termios.VSTOP] = o_ # Ctrl-s
+    term_[6][termios.VSUSP] = o_ # Ctrl-z
+    term_[6][termios.VEOF] = o_ # ?0
+    term_[6][termios.VREPRINT] = o_ # Ctrl-r
+    term_[6][termios.VDISCARD] = o_ # Ctrl-u
+    term_[6][termios.VWERASE] = o_ # Ctrl-w
+    term_[6][termios.VLNEXT] = o_ # Ctrl-v
+    term_[6][termios.VEOL2] = o_ # ?0
+
+    termios.tcsetattr(fdc, termios.TCSANOW, term_)
+    ################## over ##################
+
+    #tw = 50
+    tw = 100
+    clkb = 0
+    clkb2 = 0
+    num = 0
+    clk0 = (time.process_time())*1000 # ms
+
+    r_ = str.encode("R")
+    os.write(fdc, r_)
+
+    # initialization
+    #init = [7984,8292,8572]
+    init = [7946,8256,8563]
+    #fp = open('./out.txt','wt')
+    plot_data = []
+    j = 0
+    time_stamp = 0
+    
+    while time_stamp < duration:
+        # half second
+        try:
+            data = []
+            while True:
+                clk = (time.process_time()) * 1000 - clk0
+                if clk >= (clkb + tw):
+                    clkb = clk / tw * tw
+                    break
+            os.write(fdc, r_)
+            l = os.read(fdc, 27)
+            time_stamp = int(clk / tw * tw)
+            if l == bytes():
+                continue
+
+            data.append(time_stamp)
+            for i in range(1,22,4):
+                data.append(int((l[i:i+4]).decode(),16))
+            #fp.write(",".join(map(str,data)))
+            #fp.write("\n")
+
+            force = [(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000]
+            print(force)
+            if len(plot_data) > 1 and (force[2]>0 and plot_data[-1][2] >0)and (force[2] -  plot_data[-1][2]) > 0.03 and force[2] > threshold: 
+                print("tangle!!!")
+                
+                return True
+            plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
+            
+        except KeyboardInterrupt:
+            break
+    print("No tangle! ")
+    return False
+
+def plot_f(force, x):
+    colors = [[ 78.0/255.0,121.0/255.0,167.0/255.0], # 0_blue
+              [255.0/255.0, 87.0/255.0, 89.0/255.0], # 1_red
+              [ 89.0/255.0,169.0/255.0, 79.0/255.0], # 2_green
+              [237.0/255.0,201.0/255.0, 72.0/255.0], # 3_yellow
+              [242.0/255.0,142.0/255.0, 43.0/255.0], # 4_orange
+              [176.0/255.0,122.0/255.0,161.0/255.0], # 5_purple
+              [255.0/255.0,157.0/255.0,167.0/255.0], # 6_pink
+              [118.0/255.0,183.0/255.0,178.0/255.0], # 7_cyan
+              [156.0/255.0,117.0/255.0, 95.0/255.0], # 8_brown
+              [186.0/255.0,176.0/255.0,172.0/255.0]] # 9_gray
+
+    f_new = np.asarray(force)
+    fig = plt.figure(1, figsize=(16, 6))
+    ax1 = fig.add_subplot(111)
+    # ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_prop_cycle(color=colors)
+    #major_ticks = np.arange(x[0], x[-1], 10 if len(x) < 160 else 20)
+    #minor_ticks = np.arange(x[0], x[-1], 1 if len(x) < 160 else 2)
+    major_ticks = np.arange(x[0], x[-1], 10)
+    
+    #minor_ticks = np.arange(x[0], x[-1])
+    hline_c = 'gold'
+
+    for i, f in enumerate(f_new):
+        if i==0: continue
+        if f[2] > f_new[i-1][2] and f[2] > 0.1:
+            ax1.axvline(x=x[i], color=hline_c, alpha=1)
+            ax1.axhline(y=0, color=colors[0], alpha=.5, linestyle='dashed')
+            print("Oops! ")
+        #if abs(f[1]) > 4.8:
+        #    ax1.axvline(x=x[i], color=hline_c, alpha=1)
+        #    ax1.axhline(y=4.8 if f[1] > 0 else -4.8, color=colors[1], alpha=.5, linestyle='dashed')
+        #    print(i)
+        #if abs(f[2]) > 6:
+        #    ax1.axvline(x=x[i], color=hline_c, alpha=1)
+        #    ax1.axhline(y=6 if f[2] > 0 else -6, color=colors[2], alpha=.5, linestyle='dashed')
+        #    print(i)
+    #ax1.axhline(y=4, color=colors[0], alpha=.5, linestyle='dashed')
+    ax1.set_title('Force')
+    ax1.set_xticks(major_ticks)
+
+    #ax1.set_xticks(minor_ticks, minor=True)
+    # ax1.axhspan(0, 6, facecolor=colors[0], alpha=.1)
+    ax1.grid(which='minor', linestyle='dotted', alpha=.5)
+    ax1.grid(which='major', linestyle='dotted', alpha=1)
+    ax1.plot(x, f_new, label=['Fx', 'Fy', 'Fz'])
+    ax1.legend()
+    #handles, labels = ax1.get_legend_handles_labels()
+    #ax1.legend(handles=handles, labels=eval(labels[0]), loc='upper left')
+    plt.ion()
+    plt.ylim(-2, 2)
+    plt.show()
+
+
+

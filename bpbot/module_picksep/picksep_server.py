@@ -16,7 +16,7 @@ class PickSepServer(psrpc.PickSepServicer):
             "root_dir_linux": "/home/hlab/Documents/",
             "infer": 
             {
-                "infer_type": "pick_sep",
+                "net_type": "pick_sep",
                 "backbone": "resnet50",
                 "sep_type": "spatial", 
                 "mode": "test",
@@ -28,11 +28,11 @@ class PickSepServer(psrpc.PickSepServicer):
                 # "pick_ckpt_folder": ["try8","model_epoch_10.pth"],
                 # "sepp_ckpt_folder": ["try_38","model_epoch_4.pth"],
                 # "sepd_ckpt_folder": ["try_sepnet_d_vector_eight","model_epoch_20.pth"]
-                "sepp_ckpt_folder": ["try_refine","model_epoch_11.pth"],
-                "sepd_ckpt_folder_v": ["try_sepnet_vector_eight","model_epoch_12.pth"],
-                "sepd_ckpt_folder_v": ["try_SR","model_epoch_99.pth"],
-                "sepd_ckpt_folder_s": ["try_action_map","model_epoch_25.pth"]
-
+                "sepp_ckpt_folder": ["try_refine","model_epoch_19.pth"],
+                # "sepd_ckpt_folder_s": ["try_action_map","model_epoch_68.pth"]
+                # "sepd_ckpt_folder_s": ["try_action_map_augment","model_epoch_29.pth"]
+                "sepd_ckpt_folder_s": ["try_action_map_augment_add","model_epoch_40.pth"]
+                # "sepd_ckpt_folder_s": ["try_action_map_augment","model_epoch_35.pth"]
             }
         }
         
@@ -44,7 +44,7 @@ class PickSepServer(psrpc.PickSepServicer):
         Returns:
             array (5): [pickorsep, x, y score * 2]
         """
-        ret = self.inference.infer(data_dir=request.imgpath, infer_type="pick")
+        ret = self.inference.infer(data_dir=request.imgpath, net_type="pick")
         pickorsep = ret[0][0]
         pn_points = ret[1][0]
         pn_scores = ret[2][0]
@@ -59,7 +59,7 @@ class PickSepServer(psrpc.PickSepServicer):
         Returns:
             array (6+#directions): [pull x,y, hold x,y, vector x,y + score * #directions]
         """
-        ret = self.inference.infer(data_dir=resquest.imgpath, infer_type="sep")
+        ret = self.inference.infer(data_dir=resquest.imgpath, net_type="sep")
         snp_points = ret[0][0]
         snd_vector = ret[1][0]
         snd_scores = ret[2][0]

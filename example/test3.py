@@ -1,43 +1,52 @@
 import os
-import cv2
-import matplotlib.pyplot as plt
+import random
+import importlib
+spec = importlib.util.find_spec("cnoid")
+found_cnoid = spec is not None
+if found_cnoid: 
+    from cnoid.Util import *
+    from cnoid.Base import *
+    from cnoid.Body import *
+    from cnoid.BodyPlugin import *
+    from cnoid.GraspPlugin import *
+    from cnoid.BinPicking import *
+    topdir = executableTopDirectory
+else: 
+    topdir = "/home/hlab/choreonoid-1.7.0/"
+
+from bpbot.binpicking import *
+from bpbot.config import BinConfig
+from bpbot.robotcon.nxt.nxtrobot_client import NxtRobot
+
+import timeit
 import numpy as np
 
-from tangle.dataset import SepDataset
-from tangle.utils import *
-from tangle import Config
+root_dir = os.path.join(topdir, "ext/bpbot")
+#root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+main_print(f"Execute script at {root_dir} ")
 
+img_path = os.path.join(root_dir, "data/depth/depth.png")
+crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
+config_path = os.path.join(root_dir, "cfg/config.yaml")
+calib_path = os.path.join(root_dir, "data/calibration/calibmat.txt")
+mf_path = os.path.join(root_dir, "data/motion/motion.dat")
+traj_path = os.path.join(root_dir, "data/motion/motion_ik.dat")
+draw_path = os.path.join(root_dir, "data/depth/result.png")
 
-cfg = Config(config_type="train")
-# data_folder = cfg.data_dir
+# ---------------------- get config info -------------------------
+bincfg = BinConfig(config_path)
+cfg = bincfg.data
 
-# data_inds = random_inds(10,1000)
-data_folder = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEightAugment"
+if found_cnoid: 
+    plan_success = load_motionfile(mf_path)
+    #if gen_success and plan_success:
+    if plan_success.count(True) == len(plan_success):
+        nxt = NxtRobot(host='[::]:15005')
+        motion_seq = get_motion()
+        num_seq = int(len(motion_seq)/20)
+        print(f"Success! Total {num_seq} motion sequences! ")
+        motion_seq = np.reshape(motion_seq, (num_seq, 20))
+        print(motion_seq)
 
-_search = "C:\\Users\\xinyi\\Documents\\XYBin_Collected\\tangle_scenes_relabel\\U\\**\\depth.png"
-_dest = "C:\\Users\\xinyi\\Documents\\XYBin_Collected\\tangle_scenes_relabel\\_vis"
-import glob
-import shutil
-num_f = 0
-num_p = 0
-for d in glob.glob(_search, recursive=True):
-    j_path = os.path.join(*os.path.split(d)[:-1], "sln.json")
-    print(os.path.exists(j_path))
-    if os.path.exists(j_path): 
-        fp = open(j_path, 'r+')
-        j_file = json.loads(fp.read())
-        num_f += 1
-        if "pull" in j_file and "hold" in j_file:
-            
-            new_d = os.path.join(_dest, d.split('\\')[-2]+'.png')
-            num_p += 1 
-            print(new_d, j_file["pull"], j_file["hold"])
-            # img = cv2.imread(d)
-            # cv2.circle(img, j_file["pull"], 7, (0,255,0), -1)
-            # cv2.circle(img, j_file["hold"], 7, (0,255,255), 2)
-            # cv2.imwrite(new_d, img)
-            
-print("exist: ", num_f)
-print("point: ", num_p)
-            # print(d, '->', new_d)
-        #     shutil.copyfile(d, new_d)
+        #nxt.playMotionSeq(motion_seq) 
+        #nxt.playMotionSeqWithFB(motion_seq)

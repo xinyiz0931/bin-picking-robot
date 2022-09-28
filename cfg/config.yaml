@@ -1,52 +1,54 @@
-exp_mode: 0
+exp_mode: 1
+author: xinyi
 height: 1544
 width: 2064
-obj_height: 5
-author: xinyi
+obj_height: 13
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
 pick:
   distance:
-    max: 1120
-    min: 1074
+    max: 1183
+    min: 1056
   margin:
-    left: 652
-    top: 358
-    right: 1080
-    bottom: 851
+    left: 831
+    top: 363
+    right: 1629
+    bottom: 1025
 drop:
   distance:
-    max: 1135
-    min: 1074
+    max: 1122
+    min: 1073
   margin:
-    left: 1183
-    top: 366
-    right: 1651
-    bottom: 866
+    left: 1171
+    top: 382
+    right: 1683
+    bottom: 932
 graspability:
   rotation_step: 22.5
   depth_step: 10
   hand_depth: 25
 hand:
-  schunk:
-    template_size: 500
-    finger_height: 12
-    finger_width: 5
-    open_width: 34
-    tool_changer_height: 31
-    flange_height: 6
-    gripper_height: 48
-    finger_length: 80
-  smc:
-    template_size: 500
-    finger_height: 8
+  left:
+    type: smc_ft
+    height: 0.1615
+    finger_length: 8
     finger_width: 4
     open_width: 46
     tool_changer_height: 31
     flange_height: 3
     gripper_height: 25
-    finger_length: 80
-  smc_length: 0.139
-  schunk_length: 0.165
+    finger_height: 67.5
+    force_sensor_height: 32
+    force_sensor_flange_height: 3
+  right:
+    type: smc
+    height: 0.139
+    finger_length: 8
+    finger_width: 4
+    open_width: 46
+    tool_changer_height: 31
+    flange_height: 3
+    gripper_height: 25
+    finger_height: 80
 tangle:
   compressed_size: 250
   len_thld: 15

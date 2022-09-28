@@ -49,13 +49,13 @@ cfg = bincfg.data
 # ======================== get depth img =============================
 
 point_array = capture_pc()
-img, img_blur = pc2depth(point_array, cfg["drop"]["distance"], cfg["width"], cfg["height"])
+img, img_blur = pc2depth(point_array, cfg["pick"]["distance"], cfg["width"], cfg["height"])
 point_array /= 1000
 cv2.imwrite(img_path, img_blur)
 # import open3d as o3d
 # pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/test_ply.ply")
 # point_array = pcd.points
-img_input = crop_roi(img_path, margins=cfg["drop"]["margin"])
+img_input = crop_roi(img_path, margins=cfg["pick"]["margin"])
 cv2.imwrite(crop_path, img_input)
 
 # =======================  compute grasp =============================
@@ -88,7 +88,8 @@ left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_height
 
 gripper_right = Gripper(*right_attr)
 gripper_left = Gripper(*left_attr)
-theta_pull = gripper_left.point_oriented_grasp(img_input, [p_pull[0], p_pull[1]])
+# theta_pull = gripper_left.point_oriented_grasp(img_input, [p_pull[0], p_pull[1]])
+theta_pull = 90
 g_pull = [*p_pull, theta_pull]
 
 theta_hold = gripper_left.point_oriented_grasp(img_input, [p_hold[0], p_pull[1]])
@@ -102,22 +103,22 @@ cv2.imshow("", crop_grasp)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-p_r_pull, g_r_pull = transform_image_to_robot([*p_pull, theta_pull], point_array, cfg, hand="left", margin="drop",dualarm=True)
-p_r_hold, g_r_hold = transform_image_to_robot([*p_hold, theta_hold], point_array, cfg, hand="right", margin="drop", tilt=60, dualarm=True)
+p_r_pull, g_r_pull = transform_image_to_robot([*p_pull, theta_pull], point_array, cfg, hand="left", margin="pick",dualarm=True)
+p_r_hold, g_r_hold = transform_image_to_robot([*p_hold, theta_hold], point_array, cfg, hand="right", tilt=60, margin="pick", dualarm=True)
 
-v_pull = np.array([1,0]) # robot coordinate
-v_len = check_collision(p_r_pull[:2], v_pull, cfg, point_array)
-
+v_pull = ((p_r_pull-p_r_hold) / np.linalg.norm(p_r_pull-p_r_hold))[:2]
+v_len = 0.2
 notice_print("Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_pull, *g_r_pull))
 notice_print("Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_hold, *g_r_hold))
-notice_print("Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
+notice_print("Vector (pull): (%.3f,%.3f), length: %.3f" % (*v_pull, v_len))
 
-gen_motion_pickorsep(mf_path, g_r_pull, pose_right=g_r_hold, pulling=[*v_pull,v_len])
+gen_motion_test(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
+# gen_motion_pickorsep(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
 # # =======================  generate motion ===========================
 if found_cnoid: 
-    plan_success = load_motionfile(mf_path)
+    plan_success = load_motionfile(mf_path, dual_arm=True)
     print("plannning success? ", plan_success)
     nxt = NxtRobot(host='[::]:15005')
     motion_seq = get_motion()
@@ -128,7 +129,7 @@ if found_cnoid:
     nxt.playMotionSeq(motion_seq)
 
 # if found_cnoid: 
-#     # gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="drop")
+#     # gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="pick")
 #     # gen_success = generate_motion(mf_path, [rx,ry,rz,ra], best_action)
 #     plan_success = load_motionfile(mf_path)
 #     # if gen_success and plan_success:

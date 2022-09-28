@@ -3,9 +3,13 @@ import yaml
 
 class BinConfig(object):
     def __init__(self, config_path=None):
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
         if config_path is None: 
-            dir_path = os.path.dirname(os.path.realpath(__file__))
             config_path = os.path.realpath(os.path.join(dir_path, "../cfg/config.yaml"))
+        hand_path = os.path.realpath(os.path.join(dir_path, "../cfg/hand.yaml"))
+        self.hand_path = hand_path
+
         self.data_path = config_path
         self.data = {}
         self.load()
@@ -31,11 +35,28 @@ class BinConfig(object):
 
     def pre_define(self):
         """unit: mm -> m"""
-        self.data["hand"]["smc_length"] = (self.data["hand"]["smc"]["tool_changer_height"] + self.data["hand"]["smc"]["flange_height"] + self.data["hand"]["smc"]["gripper_height"] + self.data["hand"]["smc"]["finger_length"])/1000
-        self.data["hand"]["schunk_length"] = (self.data["hand"]["schunk"]["tool_changer_height"] + self.data["hand"]["schunk"]["flange_height"] + self.data["hand"]["schunk"]["gripper_height"] + self.data["hand"]["schunk"]["finger_length"])/1000
+        try:
+            with open(self.hand_path) as f:
+                hand = yaml.load(f, Loader=yaml.FullLoader)
+                lhand = hand[self.data["hand"]["left"]["type"]]
+                rhand = hand[self.data["hand"]["right"]["type"]]
+        except FileNotFoundError:
+            print("Wrong file or file path")
+
+        left_len, right_len = 0, 0
+        for k, i in lhand.items():
+            if "height" in k:
+                left_len += i
+        for k, i in rhand.items():
+            if "height" in k:
+                right_len += i
+        
+        self.data["hand"]["left"]["height"]=left_len/1000
+        self.data["hand"]["right"]["height"]=right_len/1000
+        self.data["hand"]["left"].update(lhand)
+        self.data["hand"]["right"].update(rhand)
         # depth = 10 * 255 / (self.data["pick"]["distance"]["max"] - self.config["pick"]["distance"]["min"])
         # self.data["graspability"]["hand_depth"] = int(depth)
-        # self.write()
 
          
     # def __getattr__(self, key):

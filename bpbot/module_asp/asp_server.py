@@ -16,6 +16,7 @@ class ASPServer(asprpc.ASPServicer):
     def load_aspnet(self, model_dir):
         """Load models"""
         self.model = load_model(model_dir)
+        self.model.summary()
         self.threshold = 0.5
         self.scores = []
         self.pred_num = -1
@@ -105,6 +106,7 @@ class ASPServer(asprpc.ASPServicer):
         self.scores = res[:, 1].reshape((g_num, 7))
         # return res[:, 1].reshape((g_num, 7))
         p2bytes = np.ndarray.tobytes(res[:, 1])
+        print(res[:, 1].reshape((g_num, 7)))
         return aspmsg.ASPOutput(probs=p2bytes)
         # return aspmsg.ASPOutput(probs = res[:, 1].reshape((g_num, 7)))
     

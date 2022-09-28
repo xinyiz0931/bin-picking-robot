@@ -48,18 +48,23 @@ def pick():
     point_array = capture_pc()
     # if not point_array: return
 
-    # img_pb, img_pb_blur = pc2depth(point_array, cfg['pick']['distance'], cfg['width'], cfg['height'])
-    # img_db, img_db_blur = pc2depth(point_array, cfg['drop']['distance'], cfg['width'], cfg['height'])
-    # point_array /= 1000
+    img_pb, img_pb_blur = pc2depth(point_array, cfg['pick']['distance'], cfg['width'], cfg['height'])
+    img_db, img_db_blur = pc2depth(point_array, cfg['drop']['distance'], cfg['width'], cfg['height'])
+    point_array /= 1000
 
-    # cv2.imwrite(img_pb_path, img_pb_blur)
-    # cv2.imwrite(img_db_path, img_db_blur)
+    cv2.imwrite(img_pb_path, img_pb_blur)
+    cv2.imwrite(img_db_path, img_db_blur)
 
     crop_pb = crop_roi(img_pb_path, cfg['pick']['margin'], bounding=True)
     crop_db = crop_roi(img_db_path, cfg['drop']['margin'], bounding=True)
 
     cv2.imwrite(crop_pb_path, crop_pb)
     cv2.imwrite(crop_db_path, crop_db)
+
+
+    tdatetime = dt.now()
+    tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+    cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
 
     end_t_capture = timeit.default_timer()
     print("[*] Time: ", end_t_capture -  start_t)
@@ -72,7 +77,7 @@ def pick():
         
             pickorsep, g_pick = res_pickbin
             
-            crop_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["schunk"], top_color=(0,255,0), top_only=True)
+            crop_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
             cv2.imwrite(draw_path, crop_grasp)
 
             _, g_r_pick = transform_image_to_robot(g_pick, point_array, cfg, 
@@ -96,7 +101,7 @@ def pick():
         if pickorsep == 0:
             notice_print("Untangled! drop zone to goal zone! ") 
             g_pick = action 
-            crop_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["schunk"], top_only=True)
+            crop_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["left"], top_only=True)
             cv2.imwrite(draw_path, crop_grasp)
 
             _, g_r_pick = transform_image_to_robot(g_pick, point_array, cfg, 
@@ -128,7 +133,7 @@ def pick():
             # img_grasp = draw_grasp([g_pull,g_hold], crop_db.copy())
             img_grasp = draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, crop_db.copy())
             cv2.imwrite(draw_path, img_grasp)
-            gen_motion_pickorsep(mf_path, g_r_pull, pose_right=g_r_hold, pulling=[*v_r_pull, v_len])
+            gen_motion_pickorsep(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_r_pull, v_len])
             # gen_motion_pickorsep(mf_path, g_r_pull, pulling=[*v_r_pull, v_len])
             dual_arm = True
 

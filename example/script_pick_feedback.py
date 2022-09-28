@@ -37,7 +37,6 @@ calib_path = os.path.join(root_dir, "data/calibration/calibmat.txt")
 mf_path = os.path.join(root_dir, "data/motion/motion.dat")
 traj_path = os.path.join(root_dir, "data/motion/motion_ik.dat")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
-
 # ---------------------- get config info -------------------------
 bincfg = BinConfig(config_path)
 cfg = bincfg.data
@@ -47,10 +46,13 @@ bin = "pick"
 
 main_print("Capture point cloud ... ")
 point_array = capture_pc()
+point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
 img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
-crop = crop_roi(img_path, cfg[bin]["margin"])
 
 cv2.imwrite(img_path, img_blur)
+
+crop = crop_roi(img_path, cfg[bin]["margin"])
+
 cv2.imwrite(crop_path, crop)
 
 point_array /= 1000
@@ -91,15 +93,16 @@ else:
 
     elif cfg['exp_mode'] == 2:
         # 2 -> random circular picking
+        best_grasp_idx = 0
         best_grasp = grasps[0]
         best_action_idx = random.sample(list(range(6)),1)[0]
-     
-    _, best_grasp_r = transform_image_to_robot(best_grasp, point_array, cfg, 
+
+    best_grasp_fg, best_grasp_r = transform_image_to_robot(best_grasp, point_array, cfg, 
                                                hand="left", margin=bin)
 
 # draw grasp
-    notice_print("Grasp (pick) : (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                 % (*best_grasp, *best_grasp_r)) 
+    notice_print("Grasp (pick) : (%d,%d,%.1f) -> finger (%.3f,%.3f,%.3f)" 
+            % (*best_grasp, *best_grasp_fg[0:3])) 
 
     # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
     img_grasp = draw_grasp(grasps, crop.copy(), top_only=True, top_idx=best_grasp_idx)
@@ -107,27 +110,30 @@ else:
 
 # ---------------------- execute on robot -------------------------
 
+best_action_idx = 1
+print("bai", best_action_idx)
 gen_motion_pick(mf_path, best_grasp_r, best_action_idx)
-
 if found_cnoid: 
     plan_success = load_motionfile(mf_path)
-    # if gen_success and plan_success:
-    if plan_success:
+    #if gen_success and plan_success:
+    if plan_success.count(True) == len(plan_success):
         nxt = NxtRobot(host='[::]:15005')
         motion_seq = get_motion()
         num_seq = int(len(motion_seq)/20)
-        print(f"Total {num_seq} motion sequences! ")
+        print(f"Success! Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 20))
-
-        nxt.playMotionSeq(motion_seq) 
+        #nxt.playMotionSeq(motion_seq) 
+        nxt.playMotionSeqWithFB(motion_seq)
 
 # ---------------------- record data -------------------------
-        # tdatetime = dt.now()
-        # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-        # os.mkdir(f"{root_dir}/exp/{tstr}")
-        # np.savetxt(f"{root_dir}/exp/{tstr}/out.txt", np.asarray(best_grasp), delimiter=',')
-        # cv2.imwrite(f"{root_dir}/exp/{tstr}/grasp.png", img_grasp)
-        # cv2.imwrite(f"{root_dir}/exp/{tstr}/depth.png", img_input)
+        tdatetime = dt.now()
+        tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+        cv2.imwrite(f"{root_dir}/exp/{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", crop)
+        cv2.imwrite(f"{root_dir}/exp/vis_{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", img_grasp)
+        #os.mkdir(f"{root_dir}/exp/{ts")
+        #np.savetxt(f"{root_dir}/exp/{tstr}/out.txt", np.asarray(best_grasp), delimiter=',')
+        #cv2.imwrite(f"{root_dir}/exp/{tstr}/grasp.png", img_grasp)
+        #cv2.imwrite(f"{root_dir}/ex/p{tstr}/depth.png", img_input)
 
 end = timeit.default_timer()
 main_print("Time: {:.2f}s".format(end - start))

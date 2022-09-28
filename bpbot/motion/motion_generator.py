@@ -6,15 +6,17 @@ class Motion(object):
         # hand open width from the center
         bincfg = BinConfig()
         cfg = bincfg.data
-        schk_w = (cfg["hand"]["schunk"]["open_width"]/2/1000) * 180 / math.pi
-        smc_w = (cfg["hand"]["smc"]["open_width"]/2/1000) * 180 / math.pi
+        schk_w = (cfg["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
+        right_w = (cfg["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
         # both hand close
         self.initpose = "0 3.00 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 0 0 0 0"
         # both hand open 
-        self.initpose_ = "0 0.80 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (smc_w,-smc_w,schk_w,-schk_w)
-        self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (smc_w,-smc_w,schk_w,-schk_w) 
+        self.initpose_ = "0 0.80 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (right_w,-right_w,schk_w,-schk_w)
+        self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (right_w,-right_w,schk_w,-schk_w) 
         self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (schk_w,-schk_w) 
-        self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (smc_w,-smc_w) 
+        self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (right_w,-right_w) 
+        self.goal_c = [0.440, 0.310]
+        self.drop_c = [0.438, 0.120]
         
         self.half_helix = [
             "0 1.00 LARM_XYZ_ABS  0.537  0.160 0.320 -180 -90 145", 
@@ -69,8 +71,6 @@ class Motion(object):
                      "0 0.50 LARM_JNT_REL 0 0 0 0 0 0 -150"]
              
     def gen_motion_picking(self, g, dest="goal"):
-        drop_c = [0.438, 0.120]
-        goal_c = [0.440, 0.310]
         # goal_c = [0.086, 0.532]
         [x,y,z,roll,pitch,yaw] = g
         fp=open(self.filepath, 'wt')
@@ -81,17 +81,39 @@ class Motion(object):
         print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
         print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (x,y,roll,pitch,yaw),file=fp)
         if dest == "drop":
-            print("0 0.80 LARM_XYZ_ABS %.3f %.3f 0.300 %.1f %.1f %.1f" % (*drop_c,roll,pitch,yaw),file=fp)
-            print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.220 %.1f %.1f %.1f" % (*drop_c,roll,pitch,yaw),file=fp)
+            print("0 0.80 LARM_XYZ_ABS %.3f %.3f 0.300 %.1f %.1f %.1f" % (*self.drop_c,roll,pitch,yaw),file=fp)
+            print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.220 %.1f %.1f %.1f" % (*self.drop_c,roll,pitch,yaw),file=fp)
         elif dest == "goal":
             #print("0 1.00 LARM_XYZ_ABS 0.086 0.532 0.300 %.1f %.1f %.1f" % (roll,pitch,yaw), file=fp)
             #print("0 1.00 LARM_XYZ_ABS 0.086 0.532 0.200 %.1f %.1f %.1f" % (roll,pitch,yaw), file=fp)
-            print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*goal_c,roll,pitch,yaw), file=fp)
-            print("0 0.30 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*goal_c,roll,pitch,yaw), file=fp)
+            print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.goal_c,roll,pitch,yaw), file=fp)
+            print("0 0.30 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c,roll,pitch,yaw), file=fp)
         print("0 0.30 LHAND_JNT_OPEN",file=fp)
         print(self.initpose_,file=fp)
         fp.close()
-    
+
+    def gen_motion_test(self, g_pull, v_pull, g_hold):
+        [px,py,pz,proll,ppitch,pyaw] = g_pull
+        [hx,hy,hz,hroll,hpitch,hyaw] = g_hold
+        [vx,vy,vlen] = v_pull
+        fp = open(self.filepath, 'wt')
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz,hroll,hpitch,hyaw),file=fp)
+        print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+        print("0 0.50 RHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
+
+        print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print(self.bothhand_close, file=fp)
+        #print("0 0.50 LHAND_JNT_OPEN",file=fp)
+        #print("0 0.50 RHAND_JNT_OPEN",file=fp)
+        print(self.initpose_,file=fp)
+
+
     def gen_motion_separation(self, g_pull, v_pull, g_hold=None):
         [px,py,pz,proll,ppitch,pyaw] = g_pull
         [vx,vy,vlen] = v_pull
@@ -101,17 +123,21 @@ class Motion(object):
             [hx,hy,hz,hroll,hpitch,hyaw] = g_hold
             # print("0 0.50 LHAND_JNT_OPEN",file=fp)
             # print("0 0.50 RHAND_JNT_OPEN",file=fp)
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
-            print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz,hroll,hpitch,hyaw),file=fp)
+            print("0 1.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
+            print("0 1.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
+            
+            print("0 2.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz+0.1,hroll,hpitch,hyaw),file=fp)
+            print("0 2.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz,hroll,hpitch,hyaw),file=fp)
+
             print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
             print("0 0.50 RHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
 
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+            # print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz,proll,ppitch,pyaw),file=fp)
             print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
 
-            print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
-            print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+            print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
+            print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
             print(self.bothhand_close, file=fp)
             #print("0 0.50 LHAND_JNT_OPEN",file=fp)
             #print("0 0.50 RHAND_JNT_OPEN",file=fp)
@@ -119,22 +145,23 @@ class Motion(object):
 
         else: 
             # print("0 0.50 LHAND_JNT_OPEN",file=fp)
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
+            print("0 1.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
+            print("0 1.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
             print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
-            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+            # print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
+            print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz,proll,ppitch,pyaw),file=fp)
             print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
 
-            print("0 2.00 LARM_XYZ_ABS 0.470 0.365 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
-            print("0 2.00 LARM_XYZ_ABS 0.470 0.365 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+            print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
+            print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
             print("0 0.50 LHAND_JNT_OPEN",file=fp)
             print(self.initpose_,file=fp) 
 
     def get_seq_pick(self,x,y,z,roll,pitch,yaw):
         return [
             # "0 0.50 LHAND_JNT_OPEN",
-            "0 2.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (x,y,roll,pitch,yaw),
-            "0 2.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (x,y,z,roll,pitch,yaw),
+            "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (x,y,roll,pitch,yaw),
+            "0 1.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (x,y,z,roll,pitch,yaw),
             "0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",
             "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (x,y,roll,pitch,yaw),
         ]
@@ -149,8 +176,9 @@ class Motion(object):
             ]
         elif destination == "side":
             return [
-                "0 1.00 LARM_XYZ_ABS 0.086 0.532 0.300 -90.0 -90.0 90.0",
-                "0 0.50 LARM_XYZ_ABS 0.086 0.532 0.200 -90.0 -90.0 90.0",
+                "0 1.00 LARM_XYZ_ABS 0.400 0.400 0.450 -90.0 -90.0 90.0",
+                "0 1.00 LARM_XYZ_ABS 0.070 0.552 0.350 -90.0 -90.0 90.0",
+                "0 0.50 LARM_XYZ_ABS 0.070 0.552 0.200 -90.0 -90.0 90.0",
                 "0 0.50 LHAND_JNT_OPEN",
                 self.initpose_
             ]

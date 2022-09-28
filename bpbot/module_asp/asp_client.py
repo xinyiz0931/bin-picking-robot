@@ -20,6 +20,7 @@ class ASPClient(object):
     def predict(self, imgpath, grasps):
         try:
             g2bytes = np.ndarray.tobytes(grasps)
+            #g2bytes = grasps
             out = self.stub.action_success_prediction(aspmsg.ASPInput(imgpath=imgpath, grasps=g2bytes))
             return np.frombuffer(out.probs, dtype=np.float32)
         except grpc.RpcError as rpc_error:

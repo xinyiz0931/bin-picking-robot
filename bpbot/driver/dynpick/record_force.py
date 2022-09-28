@@ -52,8 +52,7 @@ term_[6][termios.VEOL2] = o_ # ?0
 termios.tcsetattr(fdc, termios.TCSANOW, term_)
 ################## over ##################
 
-#tw = 50
-tw = 100
+tw = 50
 clkb = 0
 clkb2 = 0
 num = 0
@@ -116,12 +115,12 @@ def plot_f(force, x):
     #minor_ticks = np.arange(x[0], x[-1])
     hline_c = 'gold'
 
-    #for i, f in enumerate(f_new):
-    #    if i==0: continue
-    #    if f[2] > f_new[i-1][2] and f[2] > 0.1:
-    #        ax1.axvline(x=x[i], color=hline_c, alpha=1)
-    #        ax1.axhline(y=0, color=colors[0], alpha=.5, linestyle='dashed')
-    #        #print(i)
+    for i, f in enumerate(f_new):
+        if i==0: continue
+        if f[2] > f_new[i-1][2] and f[2] > 0.1:
+            ax1.axvline(x=x[i], color=hline_c, alpha=1)
+            ax1.axhline(y=0, color=colors[0], alpha=.5, linestyle='dashed')
+            #print(i)
         #if abs(f[1]) > 4.8:
         #    ax1.axvline(x=x[i], color=hline_c, alpha=1)
         #    ax1.axhline(y=4.8 if f[1] > 0 else -4.8, color=colors[1], alpha=.5, linestyle='dashed')
@@ -143,8 +142,7 @@ def plot_f(force, x):
     #handles, labels = ax1.get_legend_handles_labels()
     #ax1.legend(handles=handles, labels=eval(labels[0]), loc='upper left')
     plt.ion()
-    #plt.ylim(-2, 2)
-    plt.ylim(-0.5, 0.5)
+    plt.ylim(-2, 2)
     plt.show()
 
 plot_data = []
@@ -153,45 +151,42 @@ j = 0
 #while i < 100:
 while True:
     # half second
-    data = []
-    while True:
-        clk = (time.process_time()) * 1000 - clk0
-        if clk >= (clkb + tw):
-            clkb = clk / tw * tw
-            break
-    os.write(fdc, r_)
-    l = os.read(fdc, 27)
-    time_stamp = int(clk / tw * tw)
-    if l == bytes(): continue
+    try:
+        data = []
+        while True:
+            clk = (time.process_time()) * 1000 - clk0
+            if clk >= (clkb + tw):
+                clkb = clk / tw * tw
+                break
+        os.write(fdc, r_)
+        l = os.read(fdc, 27)
+        time_stamp = int(clk / tw * tw)
+        data.append(time_stamp)
+        if time_stamp < 1200: 
+            #continue 
+            data.append(time_stamp)
+            for i in range(6): data.append(0)
 
-    data.append(time_stamp)
-    
-    #if time_stamp < 1200: 
-    #    #continue 
-    #    data.append(time_stamp)
-    #    for i in range(6): data.append(0)
+        for i in range(1,22,4):
+            data.append(int((l[i:i+4]).decode(),16))
+        fp.write(",".join(map(str,data)))
+        fp.write("\n")
 
-    for i in range(1,22,4):
-        data.append(int((l[i:i+4]).decode(),16))
-
-    #print(data)
-    print(*data, file=fp)
-    #fp.write(",".join(map(str,data)))
-    #fp.write("\n")
-
-    plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
-    j+=1 
-    fig = plt.figure(1, figsize=(16, 6))
-    if len(plot_data) <= 50:
-        force = [[0,0,0] for _ in range(50-j)] + plot_data
-    else:
-        force = plot_data[j-50:]
-    plt.clf()
-    force_tmp = np.asarray(force)
-    plot_f(force_tmp, range(j,j+50))
-    plt.pause(0.005)
-    #time.sleep(.5)
+        plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
+        j+=1 
+        fig = plt.figure(1, figsize=(16, 6))
+        if len(plot_data) <= 50:
+            force = [[0,0,0] for _ in range(50-j)] + plot_data
+        else:
+            force = plot_data[j-50:]
+        plt.clf()
+        force_tmp = np.asarray(force)
+        plot_f(force_tmp, range(j,j+50))
+        plt.pause(0.005)
+        #time.sleep(.5)
             
+    except KeyboardInterrupt:
+        break
 #        
 #        # try visualization
 #        # plot [time, fx]

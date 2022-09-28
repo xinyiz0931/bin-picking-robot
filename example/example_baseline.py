@@ -9,12 +9,12 @@ from bpbot.binpicking import *
 
 def detect(img_path, exp_mode):
     h_params = {
-        "finger_height": 15,
+        "finger_length": 15,
         "finger_width":  8, 
         "open_width":    40
     }
     # h_params = {
-    #     "finger_height": 15,
+    #     "finger_length": 15,
     #     "finger_width":  8, 
     #     "open_width":    30
     # }
