@@ -37,7 +37,7 @@ args = parser.parse_args()
 
 root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 config_path = os.path.join(root_dir, "cfg/config.yaml")
-cfg = BinConfig(config_path)
+cfg = BinConfig(config_path, pre=False)
 min_dist_id, max_dist_id = 1, 10
 
 ws_mode = "dist_margin" if args.mode == "all" else args.mode

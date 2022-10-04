@@ -2,7 +2,7 @@ import os
 import yaml
 
 class BinConfig(object):
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None, pre=True):
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         if config_path is None: 
@@ -13,9 +13,8 @@ class BinConfig(object):
         self.data_path = config_path
         self.data = {}
         self.load()
-        self.pre_define()
-
-        # self.pre_define()
+        if pre:
+            self.pre_define()
     
     def load(self):
         try:

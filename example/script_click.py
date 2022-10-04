@@ -83,8 +83,8 @@ p_hold, p_pull = np.array(p_clicked)
 # =======================  picking policy ===========================
 
 
-right_attr = [cfg["hand"]["right"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
-left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
+right_attr = [cfg["hand"]["right"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
+left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
 
 gripper_right = Gripper(*right_attr)
 gripper_left = Gripper(*left_attr)

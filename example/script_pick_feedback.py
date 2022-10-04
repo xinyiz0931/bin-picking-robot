@@ -110,8 +110,6 @@ else:
 
 # ---------------------- execute on robot -------------------------
 
-best_action_idx = 1
-print("bai", best_action_idx)
 gen_motion_pick(mf_path, best_grasp_r, best_action_idx)
 if found_cnoid: 
     plan_success = load_motionfile(mf_path)
@@ -126,14 +124,10 @@ if found_cnoid:
         nxt.playMotionSeqWithFB(motion_seq)
 
 # ---------------------- record data -------------------------
-        tdatetime = dt.now()
-        tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-        cv2.imwrite(f"{root_dir}/exp/{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", crop)
-        cv2.imwrite(f"{root_dir}/exp/vis_{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", img_grasp)
-        #os.mkdir(f"{root_dir}/exp/{ts")
-        #np.savetxt(f"{root_dir}/exp/{tstr}/out.txt", np.asarray(best_grasp), delimiter=',')
-        #cv2.imwrite(f"{root_dir}/exp/{tstr}/grasp.png", img_grasp)
-        #cv2.imwrite(f"{root_dir}/ex/p{tstr}/depth.png", img_input)
+        # tdatetime = dt.now()
+        # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+        # cv2.imwrite(f"{root_dir}/exp/{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", crop)
+        # cv2.imwrite(f"{root_dir}/exp/vis_{tstr}_{int(best_grasp[0])}_{int(best_grasp[1])}_{best_action_idx}.png", img_grasp)
 
 end = timeit.default_timer()
 main_print("Time: {:.2f}s".format(end - start))

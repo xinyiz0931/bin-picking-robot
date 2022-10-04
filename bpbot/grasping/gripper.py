@@ -183,7 +183,7 @@ class Gripper(object):
                 if i == top_idx:
                     (r,g,b) = top_color
                 else:
-                    (r,g,b) = color
+                    (b,g,r) = color
                 rgbmask = np.ones((h, w), dtype="uint8")
                 rgbmask = np.dstack((np.array(rgbmask * r, 'uint8'), np.array(rgbmask * g, 'uint8'),
                                 np.array(rgbmask * b, 'uint8')))

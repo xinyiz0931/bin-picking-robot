@@ -64,8 +64,8 @@ os.write(fdc, r_)
 
 # initialization
 fp = open('./out.txt','wt')
-
-init = [7984,8292,8572]
+init = [7982,8247,8599]
+#init = [7984,8292,8572]
 
 def vector_rotate(x,y,theta):
     """Only for 2D"""
@@ -144,7 +144,7 @@ def plot_f(force, x):
     #ax1.legend(handles=handles, labels=eval(labels[0]), loc='upper left')
     plt.ion()
     #plt.ylim(-2, 2)
-    plt.ylim(-0.5, 0.5)
+    plt.ylim(-0.2, 0.2)
     plt.show()
 
 plot_data = []

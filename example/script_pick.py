@@ -48,9 +48,9 @@ bin = "pick"
 main_print("Capture point cloud ... ")
 point_array = capture_pc()
 img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
+cv2.imwrite(img_path, img_blur)
 crop = crop_roi(img_path, cfg[bin]["margin"])
 
-cv2.imwrite(img_path, img_blur)
 cv2.imwrite(crop_path, crop)
 
 point_array /= 1000
@@ -59,7 +59,7 @@ point_array /= 1000
 
 # ---------------------- compute grasps -------------------------
 main_print("Compute grasps... ")
-grasps = detect_grasp(n_grasp=10, 
+grasps = detect_grasp(n_grasp=5, 
                             img_path=crop_path, 
                             g_params=cfg['graspability'],
                             h_params=cfg["hand"]["left"])
@@ -85,13 +85,17 @@ else:
 
     elif cfg['exp_mode'] == 1: 
         # 1 -> proposed circuclar picking
-        grasp_pixels = np.array(grasps)[:, 1:3]
+        grasp_pixels = np.array(grasps)[:, 0:2]
         best_action_idx, best_grasp_idx = predict_action_grasp(grasp_pixels, crop_path)
         best_grasp = grasps[best_grasp_idx]
+
+        if best_action_idx == 0: best_action_idx = 1
+        elif best_action_idx == 6: best_action_idx = random.sample(list(range(4,7)), 1)[0]
 
     elif cfg['exp_mode'] == 2:
         # 2 -> random circular picking
         best_grasp = grasps[0]
+        best_grasp_idx = 0
         best_action_idx = random.sample(list(range(6)),1)[0]
      
     _, best_grasp_r = transform_image_to_robot(best_grasp, point_array, cfg, 
@@ -102,7 +106,7 @@ else:
                  % (*best_grasp, *best_grasp_r)) 
 
     # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
-    img_grasp = draw_grasp(grasps, crop.copy(), top_only=True, top_idx=best_grasp_idx)
+    img_grasp = draw_grasp(grasps, crop.copy(), top_only=False, top_idx=best_grasp_idx)
     cv2.imwrite(draw_path, img_grasp)
 
 # ---------------------- execute on robot -------------------------
@@ -112,11 +116,11 @@ gen_motion_pick(mf_path, best_grasp_r, best_action_idx)
 if found_cnoid: 
     plan_success = load_motionfile(mf_path)
     # if gen_success and plan_success:
-    if plan_success:
+    if plan_success.count(True) == len(plan_success):
         nxt = NxtRobot(host='[::]:15005')
         motion_seq = get_motion()
         num_seq = int(len(motion_seq)/20)
-        print(f"Total {num_seq} motion sequences! ")
+        print(f"Success! Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
         nxt.playMotionSeq(motion_seq) 

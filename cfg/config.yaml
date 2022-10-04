@@ -6,8 +6,8 @@ obj_height: 13
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
 pick:
   distance:
-    max: 1183
-    min: 1056
+    max: 1180
+    min: 1090
   margin:
     left: 831
     top: 363
@@ -23,32 +23,14 @@ drop:
     right: 1683
     bottom: 932
 graspability:
-  rotation_step: 22.5
+  rotation_step: 45.0
   depth_step: 10
   hand_depth: 25
 hand:
   left:
     type: smc_ft
-    height: 0.1615
-    finger_length: 8
-    finger_width: 4
-    open_width: 46
-    tool_changer_height: 31
-    flange_height: 3
-    gripper_height: 25
-    finger_height: 67.5
-    force_sensor_height: 32
-    force_sensor_flange_height: 3
   right:
     type: smc
-    height: 0.139
-    finger_length: 8
-    finger_width: 4
-    open_width: 46
-    tool_changer_height: 31
-    flange_height: 3
-    gripper_height: 25
-    finger_height: 80
 tangle:
   compressed_size: 250
   len_thld: 15

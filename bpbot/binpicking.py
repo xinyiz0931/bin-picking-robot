@@ -126,7 +126,7 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     if grasps is None: 
         return img 
     gripper = Gripper(finger_w, finger_h, open_w)
-    draw_img = gripper.draw_grasp(grasps, img, top_color=top_color, top_idx=top_idx, top_only=top_only)
+    draw_img = gripper.draw_grasp(grasps, img, color=color, top_color=top_color, top_idx=top_idx, top_only=top_only)
     return draw_img
 
 def draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, img, h_params=None):
@@ -439,7 +439,7 @@ def predict_action_grasp(grasps, imgpath):
     from bpbot.module_asp import asp_client as aspclt
     aspc = aspclt.ASPClient()
     
-    res_p = aspc.predict(imgpath=imgpath, grasps=grasps)
+    # res_p = aspc.predict(imgpath=imgpath, grasps=grasps)
 
     best_action,best_graspno = aspc.infer(imgpath=imgpath, grasps=grasps)
     #grasps2bytes=np.ndarray.tobytes(np.array(grasps))
