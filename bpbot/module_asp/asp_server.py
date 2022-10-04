@@ -16,7 +16,6 @@ class ASPServer(asprpc.ASPServicer):
     def load_aspnet(self, model_dir):
         """Load models"""
         self.model = load_model(model_dir)
-        self.model.summary()
         self.threshold = 0.5
         self.scores = []
         self.pred_num = -1
@@ -36,7 +35,7 @@ class ASPServer(asprpc.ASPServicer):
         Returns:
             action index, grasp index 
         """
-        print(f"[*] Start inference, threshold = {self.threshold}!")
+        print(f"\n[*] Start inference, threshold = {self.threshold}!")
         probs = np.frombuffer(request.probs, dtype=np.float32)
         alist, plist = [], []
         # calculate the max decision for each grasp
@@ -83,9 +82,11 @@ class ASPServer(asprpc.ASPServicer):
         return aspmsg.AGPair(action=final_a, graspidx=final_gindex)
     
     def action_success_prediction(self, request, context):
-        print("[*] Start prediction!  ")
+        print("\n[*] Start prediction!  ")
         img = cv2.imread(request.imgpath)
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
         grasps = np.frombuffer(request.grasps)
+        print(grasps)
         ch, cw, _ = img.shape
         
         g_num = int(len(grasps)/2)
@@ -93,9 +94,13 @@ class ASPServer(asprpc.ASPServicer):
         pixel_poses = np.reshape(grasps, (g_num, 2)).astype(np.float64)
         pixel_poses[:, 0] *= (224/cw)
         pixel_poses[:, 1] *= (224/ch)
+        pixel_poses = pixel_poses.astype(int)
+
+
         poses = np.repeat(pixel_poses, 7, axis=0)
         sampled_actions = to_categorical(list(range(7)), 7)
         img = cv2.resize(img,(224,224))
+
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         tileimg = cv2.cvtColor(np.tile(gray, (pred_num, 1)), cv2.COLOR_GRAY2BGR)
@@ -104,9 +109,10 @@ class ASPServer(asprpc.ASPServicer):
         actions = np.reshape(np.tile(sampled_actions, (g_num, 1)), (pred_num, 7))
         res = self.model.predict([images, poses, actions])
         self.scores = res[:, 1].reshape((g_num, 7))
+        for g,s in zip(pixel_poses,self.scores):
+            print("{0: <10}".format(str(g)), " => {}".format(np.round(s, 3)))
         # return res[:, 1].reshape((g_num, 7))
         p2bytes = np.ndarray.tobytes(res[:, 1])
-        print(res[:, 1].reshape((g_num, 7)))
         return aspmsg.ASPOutput(probs=p2bytes)
         # return aspmsg.ASPOutput(probs = res[:, 1].reshape((g_num, 7)))
     
@@ -121,7 +127,9 @@ def serve(model_dir, host = "localhost:50051"):
     asprpc.add_ASPServicer_to_server(aspserver, server)
     server.add_insecure_port(host)
     server.start()
+    print("-------------------------------------------")
     print("[*] The tensorflow server is started!")
+    print("-------------------------------------------")
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
