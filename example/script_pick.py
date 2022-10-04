@@ -88,10 +88,7 @@ else:
         grasp_pixels = np.array(grasps)[:, 0:2]
         best_action_idx, best_grasp_idx = predict_action_grasp(grasp_pixels, crop_path)
         best_grasp = grasps[best_grasp_idx]
-
-        if best_action_idx == 0: best_action_idx = 1
-        elif best_action_idx == 6: best_action_idx = random.sample(list(range(4,7)), 1)[0]
-
+        
     elif cfg['exp_mode'] == 2:
         # 2 -> random circular picking
         best_grasp = grasps[0]
