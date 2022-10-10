@@ -116,6 +116,10 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     Returns:
         array: drawn image
     """
+    if isinstance(img, str) and os.path.exists(img):
+        img = cv2.imread(img)
+    else: return
+
     if h_params is not None: 
         finger_w = h_params["finger_width"]
         finger_h = h_params["finger_length"]

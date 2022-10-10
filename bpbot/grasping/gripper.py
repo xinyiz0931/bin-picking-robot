@@ -181,7 +181,7 @@ class Gripper(object):
                 h,w,_ = img.shape
                 mask = self.get_hand_model('shape',w,h,open_w,x,y,angle)
                 if i == top_idx:
-                    (r,g,b) = top_color
+                    (b,g,r) = top_color
                 else:
                     (b,g,r) = color
                 rgbmask = np.ones((h, w), dtype="uint8")
