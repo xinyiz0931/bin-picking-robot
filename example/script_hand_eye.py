@@ -24,7 +24,7 @@ root_dir = "/home/hlab/bpbot"
 # calib_arm = "left"
 calib_arm = "right"
 
-calib_dir = os.path.join(root_dir, "data/calibration", "20220928")
+calib_dir = os.path.join(root_dir, "data/calibration", "20221017")
 save_robot_r = os.path.join(calib_dir, "robot_clb_r.txt")
 save_camera_r = os.path.join(calib_dir, "camera_clb_r.txt")
 save_robot_l = os.path.join(calib_dir, "robot_clb_l.txt")

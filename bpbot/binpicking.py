@@ -118,7 +118,6 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     """
     if isinstance(img, str) and os.path.exists(img):
         img = cv2.imread(img)
-    else: return
 
     if h_params is not None: 
         finger_w = h_params["finger_width"]
@@ -659,10 +658,10 @@ def transform_image_to_camera(image_locs, image_width, pc, margins=None):
 def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=None, tilt=None, dualarm=None):
     """
     Transform image locs to robot locs (5-th joint pose in robot coordinate)
-    1. p_r_ft -> p_r_j: position of 5-th joint of the arm in robot coordinate
+    1. p_tcpt -> p_wrist: position of 5-th joint of the arm in robot coordinate
     2. (u,v) -> p_c
-    3. p_c -> p_r_f: position of finger tip in robot coordinate
-    4. degree -> rpy_r_j: euler angles of 5-th joint in robot coordinate
+    3. p_c -> p_tcp: position of finger tip in robot coordinate
+    4. degree -> rpy_wrist: euler angles of 5-th joint in robot coordinate
     Parameters:
         image_locs {array} -- N * (ix,iy,ia) at camera coordinate, angle in degree
         calib_path {str} -- calibration matrix file path
@@ -681,20 +680,20 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
         # [1]
         if tilt == None: tilt = 90
         if hand == "left":
-            g_jf = np.array([[1,0,0,-(cfg["hand"]["left"]["height"])],
+            g_wt = np.array([[1,0,0,-(cfg["hand"]["left"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
-            # rpy_r_j = [(theta - 90), -tilt, 90]
-            rpy_r_j = [-((90-theta)%180), -tilt, 90]
+            # rpy_wrist = [(theta - 90), -tilt, 90]
+            rpy_wrist = [-((90-theta)%180), -tilt, 90]
             # if dualarm is False: 
-            #     rpy_r_j = [90), -tilt, 90]
+            #     rpy_wrist = [90), -tilt, 90]
             # else: 
-            #     rpy_r_j = [-(theta - 90) % -180, -tilt, 90]
+            #     rpy_wrist = [-(theta - 90) % -180, -tilt, 90]
 
         elif hand == "right":
-            rpy_r_j = [(theta + 90) % 180, -tilt, -90]
-            g_jf = np.array([[1,0,0,-(cfg["hand"]["right"]["height"])],
+            rpy_wrist = [(theta + 90) % 180, -tilt, -90]
+            g_wt = np.array([[1,0,0,-(cfg["hand"]["right"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
@@ -710,7 +709,7 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     # [2]
     point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
     p_c = point_mat[v,u]
-    print("camera_pose", p_c)
+    # print("camera_pose", p_c)
     #p_c = point_array[int(v * cfg["width"] + u)] # unit: m
     u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 30)
     p_c = point_mat[v,u]
@@ -718,20 +717,23 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     #    print("replace bad point! ")
     #    u,v = replace_bad_point(point_mat[:,:,2], [u,v])
     #    p_c = point_mat[v,u]
-    print("new camera_pose", p_c)
+    # print("new camera_pose", p_c)
     # [3] 
-    p_r_f = np.dot(g_rc, [*p_c, 1])  # unit: m
-    p_r_f = p_r_f[:3]
+    p_tcp = np.dot(g_rc, [*p_c, 1])  # unit: m
+    p_tcp = p_tcp[:3]
+    
+    p_tcp_table = np.dot(g_rc, [*p_c[0:2], cfg["table_distance"]/1000, 1])
+    p_tcp[2] -= _obj_h
+    print(p_tcp, p_tcp_table)
 
-    if len(image_locs) == 2: return p_r_f
+    if len(image_locs) == 2: return p_tcp
 
     # [4]
-    p_r_f[2] -= _obj_h
-    g_rf = np.r_[np.c_[rpy2mat(rpy_r_j, 'xyz'), p_r_f], [[0,0,0,1]]]
-    g_rj = np.dot(g_rf, np.linalg.inv(g_jf))
-    p_r_j = np.dot(g_rj, [0,0,0,1])
-    
-    return p_r_f, [*p_r_j[:3], *rpy_r_j]
+    g_rt = np.r_[np.c_[rpy2mat(rpy_wrist, 'xyz'), p_tcp], [[0,0,0,1]]]
+    g_rw = np.dot(g_rt, np.linalg.inv(g_wt))
+    p_wrist = np.dot(g_rw, [0,0,0,1])
+
+    return p_tcp, [*p_wrist[:3], *rpy_wrist]
 
 def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min_y=-0.25, max_y=0.25):
     max_z = 0.2

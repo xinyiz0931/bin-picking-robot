@@ -18,7 +18,7 @@ def main():
     # open_w = 48
     # tplt_size = 250
     # ============== DEPTH SETUP (500x500)==============
-    h_params = {"finger_height": 30,
+    h_params = {"finger_length": 30,
                 "finger_width":  12, 
                 "open_width":    40}
     # h_params = cfg["hand"] 

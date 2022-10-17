@@ -68,28 +68,29 @@ def on_click(event,x,y,flags,param):
         # print(f"{x},{y}")
         p_clicked.append([x,y])
 
-cv2.namedWindow('click twice to select pull and hold')
-cv2.setMouseCallback('click twice to select pull and hold',on_click)
+cv2.namedWindow('click twice to select hold and pull')
+cv2.setMouseCallback('click twice to select hold and pull',on_click)
 while(len(p_clicked)<2):
-    cv2.imshow('click twice to select pull and hold',drawn)
+    cv2.imshow('click twice to select hold and pull',drawn)
     k = cv2.waitKey(20) & 0xFF
     if k == 27 or k==ord('q'):
         break
 cv2.destroyAllWindows()
 
-# p_clicked = [[102,107], [308, 243]]
+#p_clicked = [[102,107], [308, 243]]
+
 p_hold, p_pull = np.array(p_clicked)
 
 # =======================  picking policy ===========================
 
-
-right_attr = [cfg["hand"]["right"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
-left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_height", "open_width"]]
+right_attr = [cfg["hand"]["right"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
+left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
 
 gripper_right = Gripper(*right_attr)
 gripper_left = Gripper(*left_attr)
 # theta_pull = gripper_left.point_oriented_grasp(img_input, [p_pull[0], p_pull[1]])
 theta_pull = 90
+theta_pull = 0
 g_pull = [*p_pull, theta_pull]
 
 theta_hold = gripper_left.point_oriented_grasp(img_input, [p_hold[0], p_pull[1]])
@@ -103,15 +104,25 @@ cv2.imshow("", crop_grasp)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+# ---------------------- coordinate transformation ---------------------
 p_r_pull, g_r_pull = transform_image_to_robot([*p_pull, theta_pull], point_array, cfg, hand="left", margin="pick",dualarm=True)
 p_r_hold, g_r_hold = transform_image_to_robot([*p_hold, theta_hold], point_array, cfg, hand="right", tilt=60, margin="pick", dualarm=True)
 
+#g_r_hold[2] -= 0.01
 v_pull = ((p_r_pull-p_r_hold) / np.linalg.norm(p_r_pull-p_r_hold))[:2]
+
+#g_r_hold = [0.354,-0.213,0.055,0.0,-60.0,-90.0]
+#g_r_pull = [0.425,-0.025,0.076,0.0,-90.0,90.0]
+v_pull = [0.533, 0.846]
 v_len = 0.2
-notice_print("Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                % (*g_pull, *g_r_pull))
-notice_print("Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                % (*g_hold, *g_r_hold))
+
+notice_print("Joint (hold): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_hold,))
+notice_print("Joint (pull): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_pull,))
+
+#notice_print("Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+                #% (*g_pull, *g_r_pull))
+#notice_print("Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+                #% (*g_hold, *g_r_hold))
 notice_print("Vector (pull): (%.3f,%.3f), length: %.3f" % (*v_pull, v_len))
 
 gen_motion_test(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
@@ -120,28 +131,14 @@ gen_motion_test(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
 if found_cnoid: 
     plan_success = load_motionfile(mf_path, dual_arm=True)
     print("plannning success? ", plan_success)
-    nxt = NxtRobot(host='[::]:15005')
-    motion_seq = get_motion()
-    num_seq = int(len(motion_seq)/20)
-    main_print(f"Total {num_seq} motion sequences! ")
-    motion_seq = np.reshape(motion_seq, (num_seq, 20))
+    if plan_success.count(True) == len(plan_success):
+        nxt = NxtRobot(host='[::]:15005')
+        motion_seq = get_motion()
+        num_seq = int(len(motion_seq)/20)
+        main_print(f"Total {num_seq} motion sequences! ")
+        motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
-    nxt.playMotionSeq(motion_seq)
-
-# if found_cnoid: 
-#     # gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="pick")
-#     # gen_success = generate_motion(mf_path, [rx,ry,rz,ra], best_action)
-#     plan_success = load_motionfile(mf_path)
-#     # if gen_success and plan_success:
-#     if plan_success:
-#         nxt = NxtRobot(host='[::]:15005')
-#         motion_seq = get_motion()
-#         num_seq = int(len(motion_seq)/21)
-#         print(f"Total {num_seq} motion sequences! ")
-#         motion_seq = np.reshape(motion_seq, (num_seq, 21))
-
-#         # nxt.playMotionSeq(motion_seq)    
-# # ======================= Record the data ===================s=========
+        nxt.playMotionSeq(motion_seq)
 
 # end = timeit.default_timer()
 # main_print("Time: {:.2f}s".format(end - start))

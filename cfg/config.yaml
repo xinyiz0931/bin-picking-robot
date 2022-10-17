@@ -1,18 +1,20 @@
-exp_mode: 1
+exp_mode: 0
+depth_mode: table 
 author: xinyi
 height: 1544
 width: 2064
-obj_height: 13
+obj_height: 8
+table_distance: 1195  
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
 pick:
   distance:
     max: 1180
     min: 1090
   margin:
-    left: 831
-    top: 363
-    right: 1629
-    bottom: 1025
+    left: 706
+    top: 323
+    right: 1801
+    bottom: 1261
 drop:
   distance:
     max: 1122
@@ -30,7 +32,7 @@ hand:
   left:
     type: smc_ft
   right:
-    type: smc
+    type: schunk
 tangle:
   compressed_size: 250
   len_thld: 15

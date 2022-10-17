@@ -47,7 +47,11 @@ bin = "pick"
 
 main_print("Capture point cloud ... ")
 point_array = capture_pc()
-img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
+if cfg["depth_mode"] == "table":
+    _dist = {"max": cfg["table_distance"], "min": cfg["table_distance"]-100}
+    img, img_blur = pc2depth(point_array, _dist, cfg["width"],cfg["height"])
+elif cfg["depth_mode"] == "bin":
+    img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
 cv2.imwrite(img_path, img_blur)
 crop = crop_roi(img_path, cfg[bin]["margin"])
 
@@ -74,7 +78,7 @@ grasps = detect_grasp(n_grasp=5,
 # ---------------------- picking policy -------------------------
 if grasps is None:
     best_action_idx = -1
-    best_grasp_r = 6 * [0]
+    best_grasp_wrist = 6 * [0]
 
 else:
     if cfg['exp_mode'] == 0:
@@ -95,20 +99,22 @@ else:
         best_grasp_idx = 0
         best_action_idx = random.sample(list(range(6)),1)[0]
      
-    _, best_grasp_r = transform_image_to_robot(best_grasp, point_array, cfg, 
+    best_grasp_tcp, best_grasp_wrist = transform_image_to_robot(best_grasp, point_array, cfg, 
                                                hand="left", margin=bin)
 
 # draw grasp
-    notice_print("Grasp (pick) : (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                 % (*best_grasp, *best_grasp_r)) 
+    notice_print("Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
+    notice_print("Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+                 % (*best_grasp_tcp, *best_grasp_wrist)) 
 
     # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
-    img_grasp = draw_grasp(grasps, crop.copy(), top_only=False, top_idx=best_grasp_idx)
+
+    img_grasp = draw_grasp(grasps, crop.copy(), cfg["hand"]["left"], top_only=False, top_idx=best_grasp_idx)
     cv2.imwrite(draw_path, img_grasp)
 
 # ---------------------- execute on robot -------------------------
 
-gen_motion_pick(mf_path, best_grasp_r, best_action_idx)
+gen_motion_pick(mf_path, best_grasp_wrist, best_action_idx)
 
 if found_cnoid: 
     plan_success = load_motionfile(mf_path)

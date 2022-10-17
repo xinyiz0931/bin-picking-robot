@@ -6,25 +6,18 @@ class Motion(object):
         # hand open width from the center
         bincfg = BinConfig()
         cfg = bincfg.data
-        schk_w = (cfg["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
-        right_w = (cfg["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
+        w_lft = (cfg["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
+        w_rgt = (cfg["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
         # both hand close
         self.initpose = "0 3.00 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 0 0 0 0"
         # both hand open 
-        self.initpose_ = "0 0.80 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (right_w,-right_w,schk_w,-schk_w)
-        self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (right_w,-right_w,schk_w,-schk_w) 
-        self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (schk_w,-schk_w) 
-        self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (right_w,-right_w) 
+        self.initpose_ = "JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
+        self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (w_rgt,-w_rgt,w_lft,-w_lft) 
+        self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (w_lft,-w_lft) 
+        self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (w_rgt,-w_rgt) 
         self.goal_c = [0.440, 0.310]
         self.drop_c = [0.438, 0.120]
         
-        # self.half_helix = [
-        #     "0 1.00 LARM_XYZ_ABS  0.537  0.160 0.320 -180 -90 145", 
-        #     "0 0.50 LARM_XYZ_REL  0.060 -0.100 0.050 0.0 0.0 0.0",  
-        #     "0 0.50 LARM_XYZ_REL  0.060 -0.100 0.050 0.0 0.0 0.0", 
-        #     "0 0.50 LARM_XYZ_REL -0.100 -0.150 0.000 0.0 0.0 0.0", 
-        #     "0 1.00 LARM_XYZ_REL -0.020  0.350 0.000 0.0 0.0 0.0"
-        # ]
         self.half_helix = [
             "0 1.00 LARM_XYZ_ABS 0.537  0.160 0.320 -180 -90  145", # o
             "0 0.50 LARM_XYZ_ABS 0.600  0.120 0.340 -180 -90  145", # half
@@ -93,29 +86,59 @@ class Motion(object):
             print("0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.goal_c,roll,pitch,yaw), file=fp)
             print("0 0.30 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c,roll,pitch,yaw), file=fp)
         print("0 0.30 LHAND_JNT_OPEN",file=fp)
-        print(self.initpose_,file=fp)
+        print("0 3.0 "+self.initpose_,file=fp)
         fp.close()
 
     def gen_motion_test(self, g_pull, v_pull, g_hold):
+        [px,py,pz,proll,ppitch,pyaw] = g_pull
+        [hx,hy,hz,hroll,hpitch,hyaw] = g_hold
+        fp = open(self.filepath, 'wt')
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f 0.200%.1f %.1f %.1f" % (hx,hy,hroll,hpitch,hyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz,hroll,hpitch,hyaw),file=fp)
+        print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+        print("0 0.50 RHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz+0.1,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz+0.1,hroll,hpitch,hyaw),file=fp)
+
+        # start wiggling
+        #for m in self.get_seq_wiggling(px,py,pz+0.1,0.470,0.350,0.250):
+        #    print(m, file=fp)
+
+        print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print("0 3.00 LARM_XYZ_ABS 0.470 0.350 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print(self.bothhand_close, file=fp)
+        #print("0 0.50 LHAND_JNT_OPEN",file=fp)
+        #print("0 0.50 RHAND_JNT_OPEN",file=fp)
+        print("0 3.0 " + self.initpose_,file=fp)
+
+    def gen_motion_test2(self, g_pull, v_pull, g_hold):
         [px,py,pz,proll,ppitch,pyaw] = g_pull
         [hx,hy,hz,hroll,hpitch,hyaw] = g_hold
         [vx,vy,vlen] = v_pull
         fp = open(self.filepath, 'wt')
         print("0 3.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
         print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f 0.200%.1f %.1f %.1f" % (hx,hy,hroll,hpitch,hyaw),file=fp)
         print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz,hroll,hpitch,hyaw),file=fp)
         print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
         print("0 0.50 RHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
+        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz+0.1,proll,ppitch,pyaw),file=fp)
+        print("0 3.00 RARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (hx,hy,hz+0.1,hroll,hpitch,hyaw),file=fp)
 
-        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.02,proll,ppitch,pyaw),file=fp)
-        print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
+        # start wiggling
+        for m in self.get_seq_wiggling(px,py,pz+0.1,0.470,0.350,0.250):
+            print(m, file=fp)
+        #print("0 2.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
+        #print("0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz+0.1,proll,ppitch,pyaw),file=fp)
 
-        print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
-        print("0 2.00 LARM_XYZ_ABS 0.470 0.350 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print("0 5.00 LARM_XYZ_ABS 0.470 0.350 0.250 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
+        print("0 3.00 LARM_XYZ_ABS 0.470 0.350 0.200 %.1f %.1f %.1f" % (proll,ppitch,pyaw),file=fp) 
         print(self.bothhand_close, file=fp)
         #print("0 0.50 LHAND_JNT_OPEN",file=fp)
         #print("0 0.50 RHAND_JNT_OPEN",file=fp)
-        print(self.initpose_,file=fp)
+        print("0 3.0 " + self.initpose_,file=fp)
 
 
     def gen_motion_separation(self, g_pull, v_pull, g_hold=None):
@@ -145,7 +168,7 @@ class Motion(object):
             print(self.bothhand_close, file=fp)
             #print("0 0.50 LHAND_JNT_OPEN",file=fp)
             #print("0 0.50 RHAND_JNT_OPEN",file=fp)
-            print(self.initpose_,file=fp)
+            print("0 0.8 " + self.initpose_,file=fp)
 
         else: 
             # print("0 0.50 LHAND_JNT_OPEN",file=fp)
@@ -159,7 +182,7 @@ class Motion(object):
             print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
             print("0 2.00 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c,proll,ppitch,pyaw),file=fp) 
             print("0 0.50 LHAND_JNT_OPEN",file=fp)
-            print(self.initpose_,file=fp) 
+            print("0 0.8 " + self.initpose_,file=fp) 
 
     def get_seq_pick(self,x,y,z,roll,pitch,yaw):
         return [
@@ -176,7 +199,7 @@ class Motion(object):
                 # "0 2 LARM_XYZ_ABS 0.48 0.35 0.25 %.1f %.1f %.1f" % (roll,pitch,yaw),
                 "0 2.00 LARM_XYZ_ABS 0.480 0.350 0.250 -90.0 -90.0 90.0",
                 "0 0.50 LHAND_JNT_OPEN",
-                self.initpose_
+                "0 0.80 " + self.initpose_
             ]
         elif destination == "side":
             return [
@@ -184,8 +207,19 @@ class Motion(object):
                 "0 1.50 LARM_XYZ_ABS 0.070 0.552 0.350 -90.0 -90.0 90.0",
                 "0 0.50 LARM_XYZ_ABS 0.070 0.552 0.200 -90.0 -90.0 90.0",
                 "0 0.50 LHAND_JNT_OPEN",
-                self.initpose_
+                "0 0.80 " + self.initpose_
             ]
+
+    def get_seq_wiggling(self,x,y,z,fx,fy,fz):
+        seq = []
+        freq = 12
+        _x = (fx-x)/freq
+        _y = (fy-y)/freq
+        _z = (fz-z)/freq
+        for i in range(freq):
+            seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f -90 -88 -180" % (x+_x*i,y+_y*i,z+_z*i))
+            seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f 90 -88 0" % (x+_x*i,y+_y*i,z+_z*i))
+        return seq
 
     def gen_motion_circular(self, pose, sub_action):
         """Generate circular motion for picking entangled wire harnesses        
