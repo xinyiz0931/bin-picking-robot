@@ -23,8 +23,8 @@ N = 1
 
 start = timeit.default_timer()
 
-root_dir = os.path.join(topdir, "ext/bpbot/")
-#root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+# root_dir = os.path.join(topdir, "ext/bpbot/")
+root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 print(f"[*] Execute script at {root_dir} ")
 
 img_pb_path = os.path.join(root_dir, "data/depth/depth_pick_zone.png")
@@ -44,27 +44,27 @@ def pick():
     success = False
     # ---------------------- get depth img --------------------------
     start_t = timeit.default_timer()
-    print("[*] Capture point cloud ... ")
-    point_array = capture_pc()
-    # if not point_array: return
+    # print("[*] Capture point cloud ... ")
+    # point_array = capture_pc()
+    # # if not point_array: return
 
-    img_pb, img_pb_blur = pc2depth(point_array, cfg['pick']['distance'], cfg['width'], cfg['height'])
-    img_db, img_db_blur = pc2depth(point_array, cfg['drop']['distance'], cfg['width'], cfg['height'])
-    point_array /= 1000
+    # img_pb, img_pb_blur = pc2depth(point_array, cfg['pick']['distance'], cfg['width'], cfg['height'])
+    # img_db, img_db_blur = pc2depth(point_array, cfg['drop']['distance'], cfg['width'], cfg['height'])
+    # point_array /= 1000
 
-    cv2.imwrite(img_pb_path, img_pb_blur)
-    cv2.imwrite(img_db_path, img_db_blur)
+    # cv2.imwrite(img_pb_path, img_pb_blur)
+    # cv2.imwrite(img_db_path, img_db_blur)
 
-    crop_pb = crop_roi(img_pb_path, cfg['pick']['margin'], bounding=True)
-    crop_db = crop_roi(img_db_path, cfg['drop']['margin'], bounding=True)
+    # crop_pb = crop_roi(img_pb_path, cfg['pick']['margin'], bounding=True)
+    # crop_db = crop_roi(img_db_path, cfg['drop']['margin'], bounding=True)
 
-    cv2.imwrite(crop_pb_path, crop_pb)
-    cv2.imwrite(crop_db_path, crop_db)
-
+    # cv2.imwrite(crop_pb_path, crop_pb)
+    # cv2.imwrite(crop_db_path, crop_db)
+    crop_db_path = os.path.join(root_dir, "data/depth/000132.png")
 
     tdatetime = dt.now()
     tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-    cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
+    # cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
 
     end_t_capture = timeit.default_timer()
     print("[*] Time: ", end_t_capture -  start_t)

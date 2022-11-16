@@ -28,7 +28,7 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
     height, width, _ = img.shape
     img_cut = img[top_margin:bottom_margin, left_margin:right_margin]
     cropped_height, cropped_width, _ = img_cut.shape
-    main_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
+    print("[*] Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
     
     im_adj = adjust_grayscale(img_cut)
     # im_adj = img_cut
@@ -38,20 +38,20 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
     method = Graspability(rotation_step=rstep, depth_step=dstep, hand_depth=hand_depth)
 
     # generate graspability map
-    main_print("Generate graspability map  ... ")
+    print("[*] Generate graspability map  ... ")
     candidates = method.target_oriented_graspability_map(
         im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask, Wc=Wc, Wt=Wt)
 
     # detect grasps
-    main_print("Detect grasp poses ... ")
+    print("[*] Detect grasp poses ... ")
     grasps = method.grasp_ranking(
         candidates, n=n_grasp, h=cropped_height, w=cropped_width, _dismiss=0, _distance=0)
 
     if grasps != []:
-        notice_print(f"Success! Detect {len(grasps)} grasps! ")
+        print(f"[$] Success! Detect {len(grasps)} grasps! ")
         return grasps, im_adj, img
     else:
-        warn_print("Grasp detection failed! No grasps!")
+        print("[!] Grasp detection failed! No grasps!")
         return None, im_adj,img
 
 if __name__ == '__main__':

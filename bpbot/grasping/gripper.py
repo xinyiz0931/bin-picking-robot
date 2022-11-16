@@ -61,7 +61,7 @@ class Gripper(object):
         self.finger_h /= ratio
     
     def print_gripper(self):
-        notice_print(f"Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.tplt_size}")
+        print(f"[$] Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.tplt_size}")
 
     def create_hand_model(self):
         
@@ -144,7 +144,7 @@ class Gripper(object):
                 ho_line_ = ho_line.rotate(theta, center=(x,y))
                 return np.array(ho_line_.convert('L'))
             else:
-                warn_print("Wrong input hand type")
+                print("[!] Wrong input hand type")
                 return None
         cv2.imshow("window", np.array(ho_.convert('L')))
         cv2.waitKey()

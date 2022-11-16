@@ -30,7 +30,7 @@ def detect(img_path, exp_mode):
         "sliding_size": 125,
         "sliding_stride": 25
     }
-    main_print(f"Method : {exp_mode}")
+    print(f"[*] Method : {exp_mode}")
     if exp_mode.lower() == "fge":
         grasps = detect_grasp(n_grasp=1, img_path=img_path, 
                         g_params=g_params,
@@ -55,7 +55,7 @@ def detect(img_path, exp_mode):
         ret = psc.infer_picknet(img_path)
         return ret[1][:2]
     else: 
-        warn_print("No valid mode! ")
+        print("[!] No valid mode! ")
         return
 
 if __name__ == "__main__":

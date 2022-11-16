@@ -10,7 +10,8 @@ from venv import create
 import numpy as np
 import matplotlib.pyplot as plt
 from bpbot.utils import *
-
+import bpbot
+ROOT_DIR = os.path.realpath(os.path.join(os.path.realpath(bpbot.__file__), "../../"))
 class TangleObjSke(object):
     def __init__(self):
         pass
@@ -25,7 +26,7 @@ class TangleObjSke(object):
             jf.close()
             return graph
         except IOError:
-            warn_print("Not a json file")
+            print("[!] Not a json file")
 
     def write_obj_to_json(self, json_path, graph):
         """
@@ -34,10 +35,10 @@ class TangleObjSke(object):
         try:
             with open(json_path, 'w', encoding='utf-8') as jf:
                 json.dump(graph, jf, ensure_ascii=False)
-            main_print("Wrote to json file")    
+            print("[*] Wrote to json file")    
             jf.close()
         except IOError:
-            warn_print("Fail to write")
+            print("[!] Fail to write")
       
     def draw_obj_skeleton(self, graph, ax, color, alpha=1):
         """
@@ -166,7 +167,7 @@ class TangleObjSke(object):
             print(" ".join(str(r_) for r_ in c_rot_mat[2]), file=fp)
 
         fp.close()
-        main_print("Wrote collision file... ")
+        print("[*] Wrote collision file... ")
         return vertices
 
     def write_decomposed_to_wrl(self, vertices, wrl_path):
@@ -226,7 +227,7 @@ class TangleObjSke(object):
 	    # 1,  2,  6,  5, -1,
 
         fp.close()
-        main_print("Wrote decomposed object to a wrl file... ")
+        print("[*] Wrote decomposed object to a wrl file... ")
 
 def create_obj():
     """
@@ -236,9 +237,9 @@ def create_obj():
     4. Visualize
     """
     shape = "sn"
-    obj_json_path = os.path.join("./objmodel", f"skeleton_{shape}.json")
-    collision_path = os.path.join("./objmodel", f"collision_{shape}.txt")
-    wrl_path = os.path.join("./objmodel", f"cube_{shape}.wrl")
+    obj_json_path = os.path.join(ROOT_DIR, "./objmodel", f"skeleton_{shape}.json")
+    collision_path = os.path.join(ROOT_DIR, "./objmodel", f"collision_{shape}.txt")
+    wrl_path = os.path.join(ROOT_DIR, "./objmodel", f"cube_{shape}.wrl")
 
     # 1. ===================================================
     obj_ske = {}
@@ -281,9 +282,9 @@ def decompose_obj(shape):
     3. Visualize
     """
 
-    obj_json_path = os.path.join("./objmodel", f"skeleton_{shape}.json")
-    collision_path = os.path.join("./objmodel", f"collision_{shape}.txt")
-    wrl_path = os.path.join("./objmodel", f"cube_{shape}.wrl")
+    obj_json_path = os.path.join(ROOT_DIR, "./objmodel", f"skeleton_{shape}.json")
+    collision_path = os.path.join(ROOT_DIR, "./objmodel", f"collision_{shape}.txt")
+    wrl_path = os.path.join(ROOT_DIR, "./objmodel", f"cube_{shape}.wrl")
 
     # 1. ===================================================
     tok = TangleObjSke()
@@ -312,20 +313,20 @@ if __name__ == "__main__":
     start = timeit.default_timer()
 
     tok = TangleObjSke()
-    import glob
-    for m in glob.glob("./objmodel\\model_ul*"):
-        print(m)
-        tok.show_ply(ply_path=m)
+    # import glob
+    # for m in glob.glob("./objmodel\\model_ul*"):
+    #     print(m)
+    #     tok.show_ply(ply_path=m)
     
     # create_obj()
     # shapes = ["cc", "cr", "e", "eb", "f", "j", "sc", "sr", "st", "u"]
     # for shape in shapes:
     #     decompose_obj(shape)
-    decompose_obj("ul")
+    decompose_obj("u")
     
     # create_obj()
 
     end = timeit.default_timer()
-    main_print("Time: {:.2f}s".format(end - start))
+    print("[*] Time: {:.2f}s".format(end - start))
     
 

@@ -439,7 +439,7 @@ class Graspability(object):
             if k > n:
                 break
         if grasps == []: 
-            warn_print("No valid grasps after ranking! ")
+            print("[!] No valid grasps after ranking! ")
             return grasps 
         return np.asarray(grasps)[:,1:]
 

@@ -28,7 +28,7 @@ start = timeit.default_timer()
 #root_dir = os.path.abspath("./")
 root_dir = os.path.join(topdir, "ext/bpbot")
 #root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-main_print(f"Execute script at {root_dir} ")
+print(f"[*] Execute script at {root_dir} ")
 
 img_path = os.path.join(root_dir, "data/depth/depth.png")
 crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
@@ -45,7 +45,7 @@ cfg = bincfg.data
 # ---------------------- get depth img -------------------------
 bin = "pick"
 
-main_print("Capture point cloud ... ")
+print("[*] Capture point cloud ... ")
 point_array = capture_pc()
 if cfg["depth_mode"] == "table":
     _dist = {"max": cfg["table_distance"], "min": cfg["table_distance"]-100}
@@ -62,7 +62,7 @@ point_array /= 1000
 # point_array = pcd.points
 
 # ---------------------- compute grasps -------------------------
-main_print("Compute grasps... ")
+print("[*] Compute grasps... ")
 grasps = detect_grasp(n_grasp=5, 
                             img_path=crop_path, 
                             g_params=cfg['graspability'],
@@ -103,8 +103,8 @@ else:
                                                hand="left", margin=bin)
 
 # draw grasp
-    notice_print("Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
-    notice_print("Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+    print("[$] Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
+    print("[$] Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                  % (*best_grasp_tcp, *best_grasp_wrist)) 
 
     # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
@@ -137,4 +137,4 @@ if found_cnoid:
         # cv2.imwrite(f"{root_dir}/exp/{tstr}/depth.png", img_input)
 
 end = timeit.default_timer()
-main_print("Time: {:.2f}s".format(end - start))
+print("[*] Time: {:.2f}s".format(end - start))

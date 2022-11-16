@@ -49,38 +49,38 @@ image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 clone = image.copy()
 
 if "dist" in ws_mode and args.zone != "pick_drop":
-    main_print(f"Detect distances using marker for {args.zone}")
+    print(f"[*] Detect distances using marker for {args.zone}")
     pcd = pxc.getpcd()
     pcd_r = rotate_point_cloud(pcd)
     id_locs = detect_ar_marker(image.copy())
 
     if id_locs == {}:
-        warn_print("[*] No markers! Failed to define distances! ")
+        print("[!] [*] No markers! Failed to define distances! ")
     else:
-        main_print(f"[*] Detected markers: {id_locs}")
+        print(f"[*] [*] Detected markers: {id_locs}")
 
     if min_dist_id in id_locs.keys():
         w = image.shape[1]
         x, y, = id_locs[min_dist_id]
         # offset = y * w + x
         min_distance = int(pcd_r[y*w+x][-1])
-        notice_print(f"min_distance:  {min_distance}")
+        print(f"[$] min_distance:  {min_distance}")
 
     if max_dist_id in id_locs.keys():
         w = image.shape[1]
         x, y, = id_locs[max_dist_id]
         # offset = y * w + x
         max_distance = int(pcd_r[y*w+x][-1])
-        notice_print(f"max_distance:  {max_distance}")
+        print(f"[$] max_distance:  {max_distance}")
 
     cfg.data[args.zone]["distance"]["max"] = max_distance
     # cfg.data[args.zone]["distance"]["max"] = max_distance + 5 
     cfg.data[args.zone]["distance"]["min"] = min_distance - 15
     cfg.write()
-    main_print("Successfully defined the max/min distance! ")
+    print("[*] Successfully defined the max/min distance! ")
 
 if "margin" in ws_mode:
-    main_print(f"Generating workspace for {args.zone}")
+    print(f"[*] Generating workspace for {args.zone}")
     if "pick" in args.zone:
         cv2.namedWindow("Define pick zone", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("Define pick zone", shape_selection)
@@ -105,10 +105,10 @@ if "margin" in ws_mode:
         cv2.destroyAllWindows()
 
         if flag:
-            notice_print(f"left_margin:   {ref_point[0][0]}")
-            notice_print(f"top_margin:    {ref_point[0][1]}")
-            notice_print(f"right_margin:  {ref_point[1][0]}")
-            notice_print(f"bottom_margin: {ref_point[1][1]}")
+            print(f"[$] left_margin:   {ref_point[0][0]}")
+            print(f"[$] top_margin:    {ref_point[0][1]}")
+            print(f"[$] right_margin:  {ref_point[1][0]}")
+            print(f"[$] bottom_margin: {ref_point[1][1]}")
 
             cfg.data["pick"]["margin"]["left"] = ref_point[0][0]
             cfg.data["pick"]["margin"]["top"] = ref_point[0][1]
@@ -116,9 +116,9 @@ if "margin" in ws_mode:
             cfg.data["pick"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
-            main_print("Successfully defined pick workspace size! ")
+            print("[*] Successfully defined pick workspace size! ")
         else:
-            warn_print("Failed to define pick workspace size! ")
+            print("[!] Failed to define pick workspace size! ")
 
     if "drop" in args.zone:
         cv2.namedWindow("Define drop zone", cv2.WINDOW_NORMAL)
@@ -144,10 +144,10 @@ if "margin" in ws_mode:
         cv2.destroyAllWindows()
 
         if flag:
-            notice_print(f"left_margin:   {ref_point[0][0]}")
-            notice_print(f"top_margin:    {ref_point[0][1]}")
-            notice_print(f"right_margin:  {ref_point[1][0]}")
-            notice_print(f"bottom_margin: {ref_point[1][1]}")
+            print(f"[$] left_margin:   {ref_point[0][0]}")
+            print(f"[$] top_margin:    {ref_point[0][1]}")
+            print(f"[$] right_margin:  {ref_point[1][0]}")
+            print(f"[$] bottom_margin: {ref_point[1][1]}")
 
             cfg.data["drop"]["margin"]["left"] = ref_point[0][0]
             cfg.data["drop"]["margin"]["top"] = ref_point[0][1]
@@ -155,6 +155,6 @@ if "margin" in ws_mode:
             cfg.data["drop"]["margin"]["bottom"] = ref_point[1][1]
             cfg.write()
 
-            main_print("Successfully defined drop workspace size! ")
+            print("[*] Successfully defined drop workspace size! ")
         else:
-            warn_print("Failed to define drop workspace size! ")
+            print("[!] Failed to define drop workspace size! ")

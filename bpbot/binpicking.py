@@ -55,7 +55,7 @@ def get_point_cloud(save_dir, distance, width, height):
     """
 
     # [1] ----------------------------------------------------
-    main_print("Capture! ")
+    print("[*] Capture! ")
     import bpbot.driver.phoxi.phoxi_client as pclt
     # from bpbot.driver import phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
@@ -65,7 +65,7 @@ def get_point_cloud(save_dir, distance, width, height):
     if pc is None: return
 
     # [2] ----------------------------------------------------
-    main_print("Convert point cloud to depth map ... ")
+    print("[*] Convert point cloud to depth map ... ")
     rotated_pc = rotate_point_cloud(pc)
     gray_array = rotated_pc[:, 2]
 
@@ -189,13 +189,13 @@ def get_entanglement_map(img, t_params):
     
     em = EntanglementMap(len_thld, dist_thld, sliding_size, sliding_stride)
     emap, wmat_vis,w,d = em.entanglement_map(norm_img)
-    # notice_print("w: {:.2}, d: {:.2}".format(w,d))
+    # print("[$] w: {:.2}, d: {:.2}".format(w,d))
     lmap = em.line_map(norm_img)
     bmap = em.brightness_map(norm_img)
     return emap
 
 def pick_or_sep(img_path, hand_config, bin="pick"):
-    main_print(f"Infer {bin} zone using PickNet / SepNet! ")
+    print(f"[*] Infer {bin} zone using PickNet / SepNet! ")
     img = cv2.imread(img_path)
     # img = adjust_grayscale(img)
     crop_h, crop_w, _ = img.shape
@@ -211,18 +211,18 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
 
     if bin == "pick":
         if is_bin_empty(img_path): 
-            warn_print("Pick zone is empty! ")
+            print("[!] Pick zone is empty! ")
             return
         ret = psc.infer_picknet(imgpath=img_path)
         if not ret:
             return
         p_pick = ret[1]
         scores_pn = ret[-1]
-        warn_print(f"Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+        print(f"[!] Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
         g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
         if g_pick is None:
-            warn_print("Grasp detection failed for pick zone ...")
+            print("[!] Grasp detection failed for pick zone ...")
             return
         # else: 
         #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
@@ -232,42 +232,65 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
 
     elif bin == "drop": 
         if is_bin_empty(img_path): 
-            warn_print("Drop zone is empty! ")
+            print("[!] Drop zone is empty! ")
             return
         
-        ret = psc.infer_picknet_sepnet(img_path, sep_motion=True)
+        ret = psc.infer_picknet(img_path)
         if not ret: 
             return
-        print("class: ", ret[0])
-        print("score: ", ret[-1])
-        if ret[0] == 0:
-            p_pick = ret[1]
-            scores_pn = ret[-1]
-            warn_print(f"Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+        scores_pn = ret[1]
+        print(f"[!] Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+
+        # pick or sep condition
+        if scores_pn[0] > scores_pn[1]:
+            p_pick = ret[0][0]
             g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
             if g_pick is None:
-                warn_print("Grasp detection failed for pick zone ...")
+                print("[!] Grasp detection failed for drop zone")
+            else: 
+                return 0, g_pick
+        else:
+            ret = psc.infer_sepnet(img_path)
+            if not ret:
+                return
+            p_pull = ret[0]
+            v_pull = ret[1]
+            g_pull = gripper_left.point_oriented_grasp(img, p_pull)
+            if g_pull is None:
+                print("[!] Grasp detection failed for drop zone ...")
                 return
             else:
-                return ret[0], g_pick
-        else: 
-            scores_pn = ret[1]
-            p_pull = ret[2][0]
-            p_hold = ret[2][1]
-            v_pull = ret[3]
-            score_snd = ret[-1]
-            warn_print(f"Drop zone scores: {score_snd[0]:.3f}, {score_snd[1]:.3f}")
-            g_pull = gripper_left.point_oriented_grasp(img, p_pull)
-            
-            g_hold = gripper_right.point_oriented_grasp(img, p_hold)
-            # g_hold[2] = 90 
+                return 1, g_pull, v_pull
 
-            if g_hold is None: 
-                g_hold = [*p_hold, 90]
-            if g_pull is not None: 
-                g_sep = [*g_pull, *g_hold, *v_pull]
-                return ret[0], g_sep 
-    return
+
+    #     if ret[0] == 0:
+    #         p_pick = ret[1]
+    #         scores_pn = ret[-1]
+    #         print(f"[!] Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+    #         g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
+    #         if g_pick is None:
+    #             print("[!] Grasp detection failed for pick zone ...")
+    #             return
+    #         else:
+    #             return ret[0], g_pick
+    #     else: 
+    #         scores_pn = ret[1]
+    #         p_pull = ret[2][0]
+    #         p_hold = ret[2][1]
+    #         v_pull = ret[3]
+    #         score_snd = ret[-1]
+    #         print(f"[!] Drop zone scores: {score_snd[0]:.3f}, {score_snd[1]:.3f}")
+    #         g_pull = gripper_left.point_oriented_grasp(img, p_pull)
+            
+    #         g_hold = gripper_right.point_oriented_grasp(img, p_hold)
+    #         # g_hold[2] = 90 
+
+    #         if g_hold is None: 
+    #             g_hold = [*p_hold, 90]
+    #         if g_pull is not None: 
+    #             g_sep = [*g_pull, *g_hold, *v_pull]
+    #             return ret[0], g_sep 
+    # return
 
 def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=None):
     """ Generate motions in motion file format
@@ -291,7 +314,7 @@ def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=No
     elif pose_rgt is not None and pulling is not None:
         generator.gen_motion_separation(pose_lft, pulling, pose_rgt)
     else:
-        warn_print("Wrong type for motion generator ...")    
+        print("[!] Wrong type for motion generator ...")    
 
 def gen_motion_pick(mf_path, pose_left, sub_action):
     """Generate motion in motion file format for single-arm picking
@@ -305,10 +328,10 @@ def gen_motion_pick(mf_path, pose_left, sub_action):
     sub_action_name = ["a_dl","a_h","a_hs","a_f","a_fs","a_tf","a_tfs"]
     
     if sub_action == -1:
-        warn_print("No motion! ")
+        print("[!] No motion! ")
         generator.gen_motion_empty()
     else: 
-        main_print(f"Generate motion for {sub_action_name[sub_action]} ... ")
+        print(f"[*] Generate motion for {sub_action_name[sub_action]} ... ")
         generator.gen_motion_circular(pose_left, sub_action)
 
 def gen_motion_test(mf_path, pose_lft, pose_rgt, pulling):
@@ -359,7 +382,7 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
     if candidates != []:
     # rank grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
-        main_print(f"Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
+        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
         return grasps
 
     return
@@ -425,7 +448,7 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         candidates[:,1:3] += roi_left_top
         # ranking grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
-        main_print(f"Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
+        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
         return grasps 
     return
 
@@ -461,7 +484,7 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
     height, width, _ = img.shape
     img_cut = img[top_margin:bottom_margin, left_margin:right_margin]
     cropped_height, cropped_width, _ = img_cut.shape
-    main_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
+    print("[*] Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
     
     im_adj = adjust_grayscale(img_cut)
     im_adj = img_cut
@@ -481,7 +504,7 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
         method = Graspability(rotation_step=rstep, depth_step=dstep, hand_depth=hand_depth)
 
         # generate graspability map
-        main_print("Generate graspability map  ... ")
+        print("[*] Generate graspability map  ... ")
         candidates = method.width_adjusted_graspability_map(
             im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask,width_count=open_w)
         all_candidates += candidates
@@ -490,12 +513,12 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
 
     if all_candidates != []:
     # detect grasps
-        main_print("Detect grasp poses ... ")
+        print("[*] Detect grasp poses ... ")
         grasps = method.grasp_ranking(
             all_candidates, n=n_grasp, h=cropped_height, w=cropped_width)
         # print(grasps)
         if grasps != [] :
-            notice_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
+            print(f"[$] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
             # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
@@ -504,7 +527,7 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
             cv2.destroyAllWindows()
             return grasps, im_adj, img
     else:
-        warn_print("Grasp detection failed! No grasps!")
+        print("[!] Grasp detection failed! No grasps!")
         return None, im_adj,img
 
 def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
@@ -532,7 +555,7 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
     height, width, _ = img.shape
     img_cut = img[top_margin:bottom_margin, left_margin:right_margin]
     cropped_height, cropped_width, _ = img_cut.shape
-    main_print("Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
+    print("[*] Crop depth map to shape=({}, {})".format(cropped_width, cropped_height))
     # im_adj = adjust_grayscale(img_cut)
     im_adj = img_cut
 
@@ -551,7 +574,7 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
         _, Wc = cv2.threshold(depth, d, 255, cv2.THRESH_BINARY)
 
         # Wc = cv2.bitwise_or(Wc, cv2.subtract(touch_mask, Wt))
-        main_print("Generate graspability map  ... ")
+        print("[*] Generate graspability map  ... ")
         candidates = method.target_oriented_graspability_map(
             im_adj, hand_open_mask=hand_open_mask, hand_close_mask=hand_close_mask,
             Wc=Wc, Wt=Wt)
@@ -562,12 +585,12 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
 
     if all_candidates != []:
     # detect grasps
-        main_print("Detect grasp poses ... ")
+        print("[*] Detect grasp poses ... ")
         grasps = method.grasp_ranking(
             all_candidates, n=n_grasp, h=cropped_height, w=cropped_width, _distance=50)
         # print(grasps)
         if grasps != [] :
-            notice_print(f"Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
+            print(f"[$] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
             # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
@@ -576,7 +599,7 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
             cv2.destroyAllWindows()
             return grasps, im_adj, img
     else:
-        warn_print("Grasp detection failed! No grasps!")
+        print("[!] Grasp detection failed! No grasps!")
         return None, im_adj,img
 
 def is_bin_empty(img_path):
@@ -739,13 +762,13 @@ def check_reachability(robot_loc, min_z, max_z=0.13, min_x=0.30, max_x=0.67, min
     max_z = 0.2
     (x,y,z) = robot_loc
     if z < min_z or z > max_z:
-        warn_print("Out of z-axis reachability! ") 
+        print("[!] Out of z-axis reachability! ") 
         return False 
     # elif x < min_x or x > max_x: 
-    #     warn_print("Out of x-axis reachability! ")
+    #     print("[!] Out of x-axis reachability! ")
     #     return False
     # elif y < min_y or y > max_y:
-    #     warn_print("Out of y-axis reachability! ")
+    #     print("[!] Out of y-axis reachability! ")
     #     return False
     else:
         return True

@@ -350,7 +350,7 @@ def calc_2vectors_angle(v1, v2):
     unit_v1 = v1 / np.linalg.norm(v1)
     unit_v2 = v2 / np.linalg.norm(v2)
     dot_product = np.dot(unit_v1, unit_v2)
-    return np.rad2deg(np.arccos(dot_product))
+    return np.round(np.rad2deg(np.arccos(dot_product)),3)
 
 
 def calc_2vectors_rot_mat(v1, v2):
@@ -683,6 +683,7 @@ def rotate_img_kpt(img, kpts, angle, center=None, scale=1.0, cropped=True):
     locs: np.array([[x1,y1],[x2,y2],...])
     return: rotated image, rotated keypoints np.array([[x1,y1],[x2,y2],...])
     """
+    kpts = np.array(kpts)
     (h, w) = img.shape[:2]
     num_kpt = kpts.shape[0]
 

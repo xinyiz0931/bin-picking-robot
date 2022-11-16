@@ -28,7 +28,7 @@ start = timeit.default_timer()
 #root_dir = os.path.abspath("./")
 root_dir = os.path.join(topdir, "ext/bpbot")
 #root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-main_print(f"Start at {root_dir} ")
+print(f"[*] Start at {root_dir} ")
 
 depth_dir = os.path.join(root_dir, "data/depth/")
 
@@ -108,11 +108,11 @@ p_r_hold, g_r_hold = transform_image_to_robot([*p_hold, theta_hold], point_array
 v_pull = np.array([1,0]) # robot coordinate
 v_len = check_collision(p_r_pull[:2], v_pull, cfg, point_array)
 
-notice_print("Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+print("[$] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_pull, *g_r_pull))
-notice_print("Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+print("[$] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_hold, *g_r_hold))
-notice_print("Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
+print("[$] Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
 
 gen_motion_pickorsep(mf_path, g_r_pull, pose_right=g_r_hold, pulling=[*v_pull,v_len])
 # # =======================  generate motion ===========================
@@ -122,7 +122,7 @@ if found_cnoid:
     nxt = NxtRobot(host='[::]:15005')
     motion_seq = get_motion()
     num_seq = int(len(motion_seq)/20)
-    main_print(f"Total {num_seq} motion sequences! ")
+    print(f"[*] Total {num_seq} motion sequences! ")
     motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
     nxt.playMotionSeq(motion_seq)
@@ -143,4 +143,4 @@ if found_cnoid:
 # # ======================= Record the data ===================s=========
 
 # end = timeit.default_timer()
-# main_print("Time: {:.2f}s".format(end - start))
+# print("[*] Time: {:.2f}s".format(end - start))

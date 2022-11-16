@@ -137,4 +137,4 @@ if __name__ == "__main__":
     # show_writhe_matrix()
 
     end = timeit.default_timer()
-    main_print("Time: {:.2f}s".format(end - start))
+    print("[*] Time: {:.2f}s".format(end - start))

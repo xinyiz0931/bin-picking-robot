@@ -12,7 +12,7 @@ def main():
 
     # ----------------- define path and config ---------------------
     root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
-    main_print(f"Start scrip at {root_dir}! ")
+    print(f"[*] Start scrip at {root_dir}! ")
     
     depth_dir = os.path.join(root_dir, "data/depth/")
     img_path = os.path.join(depth_dir, "depth.png") 
@@ -38,6 +38,6 @@ if __name__ == "__main__":
     main()
     
     end = timeit.default_timer()
-    main_print("Time: {:.2f}s".format(end - start))
+    print("[*] Time: {:.2f}s".format(end - start))
 
     

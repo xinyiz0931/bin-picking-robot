@@ -33,8 +33,8 @@ def main():
     # open_w = 43.2
     # tplt_size = 225
 
-    main_print("Hand params: {}".format(h_params))
-    main_print("FGE params: {}".format(g_params))
+    print("[*] Hand params: {}".format(h_params))
+    print("[*] FGE params: {}".format(g_params))
 
     # g_params = (rotation_step, depth_step, hand_depth)
     # h_params = (finger_w, finger_h, open_w, tplt_size)
@@ -53,7 +53,7 @@ def main():
 
     if grasps is not None:
         for i in range(len(grasps)):
-            notice_print(f"#{i}: pixel=({grasps[i][0]},{grasps[i][1]}), angle={grasps[i][2]}")
+            print(f"[$] #{i}: pixel=({grasps[i][0]},{grasps[i][1]}), angle={grasps[i][2]}")
     cv2.imshow("windows", img_grasp)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -66,6 +66,6 @@ if __name__ == "__main__":
     main()
     
     end = timeit.default_timer()
-    main_print("Time: {:.2f}s".format(end - start))
+    print("[*] Time: {:.2f}s".format(end - start))
 
     

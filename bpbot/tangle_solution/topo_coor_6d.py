@@ -331,7 +331,7 @@ class TopoCoor6D(object):
         n_obj = graph.shape[0]
         # n_other_obj = graph.shape[0] - 1
         n_seg = graph.shape[1]-1
-        main_print("Object number is {} and segment number is {}".format(n_obj, n_seg))
+        print("[*] Object number is {} and segment number is {}".format(n_obj, n_seg))
         rot_graph = []
         objs = []
         objs_proj = []
@@ -344,7 +344,7 @@ class TopoCoor6D(object):
         # gli_mat = np.zeros((n_obj, n_obj))
         # check if projection neede
         if proj_angle != [0,0,0]:
-            main_print(f"Start projecting along {proj_angle} ...")
+            print(f"[*] Start projecting along {proj_angle} ...")
         
         # rotate and normalize the object'
         plane_minh = 9999
