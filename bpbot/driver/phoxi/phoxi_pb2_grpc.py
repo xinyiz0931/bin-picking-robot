@@ -49,6 +49,11 @@ class PhoxiStub(object):
                 request_serializer=phoxi__pb2.SaveDir.SerializeToString,
                 response_deserializer=phoxi__pb2.Null.FromString,
                 )
+        self.isconnected = channel.unary_unary(
+                '/Phoxi/isconnected',
+                request_serializer=phoxi__pb2.Null.SerializeToString,
+                response_deserializer=phoxi__pb2.Null.FromString,
+                )
 
 
 class PhoxiServicer(object):
@@ -96,6 +101,12 @@ class PhoxiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def isconnected(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PhoxiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -132,6 +143,11 @@ def add_PhoxiServicer_to_server(servicer, server):
             'saveply': grpc.unary_unary_rpc_method_handler(
                     servicer.saveply,
                     request_deserializer=phoxi__pb2.SaveDir.FromString,
+                    response_serializer=phoxi__pb2.Null.SerializeToString,
+            ),
+            'isconnected': grpc.unary_unary_rpc_method_handler(
+                    servicer.isconnected,
+                    request_deserializer=phoxi__pb2.Null.FromString,
                     response_serializer=phoxi__pb2.Null.SerializeToString,
             ),
     }
@@ -259,6 +275,23 @@ class Phoxi(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Phoxi/saveply',
             phoxi__pb2.SaveDir.SerializeToString,
+            phoxi__pb2.Null.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def isconnected(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Phoxi/isconnected',
+            phoxi__pb2.Null.SerializeToString,
             phoxi__pb2.Null.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -18,10 +18,12 @@ from bpbot.utils import *
 def capture_pc():
     import bpbot.driver.phoxi.phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
-    pxc.triggerframe()
-    pc = pxc.getpcd()
-    # gs = pxc.getgrayscaleimg()
-    return pc.copy() if pc is not None else None
+    is_captured = pxc.triggerframe()
+    if is_captured:
+        pc = pxc.getpcd()
+        # gs = pxc.getgrayscaleimg()
+        return pc.copy() 
+    else: return None
 
 def px2depth(pcd, cfg, max_=0.07, min_=0.007):
     pc = pcd/1000
@@ -149,6 +151,9 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
 
 def draw_hold_and_pull_grasps(img, g_pull, v_pull, g_hold=None, h_params=None):
     
+    if isinstance(img, str) and os.path.exists(img):
+        img = cv2.imread(img)
+
     if h_params is not None: 
         finger_w = h_params["finger_width"]
         finger_h = h_params["finger_length"]
@@ -211,7 +216,7 @@ def get_entanglement_map(img, t_params):
     return emap
 
 def pick_or_sep(img_path, hand_config, bin="pick"):
-    print(f"[*] Infer {bin} zone using PickNet / SepNet! ")
+    # print(f"[*] Infer {bin} zone using PickNet / SepNet! ")
     img = cv2.imread(img_path)
     # img = adjust_grayscale(img)
     crop_h, crop_w, _ = img.shape
@@ -255,6 +260,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         if not ret: 
             return
         scores_pn = ret[1]
+        scores_pn = [0.1,0.4]
         print(f"[!] Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
         # pick or sep condition
@@ -276,7 +282,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
                 print("[!] Grasp detection failed for drop zone ...")
                 return
             else:
-                return 1, g_pull, v_pull
+                return 1, [g_pull, v_pull]
 
 def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=None):
     """ Generate motions in motion file format
@@ -597,7 +603,7 @@ def is_bin_empty(img_path):
     
     img = cv2.imread(img_path)
     edge = cv2.Canny(img, low_thld, high_thld)
-    print("edge", np.count_nonzero(edge), "threshold: ", pixel_thld) 
+    # print("edge", np.count_nonzero(edge), "threshold: ", pixel_thld) 
     # plt.imshow(edge), plt.show()
     if np.count_nonzero(edge) < pixel_thld: 
         return True

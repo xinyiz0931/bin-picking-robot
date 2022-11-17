@@ -23,8 +23,8 @@ N = 1
 
 start = timeit.default_timer()
 
-root_dir = os.path.join(topdir, "ext/bpbot/")
-#root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+# root_dir = os.path.join(topdir, "ext/bpbot/")
+root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 print(f"[*] Execute script at {root_dir} ")
 
 img_pb_path = os.path.join(root_dir, "data/depth/depth_pick_zone.png")
@@ -43,60 +43,66 @@ bincfg = BinConfig()
 cfg = bincfg.data
 
 def pick():
-    dual_arm = False 
-    success = False
+    gen_success = False
     # ---------------------- get depth img --------------------------
     start_t = timeit.default_timer()
-    print("[*] Capture point cloud ... ")
     point_array = capture_pc()
-    # if not point_array: return
+    # end_t_capture = timeit.default_timer()
+    # print("[*] Time: ", end_t_capture -  start_t)
 
-    # img_pb, img_pb_blur = pc2depth(point_array, cfg['pick']['distance'], cfg['width'], cfg['height'])
-    # img_db, img_db_blur = pc2depth(point_array, cfg['drop']['distance'], cfg['width'], cfg['height'])
-    # img_pb, img_pb_blur = px2depth(point_array, cfg, min_=-0.017)
-    img_pb, img_pb_blur = px2depth(point_array, cfg)
-    img_db, img_db_blur = px2depth(point_array, cfg, min_=0.010)
-    point_array /= 1000
+    if point_array is not None: 
+        print("[*] Capture point cloud ... ")
 
-    cv2.imwrite(img_pb_path, img_pb_blur)
-    cv2.imwrite(img_db_path, img_db_blur)
+        img_pb, img_pb_blur = px2depth(point_array, cfg)
+        img_db, img_db_blur = px2depth(point_array, cfg, min_=0.010)
+        point_array /= 1000
 
-    crop_pb = crop_roi(img_pb_path, cfg['pick']['margin'], bounding=True)
-    crop_db = crop_roi(img_db_path, cfg['drop']['margin'], bounding=True)
+        cv2.imwrite(img_pb_path, img_pb_blur)
+        cv2.imwrite(img_db_path, img_db_blur)
 
-    cv2.imwrite(crop_pb_path, crop_pb)
-    cv2.imwrite(crop_db_path, crop_db)
+        crop_pb = crop_roi(img_pb_path, cfg['pick']['margin'], bounding=True)
+        crop_db = crop_roi(img_db_path, cfg['drop']['margin'], bounding=True)
 
-    tdatetime = dt.now()
-    tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-    cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
+        cv2.imwrite(crop_pb_path, crop_pb)
+        cv2.imwrite(crop_db_path, crop_db)
 
-    end_t_capture = timeit.default_timer()
-    print("[*] Time: ", end_t_capture -  start_t)
+    print("[*] Failed to capture point cloud! Use image only! ")
+    # temporal collect data ....
+    # tdatetime = dt.now()
+    # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+    # cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
+
 
     ret_dropbin = pick_or_sep(img_path=crop_db_path, hand_config=cfg["hand"], bin='drop')
 
     if ret_dropbin is None: 
         res_pickbin = pick_or_sep(img_path=crop_pb_path, hand_config=cfg["hand"], bin='pick')
+
         if res_pickbin is not None: 
         
             pickorsep, g_pick = res_pickbin
             
-            img_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
+            # img_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
+            img_grasp = draw_grasp(g_pick, crop_pb_path, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
+
             cv2.imwrite(draw_path, img_grasp)
 
-            p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
-                                                hand="left", margin="pick")
-            if pickorsep == 0: 
-                print("[$] Untangled! Pick zone --> goal zone!") 
-                gen_motion_pickorsep(mf_path, g_pick_wrist, dest="goal")
-            else: 
-                print("[$] Tangled! Pick zone --> drop zone!") 
-                gen_motion_pickorsep(mf_path, g_pick_wrist, dest="drop")
+            if point_array is not None: 
+                p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
+                                                                    hand="left", margin="pick")
+                if pickorsep == 0: 
+                    print("[$] **Untangled**! Pick zone --> goal zone!") 
+                    gen_motion_pickorsep(mf_path, g_pick_wrist, dest="goal")
+                else: 
+                    print("[$] **Tangled**! Pick zone --> drop zone!") 
+                    gen_motion_pickorsep(mf_path, g_pick_wrist, dest="drop")
 
-            print("[$] Grasp (pick) : (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                        % (*g_pick, *g_pick_wrist))
-            success = True
+                print("[$] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
+                gen_success = True
+            else:
+                print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
+
+            
             # TODO: just for visualization
             heatmap_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_pick_zone.png"))
             grasp_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_pick_zone.png"))
@@ -116,49 +122,41 @@ def pick():
         pickorsep, action = ret_dropbin
 
         if pickorsep == 0:
-            print("[$] Untangled! drop zone to goal zone! ") 
+            print("[$] **Untangled**! Drop zone to goal zone! ") 
             g_pick = action 
-            img_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["left"], top_only=True)
+            # img_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["left"], top_only=True)
+            img_grasp = draw_grasp(g_pick, crop_db_path, cfg["hand"]["left"], top_only=True)
             cv2.imwrite(draw_path, img_grasp)
 
-            p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
-                                                hand="left", margin="drop")
-            print("[$] Grasp (pick) : (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                        % (*g_pick, *g_pick_wrist))
-            gen_motion_pickorsep(mf_path, g_pick_wrist, dest="goal")
+            if point_array is not None:
+                p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
+                                                    hand="left", margin="drop")
+                print("[$] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
+                gen_motion_pickorsep(mf_path, g_pick_wrist, dest="goal")
+                gen_success = True
+            else:
+                print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
+
         else: 
-            # vector image to robot: swap x and y
-            g_pull = action[0:3]
-            g_hold = action[3:6]
-            v_pull = action[6:8]
-            v_r_pull = [action[7], action[6]]
+            g_pull = action[0]
+            v_pull = action[1]
             
-            p_tcp_pull, g_wrist_pull = transform_image_to_robot(g_pull, point_array, cfg, hand="left", margin="drop",dualarm=True)
-            p_tcp_hold, g_wrist_hold = transform_image_to_robot(g_hold, point_array, cfg, hand="right", margin="drop", tilt=60, dualarm=True)
-            v_len = is_colliding(p_tcp_pull[:2], v_pull, cfg, point_array)
-
-            v_len = 0.1 
-            print("[$] Tangle! Separation motion! ")
-
-            print("[$] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                        % (*g_pull, *g_r_pull))
-            print("[$] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
-                        % (*g_hold, *g_r_hold))
-            print("[$] Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
-
-            # # draw grasp
-            # img_grasp = draw_grasp([g_pull,g_hold], crop_db.copy())
-            img_grasp = draw_hold_and_pull_grasps(crop_db.copy(), g_pull, v_pull, g_hold)
-
+            img_grasp = draw_hold_and_pull_grasps(crop_db_path, g_pull, v_pull)
             cv2.imwrite(draw_path, img_grasp)
-            # single-arm: pull
-            gen_motion_pickorsep(mf_path, g_wrist_pull, pose_rgt=g_wrist_hold, pulling=[*v_r_pull, v_len], dest="side")
-            # dual-arm: hold-and-pull
-            gen_motion_pickorsep(mf_path, g_wrist_pull, pulling=[*v_r_pull, v_len], dest="side")
-            # dual_arm = True
 
-        success = True
-        
+            if point_array is not None:
+                p_pull_tcp, g_pull_wrist = transform_image_to_robot(g_pull, point_array, cfg, hand="left", margin="drop",dualarm=True)
+                v_pull_wrist = [v_pull[1], v_pull[0]] # swap x and y from image to robot coordinate
+
+                print("[$] **Pull**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pull, *p_pull_tcp))
+                print("[$] **Pull**! Direction: (%.2f,%.2f), distance: %.3f" % (*v_pull, v_len))
+                v_len = is_colliding(p_pull_tcp[:2], v_pull, cfg, point_array)
+                gen_motion_pickorsep(mf_path, g_pull_wrist, pulling=[*v_pull_wrist, v_len], dest="side")
+                gen_success = True
+            else:
+                print("[$] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
+                print("[$] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
+
         # TODO: just for visualization
         heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_drop_zone.png"))
         grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_drop_zone.png"))
@@ -170,24 +168,23 @@ def pick():
         cv2.putText(vis_pickbin, "Bin (Pick)",(20,550), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
         cv2.putText(vis_pickbin, "No Action",(20,700), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
         vis = cv2.hconcat([vis_pickbin, vis_dropbin])
-        print(vis.shape)
         cv2.imwrite(os.path.join(root_dir, "data/depth/vis.png"), vis)
         # cv2.imwrite(os.path.join(root_dir, "data/image/vis_pickbin.png"), empty_pickbin)
         # cv2.imwrite(os.path.join(root_dir, "data/image/vis_dropbin.png"), vis_dropbin)
         
 
-    if success and found_cnoid: 
+    if gen_success and found_cnoid: 
         
-        plan_success = load_motionfile(mf_path, dual_arm=dual_arm)
+        plan_success = load_motionfile(mf_path, dual_arm=False)
         # second motion: down the gripper
         if plan_success[1] == False: 
             print(f"[!] Approaching the target failed! ")
 
-        if dual_arm == True and plan_success.count(True) != len(plan_success):
-            print(f"[!] Dual arm planning failed! Single-arm replanning! ")
-            gen_motion_pickorsep(mf_path, g_r_pull, pulling=[*v_r_pull, v_len])
-            gen_motion_pickorsep(mf_path, g_wrist_pull, pulling=[*v_r_pull, v_len])
-            plan_success = load_motionfile(mf_path, dual_arm=False)
+        # if dual_arm == True and plan_success.count(True) != len(plan_success):
+        #     print(f"[!] Dual arm planning failed! Single-arm replanning! ")
+        #     gen_motion_pickorsep(mf_path, g_r_pull, pulling=[*v_r_pull, v_len])
+        #     gen_motion_pickorsep(mf_path, g_wrist_pull, pulling=[*v_r_pull, v_len])
+        #     plan_success = load_motionfile(mf_path, dual_arm=False)
 
         print(f"[*] Motion planning succeed? ==> {plan_success.count(True) == len(plan_success)}")
         

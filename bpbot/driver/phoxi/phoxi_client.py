@@ -1,8 +1,3 @@
-import grp
-import sys
-
-from torch import repeat_interleave
-from os import path
 import grpc
 import numpy as np
 import phoxi_pb2 as pxmsg
@@ -25,8 +20,10 @@ class PhxClient(object):
     def triggerframe(self):
         try: 
             self.stub.triggerframe(pxmsg.Null())
+            return True
         except grpc.RpcError as rpc_error:
             print(f'[!] Phoxi failed with {rpc_error.code()}')
+            return False
     
     def saveplyauto(self):
         """

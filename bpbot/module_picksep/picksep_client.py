@@ -18,17 +18,20 @@ class PickSepClient(object):
             imgpath (str): path to one image
 
         Returns:
-            pickorsep: 0->pick/1->sep
-            pick_sep_p: [x,y]
-            pn_score: [s_pick,s_sep]
+            pick_sep_p: [[pick_x,pick_y],[sep_x,sep_y]]
+            pn_score: [pick_score,sep_score]
         """
+
+        self.keys = ["pick_sep_p", "pn_score"]
         try: 
             out_buffer = self.stub.infer_picknet(psmsg.ImgPath(imgpath=imgpath))
+            out = np.frombuffer(out_buffer.ret, dtype=float)
+            return np.reshape(out[:4], (2,2)).astype(int), out[4:]
+
         except grpc.RpcError as rpc_error: 
-            print(f"[!] PickNet failed with {rpc_error.code()}")
+            print(f"[!] Failed to connect PickNet: {rpc_error.code()}")
             return
-        out = np.frombuffer(out_buffer.ret, dtype=float)
-        return out[0].astype(int), out[1:3].astype(int), out[3:]
+
     
     def infer_sepnet(self, imgpath):
         """
@@ -36,67 +39,37 @@ class PickSepClient(object):
             imgpath (str): path to one image
 
         Returns:
-            pull_hold_p: [[x,y],[x,y]]
+            pull_p: [x,y]
             pull_v: [x,y]
-            snd_score: [s] * # directions
+
         """
+        self.keys = ["pull_p", "pull_v"]
         try: 
             out_buffer = self.stub.infer_sepnet(psmsg.ImgPath(imgpath=imgpath))
-            
             out = np.frombuffer(out_buffer.ret, dtype=float) 
-            return np.reshape(out[:4], (2,2),).astype(int), out[4:6], out[6:]
+            print("sepnet client: ", out)
+            return out[:2].astype(int), out[2:]
 
         except grpc.RpcError as rpc_error:
-            print(f"[!] SepNet failed with {rpc_error.code()}")
+            print(f"[!] Failed to connect SepNet: {rpc_error.code()}")
             return
-
-    def infer_picknet_sepnet(self, imgpath, sep_motion):
-        """
-        Args:
-            imgpath (str): path to one image
-            sep_motion (bool): separation motions is needed?  
-
-        Returns:
-            if sep_motion: 
-                case 1. 0->pick => pickorsep: 0
-                                pick_sep_p: [x,y]
-                                pn_score: [s_pick,s_sep] 
-                case 2. 1->sep  => pickorsep: 1
-                                pn_score: [s_pick,s_sep] 
-                                pull_hold_p: [[x,y],[x,y]]
-                                pull_v: [x,y]
-                                snd_score: [s] * # directions
-            elif not sep_motion: 
-                pickorsep: 0->pick/1->sep
-                pick_sep_p: [x,y]
-                pn_score: [s_pick,s_sep] 
-        """
-        
-        pn_out = self.infer_picknet(imgpath)
-        if not pn_out:  
-            print("[!] PickNet + SepNet failed! ")
-            return
-        if sep_motion and pn_out[0] == 1:
-            sn_out = self.infer_sepnet(imgpath)
-            return pn_out[0], pn_out[-1], *sn_out
-        else:
-            return pn_out
 
 if __name__ == "__main__":
     import timeit
-    start = timeit.default_timer()
     
     psc = PickSepClient()
-    img_path = "/home/hlab/Desktop/predicting/tmp1.png"
-    # img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
-    # img_path = "C:\\Users\\xinyi\\Documents\\Dataset\\SepDataAllPullVectorEight\\images\\000394.png"
-    # img_path = "D:\\Code\\bpbot\\data\\test\\depth20.png"
-    res = psc.infer_sepnet(imgpath=img_path)
-    # res = psc.infer_picknet(imgpath=img_path)
-    res = psc.infer_picknet_sepnet(imgpath=img_path, sep_motion=True)
-    x, y  = res[1]
-
-    for i, r in enumerate(res):
-        print(i, "=>", r)
+    # img_path = "/home/hlab/Desktop/predicting/tmp1.png"
+    img_path = "C:\\Users\\xinyi\\Desktop\\_tmp\\000132.png"
     
-    print("Time cost: ", timeit.default_timer() - start)
+    start = timeit.default_timer()
+    ret = psc.infer_sepnet(imgpath=img_path)
+    for k, r in zip(psc.keys, ret):
+        print(k, "=>", r)
+    print("Time cost (SepNet):", timeit.default_timer() - start)
+    
+    start = timeit.default_timer()
+    ret = psc.infer_picknet(imgpath=img_path)
+    for k, r in zip(psc.keys, ret):
+        print(k, "=>", r)
+    print("Time cost (PickNet): ", timeit.default_timer() - start)
+    
