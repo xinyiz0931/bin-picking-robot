@@ -47,11 +47,13 @@ bin = "pick"
 
 print("[*] Capture point cloud ... ")
 point_array = capture_pc()
+print(point_array is None)
 if cfg["depth_mode"] == "table":
     _dist = {"max": cfg["table_distance"], "min": cfg["table_distance"]-100}
     img, img_blur = pc2depth(point_array, _dist, cfg["width"],cfg["height"])
 elif cfg["depth_mode"] == "bin":
-    img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
+    # img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
+    img, img_blur = px2depth(point_array, cfg)
 cv2.imwrite(img_path, img_blur)
 crop = crop_roi(img_path, cfg[bin]["margin"])
 

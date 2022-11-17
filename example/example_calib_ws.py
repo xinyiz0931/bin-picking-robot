@@ -49,9 +49,13 @@ image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 clone = image.copy()
 
 if "dist" in ws_mode and args.zone != "pick_drop":
+    H = np.loadtxt(cfg.data["calibmat_path"])
     print(f"[*] Detect distances using marker for {args.zone}")
     pcd = pxc.getpcd()
-    pcd_r = rotate_point_cloud(pcd)
+    pc = pcd.copy() / 1000
+    pc_ = np.c_[pc, np.ones(pc.shape[0])]
+    pr = np.dot(H, pc_.T).T
+
     id_locs = detect_ar_marker(image.copy())
 
     if id_locs == {}:
@@ -63,15 +67,17 @@ if "dist" in ws_mode and args.zone != "pick_drop":
         w = image.shape[1]
         x, y, = id_locs[min_dist_id]
         # offset = y * w + x
-        min_distance = int(pcd_r[y*w+x][-1])
+        min_distance = int(pr[y*w+x][2])
         print(f"[$] min_distance:  {min_distance}")
+        print(pr[y*w+x])
 
     if max_dist_id in id_locs.keys():
         w = image.shape[1]
         x, y, = id_locs[max_dist_id]
         # offset = y * w + x
-        max_distance = int(pcd_r[y*w+x][-1])
+        max_distance = int(pr[y*w+x][2])
         print(f"[$] max_distance:  {max_distance}")
+        print(pr[y*w+x])
 
     cfg.data[args.zone]["distance"]["max"] = max_distance
     # cfg.data[args.zone]["distance"]["max"] = max_distance + 5 

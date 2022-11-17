@@ -15,27 +15,35 @@ if __name__ == "__main__":
     motion_seq = np.loadtxt(args.filepath)
     nxt = NxtRobot(host='[::]:15005')
 
-    print("Start robot execution .. ")
-    """
-    each line for mfik: 
-    m[0]: motion time (1)
-    m[1]: hand action(1)
-        0: close
-        1: open
-        2: stay
-        3: pause flag
-    m[2:17]: whole body joint (15) in degrees 
-    m[18:21]: gripper control (4)
-    """
+    print("[*] Extra motion sampling")
 
-    for i, m in enumerate(motion_seq):
-        if m[1] == 0:
-            nxt.closeHandToolLft()
-        elif m[1] == 1:
-            nxt.openHandToolLft()
-        nxt.setJointAngles(m[2:27],tm=m[0]) # no hand open-close control
-    print("Finish!!")
-        
-        
-            
+    seq = []
+    itvl = 10
+    # i : 2-3, 3-4
+    fling = motion_seq[2:5]
+    for i, jnt in enumerate(fling):
+        if i == len(fling) - 1:
+            jnt[0] = tm 
+            seq.append(jnt)
+            break
+        jnt_next = fling[i+1]
+        delta = (jnt_next-jnt)/itvl
+        tm = jnt_next[0]/itvl
+        jnt[0] = tm 
+        seq.append(jnt)
+        for k in range(itvl-1):
+            jnt_ = delta*(k+1)+jnt
+            jnt_[0] = tm
+            seq.append(jnt_)
+    seq = np.round(np.array(seq), 6)
+    final_seq = np.vstack((motion_seq[:2], seq, motion_seq[5:]))
+    print(final_seq.shape)
+    np.savetxt("/home/hlab/bpbot/data/motion/motion_ik_uni.dat", final_seq, fmt='%.06f')
+
+    print("[*] Start robot execution .. ")
+
+    # nxt.playMotionSeq(motion_seq)
+    nxt.playMotionSeq(final_seq)
+    print("[*] Finish! ")
+
         

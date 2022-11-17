@@ -23,6 +23,20 @@ def capture_pc():
     # gs = pxc.getgrayscaleimg()
     return pc.copy() if pc is not None else None
 
+def px2depth(pcd, cfg, max_=0.07, min_=0.007):
+    pc = pcd/1000
+    G = np.loadtxt(cfg["calibmat_path"])
+    pc_ = np.c_[pc, np.ones(pc.shape[0])]
+    pr = np.dot(G, pc_.T).T
+    gray_pc = pr[:,2]
+    gray_pc[gray_pc > max_] = min_
+    gray_pc[gray_pc < min_] = min_
+    img = ((gray_pc - min_) *
+           (1/(max_ - min_) * 255)).astype('uint8')
+    img = img.reshape((cfg["height"], cfg["width"]))
+    img_blur = cv2.medianBlur(img, 5)
+    return img, img_blur
+
 def pc2depth(pc, distance, width, height):
     """Convert point cloud to depth image
 
@@ -132,7 +146,8 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     draw_img = gripper.draw_grasp(grasps, img, color=color, top_color=top_color, top_idx=top_idx, top_only=top_only)
     return draw_img
 
-def draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, img, h_params=None):
+
+def draw_hold_and_pull_grasps(img, g_pull, v_pull, g_hold=None, h_params=None):
     
     if h_params is not None: 
         finger_w = h_params["finger_width"]
@@ -142,8 +157,9 @@ def draw_hold_and_pull_grasps(g_pull, v_pull, g_hold, img, h_params=None):
         # default
         finger_w, finger_h, open_w = 5, 15, 27
     gripper = Gripper(finger_w, finger_h, open_w)
-    draw_img = gripper.draw_grasp(g_hold, img, top_color=(0,255,255))
-    draw_img = gripper.draw_grasp(g_pull, draw_img, top_color=(0,255,0))
+    draw_img = gripper.draw_grasp(g_pull, img, top_color=(0,255,0))
+    if g_hold is not None:
+        draw_img = gripper.draw_grasp(g_hold, draw_img, top_color=(0,255,255))
 
     arrow_len=50 
     p = g_pull[:2]
@@ -262,36 +278,6 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
             else:
                 return 1, g_pull, v_pull
 
-
-    #     if ret[0] == 0:
-    #         p_pick = ret[1]
-    #         scores_pn = ret[-1]
-    #         print(f"[!] Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
-    #         g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
-    #         if g_pick is None:
-    #             print("[!] Grasp detection failed for pick zone ...")
-    #             return
-    #         else:
-    #             return ret[0], g_pick
-    #     else: 
-    #         scores_pn = ret[1]
-    #         p_pull = ret[2][0]
-    #         p_hold = ret[2][1]
-    #         v_pull = ret[3]
-    #         score_snd = ret[-1]
-    #         print(f"[!] Drop zone scores: {score_snd[0]:.3f}, {score_snd[1]:.3f}")
-    #         g_pull = gripper_left.point_oriented_grasp(img, p_pull)
-            
-    #         g_hold = gripper_right.point_oriented_grasp(img, p_hold)
-    #         # g_hold[2] = 90 
-
-    #         if g_hold is None: 
-    #             g_hold = [*p_hold, 90]
-    #         if g_pull is not None: 
-    #             g_sep = [*g_pull, *g_hold, *v_pull]
-    #             return ret[0], g_sep 
-    # return
-
 def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=None):
     """ Generate motions in motion file format
 
@@ -309,6 +295,8 @@ def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=No
         generator.gen_motion_picking(pose_lft, dest)
     # single-arm separation
     elif pose_rgt is None and pulling is not None:
+        # generator.gen_motion_picking(pose_lft, dest="drop")
+        # generator.gen_motion_picking(pose_lft, dest="goal")
         generator.gen_motion_separation(pose_lft, pulling)
     # dual-arm separation
     elif pose_rgt is not None and pulling is not None:
@@ -609,6 +597,7 @@ def is_bin_empty(img_path):
     
     img = cv2.imread(img_path)
     edge = cv2.Canny(img, low_thld, high_thld)
+    print("edge", np.count_nonzero(edge), "threshold: ", pixel_thld) 
     # plt.imshow(edge), plt.show()
     if np.count_nonzero(edge) < pixel_thld: 
         return True
@@ -694,7 +683,11 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     _obj_h = cfg["obj_height"] / 1000
     # _obj_h += 0.005 
     # _obj_h += 0.01 
-    g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
+    if margin == "pick":
+        g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
+    else:
+        print("load new matrix")
+        g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
 
     if len(image_locs) == 3: 
         # including calculate euler angle 
@@ -732,10 +725,13 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     # [2]
     point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
     p_c = point_mat[v,u]
-    # print("camera_pose", p_c)
+    print("camera_pose", p_c)
     #p_c = point_array[int(v * cfg["width"] + u)] # unit: m
-    u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 30)
+    if (p_c == 0).all(): 
+        u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
+    # u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
     p_c = point_mat[v,u]
+    print("==> new camera_pose", p_c)
     #if np.count_nonzero(p_c) == 0:
     #    print("replace bad point! ")
     #    u,v = replace_bad_point(point_mat[:,:,2], [u,v])
@@ -747,7 +743,6 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     
     p_tcp_table = np.dot(g_rc, [*p_c[0:2], cfg["table_distance"]/1000, 1])
     p_tcp[2] -= _obj_h
-    print(p_tcp, p_tcp_table)
 
     if len(image_locs) == 2: return p_tcp
 

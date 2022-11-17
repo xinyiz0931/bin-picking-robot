@@ -506,6 +506,24 @@ def replace_bad_point(src, loc, type="max", size=20):
 
     return (x_p, y_p)
 
+def sample_uniformly(J, itvl):
+
+    newJ = []
+    for i, jnt in enumerate(J):
+        if i == len(J) - 1:
+            newJ.append(jnt)
+            break
+        newJ.append(jnt)
+        jnt_next = J[i+1] 
+        _delta = (jnt_next-jnt)/itvl
+        for k in range(itvl-1):
+            newJ.append(_delta*(k+1)+jnt)
+    newJ = np.array(newJ)
+    return newJ
+
+def visualize_calibration(pc, pr, mat):
+    return
+
 def detect_ar_marker(image, marker_type="DICT_5X5_100", show=True):
     
     ARUCO_DICT = {

@@ -161,12 +161,12 @@ while True:
         os.write(fdc, r_)
         l = os.read(fdc, 27)
         time_stamp = int(clk / tw * tw)
-        data.append(time_stamp)
         if time_stamp < 1200: 
-            #continue 
-            data.append(time_stamp)
-            for i in range(6): data.append(0)
-
+            continue 
+            #data.append(time_stamp)
+            #for i in range(6): data.append(0)
+        data.append(time_stamp)
+    
         for i in range(1,22,4):
             data.append(int((l[i:i+4]).decode(),16))
         fp.write(",".join(map(str,data)))
@@ -174,7 +174,8 @@ while True:
 
         plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
         j+=1 
-        fig = plt.figure(1, figsize=(16, 6))
+        # fig = plt.figure(1, figsize=(16, 6))
+        fig = plt.figure(1, figsize=(8, 3))
         if len(plot_data) <= 50:
             force = [[0,0,0] for _ in range(50-j)] + plot_data
         else:

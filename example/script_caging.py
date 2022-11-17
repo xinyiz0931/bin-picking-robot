@@ -105,14 +105,14 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 # ---------------------- coordinate transformation ---------------------
-p_r_pull, g_r_pull = transform_image_to_robot([*p_pull, theta_pull], point_array, cfg, hand="left", margin="pick",dualarm=True)
-p_r_hold, g_r_hold = transform_image_to_robot([*p_hold, theta_hold], point_array, cfg, hand="right", tilt=60, margin="pick", dualarm=True)
+p_r_pull, g_wrist_pull = transform_image_to_robot([*p_pull, theta_pull], point_array, cfg, hand="left", margin="pick",dualarm=True)
+p_r_hold, g_wrist_hold = transform_image_to_robot([*p_hold, theta_hold], point_array, cfg, hand="right", tilt=60, margin="pick", dualarm=True)
 
-#g_r_hold[2] -= 0.01
+#g_wrist_hold[2] -= 0.01
 v_pull = ((p_r_pull-p_r_hold) / np.linalg.norm(p_r_pull-p_r_hold))[:2]
 
-#g_r_hold = [0.354,-0.213,0.055,0.0,-60.0,-90.0]
-#g_r_pull = [0.425,-0.025,0.076,0.0,-90.0,90.0]
+#g_wrist_hold = [0.354,-0.213,0.055,0.0,-60.0,-90.0]
+#g_wrist_pull = [0.425,-0.025,0.076,0.0,-90.0,90.0]
 v_pull = [0.533, 0.846]
 v_len = 0.2
 
@@ -125,8 +125,8 @@ print("[$] Joint (pull): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_pull,))
                 #% (*g_hold, *g_r_hold))
 print("[$] Vector (pull): (%.3f,%.3f), length: %.3f" % (*v_pull, v_len))
 
-gen_motion_test(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
-# gen_motion_pickorsep(mf_path, g_r_pull, pose_rgt=g_r_hold, pulling=[*v_pull,v_len])
+gen_motion_test(mf_path, g_wrist_pull, pose_rgt=g_wrist_hold, pulling=[*v_pull,v_len])
+# gen_motion_pickorsep(mf_path, g_wrist_pull, pose_rgt=g_wrist_hold, pulling=[*v_pull,v_len])
 # # =======================  generate motion ===========================
 if found_cnoid: 
     plan_success = load_motionfile(mf_path, dual_arm=True)
