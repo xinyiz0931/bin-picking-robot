@@ -67,11 +67,13 @@ def pick():
         cv2.imwrite(crop_db_path, crop_db)
 
     print("[*] Failed to capture point cloud! Use image only! ")
+    #################################################################
+    # Revise `crop_db_path` or `crop_pb_path` to test
+    #################################################################
     # temporal collect data ....
-    # tdatetime = dt.now()
-    # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+    tdatetime = dt.now()
+    tstr = tdatetime.strftime('%Y%m%d%H%M%S')
     # cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
-
 
     ret_dropbin = pick_or_sep(img_path=crop_db_path, hand_config=cfg["hand"], bin='drop')
 
@@ -103,7 +105,6 @@ def pick():
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
 
             
-            # TODO: just for visualization
             heatmap_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_pick_zone.png"))
             grasp_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_pick_zone.png"))
             vis = []
@@ -147,28 +148,30 @@ def pick():
             if point_array is not None:
                 p_pull_tcp, g_pull_wrist = transform_image_to_robot(g_pull, point_array, cfg, hand="left", margin="drop",dualarm=True)
                 v_pull_wrist = [v_pull[1], v_pull[0]] # swap x and y from image to robot coordinate
+                v_len = is_colliding(p_pull_tcp[:2], v_pull, cfg, point_array)
+                v_len = 0.1
 
                 print("[$] **Pull**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pull, *p_pull_tcp))
                 print("[$] **Pull**! Direction: (%.2f,%.2f), distance: %.3f" % (*v_pull, v_len))
-                v_len = is_colliding(p_pull_tcp[:2], v_pull, cfg, point_array)
                 gen_motion_pickorsep(mf_path, g_pull_wrist, pulling=[*v_pull_wrist, v_len], dest="side")
                 gen_success = True
             else:
                 print("[$] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
                 print("[$] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
-
-        # TODO: just for visualization
-        heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_drop_zone.png"))
-        grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_drop_zone.png"))
-        vis = []
-        for v in [heatmap_dropbin, cv2.hconcat([grasp_dropbin, img_grasp])]:
-            vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
-        vis_dropbin = cv2.vconcat(vis)
-        vis_pickbin = (np.ones([*vis_dropbin.shape])*255).astype(np.uint8)
-        cv2.putText(vis_pickbin, "Bin (Pick)",(20,550), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-        cv2.putText(vis_pickbin, "No Action",(20,700), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-        vis = cv2.hconcat([vis_pickbin, vis_dropbin])
-        cv2.imwrite(os.path.join(root_dir, "data/depth/vis.png"), vis)
+        import shutil
+        shutil.copyfile("/home/hlab/bpbot/data/depth/pred/out_depth_cropped_drop_zone.png", f"/home/hlab/bpbot/data/depth/{tstr}.png")
+        # # TODO: just for visualization
+        # heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_drop_zone.png"))
+        # grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_drop_zone.png"))
+        # vis = []
+        # for v in [heatmap_dropbin, cv2.hconcat([grasp_dropbin, img_grasp])]:
+        #     vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
+        # vis_dropbin = cv2.vconcat(vis)
+        # vis_pickbin = (np.ones([*vis_dropbin.shape])*255).astype(np.uint8)
+        # cv2.putText(vis_pickbin, "Bin (Pick)",(20,550), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
+        # cv2.putText(vis_pickbin, "No Action",(20,700), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
+        # vis = cv2.hconcat([vis_pickbin, vis_dropbin])
+        # cv2.imwrite(os.path.join(root_dir, "data/depth/vis.png"), vis)
         # cv2.imwrite(os.path.join(root_dir, "data/image/vis_pickbin.png"), empty_pickbin)
         # cv2.imwrite(os.path.join(root_dir, "data/image/vis_dropbin.png"), vis_dropbin)
         
@@ -188,7 +191,7 @@ def pick():
 
         print(f"[*] Motion planning succeed? ==> {plan_success.count(True) == len(plan_success)}")
         
-        if plan_success:
+        if plan_success.count(True) == len(plan_success):
             nxt = NxtRobot(host='[::]:15005')
             motion_seq = get_motion()
             num_seq = int(len(motion_seq)/20)

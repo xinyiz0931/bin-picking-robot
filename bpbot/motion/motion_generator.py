@@ -177,11 +177,12 @@ class Motion(object):
             print("0 0.8 " + self.initpose_,file=fp)
 
         else: 
+            print("Here! ")
             # print("0 0.50 LHAND_JNT_OPEN",file=fp)
             print("0 0.80 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (px,py,proll,ppitch,pyaw),file=fp)
             print("0 0.50 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px,py,pz,proll,ppitch,pyaw),file=fp)
             print("0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",file=fp)
-            _e = [px+vlen*vx,py+vlen*vy,pz]
+            _e = [px+vlen*vx,py+vlen*vy,pz+0.05]
             for m in self.get_seq_wiggle(*g_pull, *_e):
                 print(m, file=fp)
             # print("0 0.80 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (px+vlen*vx,py+vlen*vy,pz,proll,ppitch,pyaw),file=fp)

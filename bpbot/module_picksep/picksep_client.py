@@ -47,7 +47,6 @@ class PickSepClient(object):
         try: 
             out_buffer = self.stub.infer_sepnet(psmsg.ImgPath(imgpath=imgpath))
             out = np.frombuffer(out_buffer.ret, dtype=float) 
-            print("sepnet client: ", out)
             return out[:2].astype(int), out[2:]
 
         except grpc.RpcError as rpc_error:
@@ -58,8 +57,8 @@ if __name__ == "__main__":
     import timeit
     
     psc = PickSepClient()
-    # img_path = "/home/hlab/Desktop/predicting/tmp1.png"
-    img_path = "C:\\Users\\xinyi\\Desktop\\_tmp\\000132.png"
+    img_path = "/home/hlab/Desktop/predicting/tmp1.png"
+    # img_path = "C:\\Users\\xinyi\\Desktop\\_tmp\\000132.png"
     
     start = timeit.default_timer()
     ret = psc.infer_sepnet(imgpath=img_path)
@@ -67,9 +66,9 @@ if __name__ == "__main__":
         print(k, "=>", r)
     print("Time cost (SepNet):", timeit.default_timer() - start)
     
-    start = timeit.default_timer()
-    ret = psc.infer_picknet(imgpath=img_path)
-    for k, r in zip(psc.keys, ret):
-        print(k, "=>", r)
-    print("Time cost (PickNet): ", timeit.default_timer() - start)
+    # start = timeit.default_timer()
+    # ret = psc.infer_picknet(imgpath=img_path)
+    # for k, r in zip(psc.keys, ret):
+    #     print(k, "=>", r)
+    # print("Time cost (PickNet): ", timeit.default_timer() - start)
     

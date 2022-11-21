@@ -24,7 +24,7 @@ class PickSepServer(psrpc.PickSepServicer):
                 "img_height": 512,
                 "img_width": 512,
                 "pick_ckpt_folder": ["ckpt_picknet", "model_epoch_8.pth"], 
-                "sep_ckpt_folder": ["try_sepnet", "model_epoch_21.pth"]
+                "sep_ckpt_folder": ["try_sep_mask", "model_epoch_17.pth"]
             }
         }
         

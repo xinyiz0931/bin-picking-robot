@@ -11,19 +11,19 @@ pick:
     max: 0
     min: -15
   margin:
-    left: 848
-    top: 416
-    right: 1296
-    bottom: 918
+    left: 842
+    top: 318
+    right: 1290
+    bottom: 798
 drop:
   distance:
     max: 1125
     min: 1075
   margin:
-    left: 1393
-    top: 416
-    right: 1868
-    bottom: 943
+    left: 1384
+    top: 308
+    right: 1863
+    bottom: 816
 graspability:
   rotation_step: 45.0
   depth_step: 10
