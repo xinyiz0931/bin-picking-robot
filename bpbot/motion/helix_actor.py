@@ -39,7 +39,7 @@ class HelixActor(object):
             "0 0.50 LARM_JNT_REL 0 0 0 0 0 0 -150"
         ]
     
-    def gen_empty_action(self):
+    def get_empty_action(self):
         open(self.filepath, 'w').close()
 
     def get_pick_seq(self, xyz, rpy):
@@ -59,7 +59,7 @@ class HelixActor(object):
             self.initpose
         ]
 
-    def get_helix_action(self, xyz, rpy, action_idx):
+    def get_action(self, xyz, rpy, action_idx):
         """Generate helix motion for picking entangled wire harnesses
 
         Args:

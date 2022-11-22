@@ -28,6 +28,7 @@ with open("/home/hlab/Desktop/lhand.txt", 'w') as fp:
         else:
             print('['+','.join(str(i) for i in h)+']],', file=fp)
     print("[3"+",1"*len(H)+"])", file=fp)
+
 # np.savetxt("/home/hlab/Desktop/lhand.txt", H, fmt='%.06f', delimiter=',')
 # itvl = 5
 # newJ = []

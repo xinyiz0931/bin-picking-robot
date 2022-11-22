@@ -126,7 +126,7 @@ gripper_right = Gripper(*right_attr)
 gripper_left = Gripper(*left_attr)
 # theta_pull = gripper_left.point_oriented_grasp(img_input, [p_pull[0], p_pull[1]])
 g_pull = gripper_left.point_oriented_grasp(img_input, p_pull)
-crop_grasp = draw_hold_and_pull_grasps(img_input.copy(), g_pull, v_pull)
+crop_grasp = draw_pull_grasps(img_input.copy(), g_pull, v_pull)
 # crop_grasp = gripper_left.draw_grasp(g_pull, img_input.copy())
 p_tcp_pull, g_wrist_pull = transform_image_to_robot(g_pull, point_array, cfg, hand="left", margin="drop",dualarm=True)
 v_tcp_pull = [v_pull[1],v_pull[0]]

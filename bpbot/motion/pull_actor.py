@@ -18,6 +18,9 @@ class PullActor(object):
        
         self.goal_c = [0.480, 0.350]
         self.drop_c = [0.438, 0.200]
+    def get_action(self, pose, direction):
+        xyz = pose[:3]
+        rpy = pose[3:]
 
     def get_pick_seq(self, xyz, rpy): 
         return [
@@ -42,7 +45,7 @@ class PullActor(object):
                 self.initpose
             ]
 
-    def get_pull_seq(self, xyz, rpy, v, wiggle=False):
+    def get_action(self, pose, v, wiggle=False):
         """Get pulling motionfile command
 
         Args:
@@ -51,6 +54,9 @@ class PullActor(object):
             v (tuple or list): [x,y,z,length]
             wiggle (bool, optional): pulling with wiggling?. defaults to False.
         """
+        xyz = pose[:3]
+        rpy = pose[3:]
+
         xyz_e = [xyz[i] + v[3]*v[i] for i in range(3)]
         xyz_u = xyz_e.copy()
         xyz_u[2] += 0.1 
@@ -79,3 +85,6 @@ class PullActor(object):
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
     
+    def get_holdandpull_seq(self):
+        # TODO
+        return

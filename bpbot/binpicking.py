@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
 from bpbot.grasping import Graspability, Gripper
-from bpbot.motion import Motion
+from bpbot.motion import PickAndPlaceActor, PullActor, HelixActor
 from bpbot.utils import *
 
 def capture_pc():
@@ -147,7 +147,10 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     return draw_img
 
 
-def draw_hold_and_pull_grasps(img, g_pull, v_pull, g_hold=None, h_params=None):
+def draw_pull_grasps(img, g_pull, v_pull, g_hold=None, h_params=None):
+    
+    if isinstance(img, str) and os.path.exists(img):
+        img = cv2.imread(img)
     
     if h_params is not None: 
         finger_w = h_params["finger_width"]
@@ -232,8 +235,8 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         ret = psc.infer_picknet(imgpath=img_path)
         if not ret:
             return
-        p_pick = ret[1]
-        scores_pn = ret[-1]
+        scores_pn = ret[1]
+        p_pick = ret[0][scores_pn.argmax()]
         print(f"[!] Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
         g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
@@ -243,7 +246,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         # else: 
         #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
             # else: return 1, g_pick
-        return ret[0], g_pick
+        return scores_pn.argmax(), g_pick
 
 
     elif bin == "drop": 
@@ -278,7 +281,7 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
             else:
                 return 1, g_pull, v_pull
 
-def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=None):
+def gen_motion_picksep(mf_path, pose_lft, dest, pulling=None, pose_rgt=None):
     """ Generate motions in motion file format
 
     Args:
@@ -288,21 +291,18 @@ def gen_motion_pickorsep(mf_path, pose_lft, dest=None, pose_rgt=None, pulling=No
         pose_right (array, optional): [x,y,z,roll,pitch,yaw] right palm pose. Defaults to None.
         pulling (array, optional): [pull_x, pull_y, pull_len]. Defaults to None.
     """
-    generator = Motion(filepath=mf_path)
+    actor_pick = PickAndPlaceActor(mf_path)
+    actor_pull = PullActor(mf_path)
+
+    if pulling is None:
+        actor_pick.get_action(pose_lft, dest=dest)
+
+    elif pose_rgt is None:
+        actor_pull.get_action(pose_lft, pulling, wiggle=True)
     
-    # pick
-    if pose_rgt is None and pulling is None and dest is not None:
-        generator.gen_motion_picking(pose_lft, dest)
-    # single-arm separation
-    elif pose_rgt is None and pulling is not None:
-        # generator.gen_motion_picking(pose_lft, dest="drop")
-        # generator.gen_motion_picking(pose_lft, dest="goal")
-        generator.gen_motion_separation(pose_lft, pulling)
-    # dual-arm separation
-    elif pose_rgt is not None and pulling is not None:
-        generator.gen_motion_separation(pose_lft, pulling, pose_rgt)
     else:
         print("[!] Wrong type for motion generator ...")    
+
 
 def gen_motion_pick(mf_path, pose_left, sub_action):
     """Generate motion in motion file format for single-arm picking
@@ -312,19 +312,16 @@ def gen_motion_pick(mf_path, pose_left, sub_action):
         pose_left (array): [x,y,z,roll,pitch,yaw]
         sub_action (int): -1(no motion),0(direct lifting),1,2,3,4,5,6
     """
-    generator = Motion(filepath=mf_path)
+    actor = HelixActor(mf_path)
     sub_action_name = ["a_dl","a_h","a_hs","a_f","a_fs","a_tf","a_tfs"]
     
     if sub_action == -1:
         print("[!] No motion! ")
-        generator.gen_motion_empty()
+        actor.get_empty_action()
     else: 
         print(f"[*] Generate motion for {sub_action_name[sub_action]} ... ")
-        generator.gen_motion_circular(pose_left, sub_action)
+        actor.get_action(pose_left, sub_action)
 
-def gen_motion_test(mf_path, pose_lft, pose_rgt, pulling):
-    generator = Motion(filepath=mf_path)
-    generator.gen_motion_test(pose_lft, pulling, pose_rgt)
 
 def detect_grasp(n_grasp, img_path, g_params, h_params):
     """Detect grasp point using fast graspability evaluation
@@ -597,7 +594,7 @@ def is_bin_empty(img_path):
     
     img = cv2.imread(img_path)
     edge = cv2.Canny(img, low_thld, high_thld)
-    print("edge", np.count_nonzero(edge), "threshold: ", pixel_thld) 
+    # print("edge", np.count_nonzero(edge), "threshold: ", pixel_thld) 
     # plt.imshow(edge), plt.show()
     if np.count_nonzero(edge) < pixel_thld: 
         return True
@@ -686,7 +683,7 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     if margin == "pick":
         g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
     else:
-        print("load new matrix")
+        # print("load new matrix")
         g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
 
     if len(image_locs) == 3: 
@@ -725,13 +722,13 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     # [2]
     point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
     p_c = point_mat[v,u]
-    print("camera_pose", p_c)
+    # print("camera_pose", p_c)
     #p_c = point_array[int(v * cfg["width"] + u)] # unit: m
     if (p_c == 0).all(): 
         u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
     # u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
     p_c = point_mat[v,u]
-    print("==> new camera_pose", p_c)
+    # print("==> new camera_pose", p_c)
     #if np.count_nonzero(p_c) == 0:
     #    print("replace bad point! ")
     #    u,v = replace_bad_point(point_mat[:,:,2], [u,v])
