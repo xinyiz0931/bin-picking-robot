@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import grpc
 import time
-from numpy.lib.function_base import angle
 import yaml
 import math
 from concurrent import futures

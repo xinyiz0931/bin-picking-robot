@@ -20,7 +20,7 @@ pxc = pclt.PhxClient(host="127.0.0.1:18300")
 
 # some parameters
 folder = "test"
-calib_mkid = 7
+MKID = 7
 visualize = True
 # calib_arm = "right"
 fix_waist = False
@@ -29,7 +29,6 @@ root_dir = "/home/hlab/bpbot"
 calib_dir = os.path.join(root_dir, "data/calibration", folder)
 save_robot = os.path.join(calib_dir, "robot_clb.txt")
 save_camera = os.path.join(calib_dir, "camera_clb.txt")
-
 
 mf_path = os.path.join(root_dir, "data/motion/calib_3d.dat")
 pre_robot = os.path.join(calib_dir, "robot.txt")
@@ -64,14 +63,14 @@ if found_cnoid:
         print(f"[*] {i:02d}-th | ", end="")
 
         # pcd_r = rotate_point_cloud(pcd)
-        if calib_mkid in ids.keys(): 
-            x, y = ids[calib_mkid]
+        if MKID in ids.keys(): 
+            x, y = ids[MKID]
             # camera_p = pcd_r[y*image.shape[1]+x] / 1000
             camera_p = pcd[y*image.shape[1]+x]
             camera_pos_clb.append(camera_p)
             robot_pos_clb.append(robot_pos[i-1])
-            print(f"=> Detected marker {calib_mkid}, ({camera_p[0]:.3f},{camera_p[1]:.3f},{camera_p[2]:.3f})")
-            # print(f"=> Detected marker {calib_mkid}, ({x},{y})")
+            print(f"=> Detected marker {MKID}, ({camera_p[0]:.3f},{camera_p[1]:.3f},{camera_p[2]:.3f})")
+            # print(f"=> Detected marker {MKID}, ({x},{y})")
         else: print(f"[!] No markers detected! ")
     camera_pos_clb = np.asarray(camera_pos_clb)
     robot_pos_clb = np.asarray(robot_pos_clb)
