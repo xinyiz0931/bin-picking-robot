@@ -27,16 +27,20 @@ start = timeit.default_timer()
 root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 print(f"[*] Execute script at {root_dir} ")
 
-img_pb_path = os.path.join(root_dir, "data/depth/depth_pick_zone.png")
-img_db_path = os.path.join(root_dir, "data/depth/depth_drop_zone.png")
-crop_pb_path = os.path.join(root_dir, "data/depth/depth_cropped_pick_zone.png")
-crop_db_path = os.path.join(root_dir, "data/depth/depth_cropped_drop_zone.png")
+img_pb_path = os.path.join(root_dir, "data/depth/depth_pickbin.png")
+img_db_path = os.path.join(root_dir, "data/depth/depth_dropbin.png")
+crop_pb_path = os.path.join(root_dir, "data/depth/depth_cropped_pickbin.png")
+crop_db_path = os.path.join(root_dir, "data/depth/depth_cropped_dropbin.png")
 mf_path = os.path.join(root_dir, "data/motion/motion.dat")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
 
 vis_pickbin_path = os.path.join(root_dir, "data/image/no_action_pickbin.jpg")
 vis_dropbin_path = os.path.join(root_dir, "data/image/no_action_dropbin.jpg")
-
+vis_pp_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_pickbin.png")
+vis_pd_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_dropbin.png")
+vis_sd_path = os.path.join(root_dir, "data/depth/pred/sepnet_depth_cropped_dropbin.png")
+vis_size = 1000
+_hs = int(vis_size/2)
 # ---------------------- get config info -------------------------
 
 bincfg = BinConfig()
@@ -82,8 +86,6 @@ def pick():
         if res_pickbin is not None: 
         
             pickorsep, g_pick = res_pickbin
-            
-            # img_grasp = draw_grasp(g_pick, crop_pb, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
             img_grasp = draw_grasp(g_pick, crop_pb_path, cfg["hand"]["left"], top_color=(0,255,0), top_only=True)
 
             cv2.imwrite(draw_path, img_grasp)
@@ -104,8 +106,15 @@ def pick():
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
 
             # TODO visualization 
-            # heatmap_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_pick_zone.png"))
-            # grasp_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_pick_zone.png"))
+            # "picknet"o + "pickbin"
+            upper = cv2.resize(cv2.imread(vis_pp_path), (vis_size, _hs))
+            lower = cv2.hconcat([np.zeros(_hs,_hs,3).astype(np.uint8), cv2.resize(img_grasp,(_hs,_hs))])
+            print(upper.shape, lower.shape)
+            vis = cv2.vconcat([upper, lower])
+
+
+            # heatmap_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_pickbin.png"))
+            # grasp_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_pickbin.png"))
             # vis = []
             # for v in [heatmap_pickbin, cv2.hconcat([grasp_pickbin, img_grasp])]:
             #     vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
@@ -136,6 +145,13 @@ def pick():
                 gen_success = True
             else:
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
+            
+            # TODO visualization
+            # dropbin + picknet
+            upper = cv2.resize(cv2.imread(vis_pd_path), (vis_size, _hs))
+            lower = cv2.hconcat([np.zeros(_hs,_hs,3).astype(np.uint8), cv2.resize(img_grasp,(_hs,_hs))])
+            print(upper.shape, lower.shape)
+            vis = cv2.vconcat([upper, lower])
 
         else: 
             _, g_pull, v_pull = ret_dropbin
@@ -156,12 +172,29 @@ def pick():
             else:
                 print("[$] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
                 print("[$] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
+            
+            # TODO visualization
+            # dropbin + sepnet
+            h_pick = cv2.imread(vis_pd_path)
+            h_sep = cv2.resize(cv2.imread(vis_sd_path), (h_pick.shape[1], h_pick.shape[0]))
+            heatmaps = cv2.vconcat([h_pick, h_sep])
+            
+            img_ = cv2.resize(cv2.imread(crop_pb_path), (img_grasp.shape[1], img_grasp.shape[0]))
+            rets = cv2.hconcat([img_, img_grasp])
+            
+            fig = plt.figure(1, figsize=(16, 6))
+            ax1 = fig.add_subplot(121)
+            ax1.imshow(h)
+            ax2 = fig.add_subplot(122)
+            ax2.imshow(ret)
+            plt.show()
+
 
         # import shutil
-        # shutil.copyfile("/home/hlab/bpbot/data/depth/pred/out_depth_cropped_drop_zone.png", f"/home/hlab/bpbot/data/depth/{tstr}.png")
+        # shutil.copyfile("/home/hlab/bpbot/data/depth/pred/out_depth_cropped_dropbin.png", f"/home/hlab/bpbot/data/depth/{tstr}.png")
         # # TODO: just for visualization
-        # heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_drop_zone.png"))
-        # grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_drop_zone.png"))
+        # heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_dropbin.png"))
+        # grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_dropbin.png"))
         # vis = []
         # for v in [heatmap_dropbin, cv2.hconcat([grasp_dropbin, img_grasp])]:
         #     vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
@@ -209,12 +242,12 @@ def pick():
         # import shutil
         # if res_db is not None: 
         #     # copy drop zone heatmaps 
-        #     shutil.copyfile(crop_db_path, f"{root_dir}/exp/{tstr}/depth_drop_zone.png")
-        #     shutil.copyfile(f"{root_dir}/data/depth/out_depth_cropped_drop_zone.png", f"{root_dir}/exp/{tstr}/out_depth_drop_zone.png")
+        #     shutil.copyfile(crop_db_path, f"{root_dir}/exp/{tstr}/depth_dropbin.png")
+        #     shutil.copyfile(f"{root_dir}/data/depth/out_depth_cropped_dropbin.png", f"{root_dir}/exp/{tstr}/out_depth_dropbin.png")
         # else: 
         # # copy pick zone heatmaps 
-        #     shutil.copyfile(crop_pb_path, f"{root_dir}/exp/{tstr}/depth_pick_zone.png")
-        #     shutil.copyfile(f"{root_dir}/data/depth/out_depth_cropped_pick_zone.png", f"{root_dir}/exp/{tstr}/out_depth_pick_zone.png")
+        #     shutil.copyfile(crop_pb_path, f"{root_dir}/exp/{tstr}/depth_pickbin.png")
+        #     shutil.copyfile(f"{root_dir}/data/depth/out_depth_cropped_pickbin.png", f"{root_dir}/exp/{tstr}/out_depth_pickbin.png")
 
     end = timeit.default_timer()
     print("[*] Time: {:.2f}s".format(end - start))

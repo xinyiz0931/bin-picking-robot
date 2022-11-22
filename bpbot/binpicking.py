@@ -248,7 +248,6 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
             # else: return 1, g_pick
         return scores_pn.argmax(), g_pick
 
-
     elif bin == "drop": 
         if is_bin_empty(img_path): 
             print("[!] Drop zone is empty! ")
