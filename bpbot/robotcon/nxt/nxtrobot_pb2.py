@@ -3,6 +3,7 @@
 # source: nxtrobot.proto
 """Generated protocol buffer code."""
 from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
@@ -13,172 +14,15 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor.FileDescriptor(
-  name='nxtrobot.proto',
-  package='',
-  syntax='proto3',
-  serialized_options=None,
-  create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0enxtrobot.proto\"\x07\n\x05\x45mpty\"P\n\x06Status\x12\"\n\x05value\x18\x01 \x01(\x0e\x32\x13.Status.StatusValue\"\"\n\x0bStatusValue\x12\t\n\x05\x45RROR\x10\x00\x12\x08\n\x04\x44ONE\x10\x01\"\x19\n\tSendValue\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1b\n\x0bReturnValue\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t2\xd3\x06\n\x03Nxt\x12\"\n\rcheckEncoders\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1c\n\x07servoOn\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1d\n\x08servoOff\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1e\n\tgoInitial\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1e\n\tgoOffPose\x12\x06.Empty\x1a\x07.Status\"\x00\x12(\n\x0egetJointAngles\x12\x06.Empty\x1a\x0c.ReturnValue\"\x00\x12\'\n\x0esetJointAngles\x12\n.SendValue\x1a\x07.Status\"\x00\x12$\n\x0bplayPattern\x12\n.SendValue\x1a\x07.Status\"\x00\x12%\n\x10\x63loseHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x63loseHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12$\n\x0fopenHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12$\n\x0fopenHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x65jectHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x65jectHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12&\n\x11\x61ttachHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12&\n\x11\x61ttachHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12,\n\x13setHandAnglesDegRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12,\n\x13setHandAnglesDegLft\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmRelRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmRelLft\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmAbsRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmAbsLft\x12\n.SendValue\x1a\x07.Status\"\x00\x62\x06proto3'
-)
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0enxtrobot.proto\"\x07\n\x05\x45mpty\"P\n\x06Status\x12\"\n\x05value\x18\x01 \x01(\x0e\x32\x13.Status.StatusValue\"\"\n\x0bStatusValue\x12\t\n\x05\x45RROR\x10\x00\x12\x08\n\x04\x44ONE\x10\x01\"\x19\n\tSendValue\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1b\n\x0bReturnValue\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t2\x83\x07\n\x03Nxt\x12\"\n\rcheckEncoders\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1c\n\x07servoOn\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1d\n\x08servoOff\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1e\n\tgoInitial\x12\x06.Empty\x1a\x07.Status\"\x00\x12\x1e\n\tgoOffPose\x12\x06.Empty\x1a\x07.Status\"\x00\x12(\n\x0egetJointAngles\x12\x06.Empty\x1a\x0c.ReturnValue\"\x00\x12\'\n\x0esetJointAngles\x12\n.SendValue\x1a\x07.Status\"\x00\x12$\n\x0bplayPattern\x12\n.SendValue\x1a\x07.Status\"\x00\x12%\n\x10\x63loseHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x63loseHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12$\n\x0fopenHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12$\n\x0fopenHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x65jectHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12%\n\x10\x65jectHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12&\n\x11\x61ttachHandToolLft\x12\x06.Empty\x1a\x07.Status\"\x00\x12&\n\x11\x61ttachHandToolRgt\x12\x06.Empty\x1a\x07.Status\"\x00\x12,\n\x13setHandAnglesDegRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12,\n\x13setHandAnglesDegLft\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmRelRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmRelLft\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmAbsRgt\x12\n.SendValue\x1a\x07.Status\"\x00\x12&\n\rmoveArmAbsLft\x12\n.SendValue\x1a\x07.Status\"\x00\x12.\n\x10getJointPosition\x12\n.SendValue\x1a\x0c.ReturnValue\"\x00\x62\x06proto3')
 
 
 
-_STATUS_STATUSVALUE = _descriptor.EnumDescriptor(
-  name='StatusValue',
-  full_name='Status.StatusValue',
-  filename=None,
-  file=DESCRIPTOR,
-  create_key=_descriptor._internal_create_key,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='ERROR', index=0, number=0,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='DONE', index=1, number=1,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=73,
-  serialized_end=107,
-)
-_sym_db.RegisterEnumDescriptor(_STATUS_STATUSVALUE)
-
-
-_EMPTY = _descriptor.Descriptor(
-  name='Empty',
-  full_name='Empty',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=18,
-  serialized_end=25,
-)
-
-
-_STATUS = _descriptor.Descriptor(
-  name='Status',
-  full_name='Status',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='value', full_name='Status.value', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-    _STATUS_STATUSVALUE,
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=27,
-  serialized_end=107,
-)
-
-
-_SENDVALUE = _descriptor.Descriptor(
-  name='SendValue',
-  full_name='SendValue',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='data', full_name='SendValue.data', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=109,
-  serialized_end=134,
-)
-
-
-_RETURNVALUE = _descriptor.Descriptor(
-  name='ReturnValue',
-  full_name='ReturnValue',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='data', full_name='ReturnValue.data', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=136,
-  serialized_end=163,
-)
-
-_STATUS.fields_by_name['value'].enum_type = _STATUS_STATUSVALUE
-_STATUS_STATUSVALUE.containing_type = _STATUS
-DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
-DESCRIPTOR.message_types_by_name['Status'] = _STATUS
-DESCRIPTOR.message_types_by_name['SendValue'] = _SENDVALUE
-DESCRIPTOR.message_types_by_name['ReturnValue'] = _RETURNVALUE
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
-
+_EMPTY = DESCRIPTOR.message_types_by_name['Empty']
+_STATUS = DESCRIPTOR.message_types_by_name['Status']
+_SENDVALUE = DESCRIPTOR.message_types_by_name['SendValue']
+_RETURNVALUE = DESCRIPTOR.message_types_by_name['ReturnValue']
+_STATUS_STATUSVALUE = _STATUS.enum_types_by_name['StatusValue']
 Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
   'DESCRIPTOR' : _EMPTY,
   '__module__' : 'nxtrobot_pb2'
@@ -207,241 +51,20 @@ ReturnValue = _reflection.GeneratedProtocolMessageType('ReturnValue', (_message.
   })
 _sym_db.RegisterMessage(ReturnValue)
 
+_NXT = DESCRIPTOR.services_by_name['Nxt']
+if _descriptor._USE_C_DESCRIPTORS == False:
 
-
-_NXT = _descriptor.ServiceDescriptor(
-  name='Nxt',
-  full_name='Nxt',
-  file=DESCRIPTOR,
-  index=0,
-  serialized_options=None,
-  create_key=_descriptor._internal_create_key,
-  serialized_start=166,
-  serialized_end=1017,
-  methods=[
-  _descriptor.MethodDescriptor(
-    name='checkEncoders',
-    full_name='Nxt.checkEncoders',
-    index=0,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='servoOn',
-    full_name='Nxt.servoOn',
-    index=1,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='servoOff',
-    full_name='Nxt.servoOff',
-    index=2,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='goInitial',
-    full_name='Nxt.goInitial',
-    index=3,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='goOffPose',
-    full_name='Nxt.goOffPose',
-    index=4,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='getJointAngles',
-    full_name='Nxt.getJointAngles',
-    index=5,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_RETURNVALUE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='setJointAngles',
-    full_name='Nxt.setJointAngles',
-    index=6,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='playPattern',
-    full_name='Nxt.playPattern',
-    index=7,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='closeHandToolLft',
-    full_name='Nxt.closeHandToolLft',
-    index=8,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='closeHandToolRgt',
-    full_name='Nxt.closeHandToolRgt',
-    index=9,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='openHandToolLft',
-    full_name='Nxt.openHandToolLft',
-    index=10,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='openHandToolRgt',
-    full_name='Nxt.openHandToolRgt',
-    index=11,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='ejectHandToolLft',
-    full_name='Nxt.ejectHandToolLft',
-    index=12,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='ejectHandToolRgt',
-    full_name='Nxt.ejectHandToolRgt',
-    index=13,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='attachHandToolLft',
-    full_name='Nxt.attachHandToolLft',
-    index=14,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='attachHandToolRgt',
-    full_name='Nxt.attachHandToolRgt',
-    index=15,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='setHandAnglesDegRgt',
-    full_name='Nxt.setHandAnglesDegRgt',
-    index=16,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='setHandAnglesDegLft',
-    full_name='Nxt.setHandAnglesDegLft',
-    index=17,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='moveArmRelRgt',
-    full_name='Nxt.moveArmRelRgt',
-    index=18,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='moveArmRelLft',
-    full_name='Nxt.moveArmRelLft',
-    index=19,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='moveArmAbsRgt',
-    full_name='Nxt.moveArmAbsRgt',
-    index=20,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='moveArmAbsLft',
-    full_name='Nxt.moveArmAbsLft',
-    index=21,
-    containing_service=None,
-    input_type=_SENDVALUE,
-    output_type=_STATUS,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-])
-_sym_db.RegisterServiceDescriptor(_NXT)
-
-DESCRIPTOR.services_by_name['Nxt'] = _NXT
-
+  DESCRIPTOR._options = None
+  _EMPTY._serialized_start=18
+  _EMPTY._serialized_end=25
+  _STATUS._serialized_start=27
+  _STATUS._serialized_end=107
+  _STATUS_STATUSVALUE._serialized_start=73
+  _STATUS_STATUSVALUE._serialized_end=107
+  _SENDVALUE._serialized_start=109
+  _SENDVALUE._serialized_end=134
+  _RETURNVALUE._serialized_start=136
+  _RETURNVALUE._serialized_end=163
+  _NXT._serialized_start=166
+  _NXT._serialized_end=1065
 # @@protoc_insertion_point(module_scope)

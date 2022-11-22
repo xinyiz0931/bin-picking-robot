@@ -124,6 +124,11 @@ class NxtStub(object):
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
+        self.getJointPosition = channel.unary_unary(
+                '/Nxt/getJointPosition',
+                request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
+                response_deserializer=nxtrobot__pb2.ReturnValue.FromString,
+                )
 
 
 class NxtServicer(object):
@@ -261,6 +266,12 @@ class NxtServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def getJointPosition(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_NxtServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -373,6 +384,11 @@ def add_NxtServicer_to_server(servicer, server):
                     servicer.moveArmAbsLft,
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
+            ),
+            'getJointPosition': grpc.unary_unary_rpc_method_handler(
+                    servicer.getJointPosition,
+                    request_deserializer=nxtrobot__pb2.SendValue.FromString,
+                    response_serializer=nxtrobot__pb2.ReturnValue.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -755,5 +771,22 @@ class Nxt(object):
         return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmAbsLft',
             nxtrobot__pb2.SendValue.SerializeToString,
             nxtrobot__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getJointPosition(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Nxt/getJointPosition',
+            nxtrobot__pb2.SendValue.SerializeToString,
+            nxtrobot__pb2.ReturnValue.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -23,6 +23,7 @@ service Nxt {
     rpc moveArmRelLft (SendValue) returns (Status) {}
     rpc moveArmAbsRgt (SendValue) returns (Status) {}
     rpc moveArmAbsLft (SendValue) returns (Status) {}
+    rpc getJointPosition (SendValue) returns (ReturnValue) {}
 }
 
 message Empty {

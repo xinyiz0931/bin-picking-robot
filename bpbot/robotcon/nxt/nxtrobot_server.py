@@ -83,6 +83,21 @@ class NxtServer(nxt_rpc.NxtServicer):
     def getJointAngles(self, request, context):
         jntangles = self._robot.getJointAngles()
         return nxt_msg.ReturnValue(data = yaml.dump(jntangles))
+    
+    def getJointPosition(self, request, context):
+        """
+        added by xinyi
+        """
+        try:
+            if self._oldyaml:
+                jnt = yaml.load(request.data)
+            else:
+                jnt = yaml.load(request.data, Loader=yaml.UnsafeLoader)
+            position = self._robot.getCurrentPosition(jnt)
+            return nxt_msg.ReturnValue(data = yaml.dump(position))
+        except Exception as e:
+            print(e, type(e))
+            return nxt_msg.Status(value = nxt_msg.Status.ERROR)
 
     def setJointAngles(self, request, context):
         """
@@ -298,7 +313,7 @@ def serve():
     nxt_rpc.add_NxtServicer_to_server(nxtserver, server)
     server.add_insecure_port('[::]:15005')
     server.start()
-    print("The Nextage Robot server is started!")
+    print("[*] The Nextage Robot server is started!")
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)

@@ -54,6 +54,14 @@ class NxtRobot(object):
             raise Exception()
         else:
             print("The robot_s is moved to the off pose.")
+    
+    def getJointPosition(self, jnt):
+        if self._oldyaml:
+            position = yaml.load(self.stub.getJointPosition(nxt_msg.SendValue(data=yaml.dump(jnt))).data)
+        else:
+            position = yaml.load(self.stub.getJointPosition(nxt_msg.SendValue(data=yaml.dump(jnt))).data, Loader=yaml.UnsafeLoader)
+        return position
+
 
     def getJointAngles(self):
         if self._oldyaml:
@@ -388,6 +396,11 @@ if __name__ == "__main__":
     elif args.movement == "openrhand":
         print("Open right hand ... ")
         nxt.openHandToolRgt() 
+    
+    elif args.movement == "tmp":
+        jnt  = "LARM_JOINT5"
+        print("Test code: get position for", jnt)
+        print(nxt.getJointPosition(jnt))
     else:
         print("Wrong robot movment! ")
 
