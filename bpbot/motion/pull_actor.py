@@ -18,9 +18,6 @@ class PullActor(object):
        
         self.goal_c = [0.480, 0.350]
         self.drop_c = [0.438, 0.200]
-    def get_action(self, pose, direction):
-        xyz = pose[:3]
-        rpy = pose[3:]
 
     def get_pick_seq(self, xyz, rpy): 
         return [

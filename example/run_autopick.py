@@ -34,13 +34,23 @@ crop_db_path = os.path.join(root_dir, "data/depth/depth_cropped_dropbin.png")
 mf_path = os.path.join(root_dir, "data/motion/motion.dat")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
 
-vis_pickbin_path = os.path.join(root_dir, "data/image/no_action_pickbin.jpg")
-vis_dropbin_path = os.path.join(root_dir, "data/image/no_action_dropbin.jpg")
 vis_pp_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_pickbin.png")
 vis_pd_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_dropbin.png")
 vis_sd_path = os.path.join(root_dir, "data/depth/pred/sepnet_depth_cropped_dropbin.png")
-vis_size = 1000
-_hs = int(vis_size/2)
+vis_path = os.path.join(root_dir, "data/depth/vis.png")
+plt.style.use('dark_background')
+matplotlib.rcParams.update({'font.size': 24}) 
+# fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(24,8), sharey=True, sharex=True)
+fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(24,8))
+# # fig = plt.figure(1, figsize=(24, 8), sharey=True, sharex=True)
+# import matplotlib.gridspec as gridspec
+# gs = gridspec.GridSpec(1,4, width_ratios=[1,1,1,1])
+# f = plt.figure(figsize=(24,8))
+# ax1 = plt.subplot(gs[:1])
+# ax2 = plt.subplot(gs[2])
+# ax3 = plt.subplot(gs[3])
+
+
 # ---------------------- get config info -------------------------
 
 bincfg = BinConfig()
@@ -105,25 +115,11 @@ def pick():
             else:
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
 
-            # TODO visualization 
-            # "picknet"o + "pickbin"
-            upper = cv2.resize(cv2.imread(vis_pp_path), (vis_size, _hs))
-            lower = cv2.hconcat([np.zeros(_hs,_hs,3).astype(np.uint8), cv2.resize(img_grasp,(_hs,_hs))])
-            print(upper.shape, lower.shape)
-            vis = cv2.vconcat([upper, lower])
-
-
-            # heatmap_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_pickbin.png"))
-            # grasp_pickbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_pickbin.png"))
-            # vis = []
-            # for v in [heatmap_pickbin, cv2.hconcat([grasp_pickbin, img_grasp])]:
-            #     vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
-            # vis_pickbin = cv2.vconcat(vis)
-            # vis_dropbin = (np.ones([*vis_pickbin.shape])*255).astype(np.uint8)
-            # cv2.putText(vis_dropbin, "Bin (Drop)",(20,550), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-            # cv2.putText(vis_dropbin, "No Action",(20,700), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-            # vis = cv2.hconcat([vis_pickbin, vis_dropbin])
-            # cv2.imwrite(os.path.join(root_dir, "data/depth/vis.png"), vis)
+            
+            # visualization
+            heatmaps = cv2.imread(vis_pd_path)
+            vis_db = cv2.imread(crop_db_path)
+            vis_pb = img_grasp
 
         else: 
             print("[!] Pick bin detection failed! ")
@@ -146,12 +142,10 @@ def pick():
             else:
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
             
-            # TODO visualization
-            # dropbin + picknet
-            upper = cv2.resize(cv2.imread(vis_pd_path), (vis_size, _hs))
-            lower = cv2.hconcat([np.zeros(_hs,_hs,3).astype(np.uint8), cv2.resize(img_grasp,(_hs,_hs))])
-            print(upper.shape, lower.shape)
-            vis = cv2.vconcat([upper, lower])
+            # visualization
+            heatmaps  = cv2.imread(vis_pd_path)
+            vis_pb = cv2.imread(crop_pb_path)
+            vis_db = img_grasp
 
         else: 
             _, g_pull, v_pull = ret_dropbin
@@ -173,45 +167,40 @@ def pick():
                 print("[$] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
                 print("[$] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
             
-            # TODO visualization
-            # dropbin + sepnet
+            # visualization
             h_pick = cv2.imread(vis_pd_path)
             h_sep = cv2.resize(cv2.imread(vis_sd_path), (h_pick.shape[1], h_pick.shape[0]))
             heatmaps = cv2.vconcat([h_pick, h_sep])
             
-            img_ = cv2.resize(cv2.imread(crop_pb_path), (img_grasp.shape[1], img_grasp.shape[0]))
-            rets = cv2.hconcat([img_, img_grasp])
-            
-            fig = plt.figure(1, figsize=(16, 6))
-            ax1 = fig.add_subplot(121)
-            ax1.imshow(h)
-            ax2 = fig.add_subplot(122)
-            ax2.imshow(ret)
-            plt.show()
+            vis_pb = cv2.imread(crop_pb_path)
+            vis_db = img_grasp
 
-
-        # import shutil
-        # shutil.copyfile("/home/hlab/bpbot/data/depth/pred/out_depth_cropped_dropbin.png", f"/home/hlab/bpbot/data/depth/{tstr}.png")
-        # # TODO: just for visualization
-        # heatmap_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/out_depth_cropped_dropbin.png"))
-        # grasp_dropbin = cv2.imread(os.path.join(root_dir, "data/depth/pred/ret_depth_cropped_dropbin.png"))
-        # vis = []
-        # for v in [heatmap_dropbin, cv2.hconcat([grasp_dropbin, img_grasp])]:
-        #     vis.append(cv2.resize(v, (1000, int(v.shape[0]*1000/v.shape[1]))))
-        # vis_dropbin = cv2.vconcat(vis)
-        # vis_pickbin = (np.ones([*vis_dropbin.shape])*255).astype(np.uint8)
-        # cv2.putText(vis_pickbin, "Bin (Pick)",(20,550), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-        # cv2.putText(vis_pickbin, "No Action",(20,700), cv2.FONT_HERSHEY_SIMPLEX, 5, (192,192,192), 3)
-        # vis = cv2.hconcat([vis_pickbin, vis_dropbin])
-        # cv2.imwrite(os.path.join(root_dir, "data/depth/vis.png"), vis)
-        # cv2.imwrite(os.path.join(root_dir, "data/image/vis_pickbin.png"), empty_pickbin)
-        # cv2.imwrite(os.path.join(root_dir, "data/image/vis_dropbin.png"), vis_dropbin)
+        viss = []
+        for v in [heatmaps, vis_pb, vis_db]:
+            v = cv2.resize(v, (int(500*v.shape[1]/v.shape[0]),500))
+            # v = cv2.cvtColor(v, cv2.COLOR_BGR2RGB)
+            viss.append(v)
+        cv2.imshow("", cv2.hconcat(viss))
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+        # ax1.imshow(viss[0])
+        # ax1.title.set_text('Predicted Heatmaps')
+        # ax1.axis('off')
         
+        # ax2.imshow(viss[1])
+        # ax2.title.set_text('Action in Picking Bin')
+        # ax2.axis('off')
+        
+        # ax3.imshow(viss[2])
+        # ax3.title.set_text('Action in Dropping Bin')
+        # ax3.axis('off')
+        # # plt.tight_layout()
+        # plt.savefig(vis_path)
+        # # plt.show()
 
     if gen_success and found_cnoid: 
         
         plan_success = load_motionfile(mf_path, dual_arm=False)
-        # second motion: down the gripper
         if plan_success[1] == False: 
             print(f"[!] Approaching the target failed! ")
 
