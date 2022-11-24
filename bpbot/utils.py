@@ -36,18 +36,15 @@ def notice_print(result_str):
 
 # ============================ PLOT UTILS ============================
 def cv_plot_title(img, text, height=50):
-    h,w,_ = img.shape
-    black = np.zeros((50, w, 3)).astype(np.uint8)
+    black = np.zeros((height, img.shape[1], 3)).astype(np.uint8)
     # get boundary of this text
     font = cv2.FONT_HERSHEY_SIMPLEX
     textsize = cv2.getTextSize(text, font, 1, 2)[0]
     text_x = int((black.shape[1] - textsize[0]) / 2)
     text_y = int((black.shape[0] + textsize[1]) / 2)
-    print(text_x, text_y)
     cv2.putText(black, text, (text_x, text_y ), font, 1, (255, 255, 255), 2)
-    cv2.imshow("", black)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    stack = cv2.vconcat([black, img])
+    return stack
 
     
 def plot_values(V):

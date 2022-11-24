@@ -84,12 +84,12 @@ def pick():
     # Revise `crop_db_path` or `crop_pb_path` to test
     #################################################################
     # temporal collect data ....
-    tdatetime = dt.now()
-    tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+    # tdatetime = dt.now()
+    # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
     # cv2.imwrite(os.path.join("/home/hlab/Desktop/collected", tstr+".png"), crop_db)
 
     ret_dropbin = pick_or_sep(img_path=crop_db_path, hand_config=cfg["hand"], bin='drop')
-
+    ret_dropbin = None
     if ret_dropbin is None: 
         res_pickbin = pick_or_sep(img_path=crop_pb_path, hand_config=cfg["hand"], bin='pick')
 
@@ -114,10 +114,9 @@ def pick():
                 gen_success = True
             else:
                 print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
-
             
             # visualization
-            heatmaps = cv2.imread(vis_pd_path)
+            heatmaps = cv2.imread(vis_pp_path)
             vis_db = cv2.imread(crop_db_path)
             vis_pb = img_grasp
 
@@ -175,29 +174,13 @@ def pick():
             vis_pb = cv2.imread(crop_pb_path)
             vis_db = img_grasp
 
-        viss = []
-        for v in [heatmaps, vis_pb, vis_db]:
-            v = cv2.resize(v, (int(500*v.shape[1]/v.shape[0]),500))
-            # v = cv2.cvtColor(v, cv2.COLOR_BGR2RGB)
-            viss.append(v)
-        cv2.imshow("", cv2.hconcat(viss))
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-        # ax1.imshow(viss[0])
-        # ax1.title.set_text('Predicted Heatmaps')
-        # ax1.axis('off')
-        
-        # ax2.imshow(viss[1])
-        # ax2.title.set_text('Action in Picking Bin')
-        # ax2.axis('off')
-        
-        # ax3.imshow(viss[2])
-        # ax3.title.set_text('Action in Dropping Bin')
-        # ax3.axis('off')
-        # # plt.tight_layout()
-        # plt.savefig(vis_path)
-        # # plt.show()
-
+    viss = []
+    for v, s in zip([heatmaps, vis_pb, vis_db], ["Predicted Heatmaps", "Action in Picking Bin", "Action in Dropping Bin"]):
+        v = cv2.resize(v, (int(500*v.shape[1]/v.shape[0]),500))
+        v_with_title = cv_plot_title(v, s)
+        viss.append(v_with_title)
+    cv2.imwrite(vis_path, cv2.hconcat(viss))
+    
     if gen_success and found_cnoid: 
         
         plan_success = load_motionfile(mf_path, dual_arm=False)
