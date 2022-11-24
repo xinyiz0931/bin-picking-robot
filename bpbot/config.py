@@ -54,10 +54,19 @@ class BinConfig(object):
         self.data["hand"]["right"]["height"]=right_len/1000
         self.data["hand"]["left"].update(lhand)
         self.data["hand"]["right"].update(rhand)
-        # depth = 10 * 255 / (self.data["pick"]["distance"]["max"] - self.config["pick"]["distance"]["min"])
-        # self.data["graspability"]["hand_depth"] = int(depth)
+        # depth = 10 * 255 / (self.data["pick"]["height"]["max"] - self.config["pick"]["height"]["min"])
+        # self.dpata["graspability"]["hand_depth"] = int(depth)
 
-         
+    # def all_the_values(self):
+    #     # Iterating over all the values of the dictionary
+    #     for keys , values in self.data.items():
+    #         # If the values are of dictionary type then yield all the values in the nested dictionary
+    #         if isinstance(values, dict):
+    #             for x in self.all_the_values(values):
+    #                 yield x
+    #         else:
+    #             yield values
+
     # def __getattr__(self, key):
     #     try:
     #         return self.data[key]
@@ -68,6 +77,7 @@ class BinConfig(object):
         self.data[key] = value
 
     def write(self):
+
         try:
             with open(self.data_path, 'w') as f:
                 yaml.dump(self.data, stream=f,

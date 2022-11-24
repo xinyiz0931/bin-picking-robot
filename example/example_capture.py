@@ -25,8 +25,8 @@ def main():
     # ---------------------- get depth img -------------------------
     pc = capture_pc()
     # img, img_blur = px2depth(pc, cfg)
-    # crop_pb = crop_roi(img_path, cfg["pick"]["margin"])
-    # crop_db = crop_roi(img_path, cfg["drop"]["margin"])
+    # crop_pb = crop_roi(img_path, cfg["pick"]["area"])
+    # crop_db = crop_roi(img_path, cfg["drop"]["area"])
     
     # plt.imshow(crop_pb, cmap='gray'), plt.show()
     # plt.imshow(crop_db, cmap='gray'), plt.show()
@@ -53,11 +53,11 @@ def main():
     # img = img.reshape((cfg["height"], cfg["width"]))
     # plt.imshow(img), plt.show()
     
-    # get_point_cloud(depth_dir, cfg[args.zone]["distance"],
+    # get_point_cloud(depth_dir, cfg[args.zone]["height"],
     #                               cfg["width"],cfg["height"])
     
     # ---------------------- visualize -------------------------
-    # crop = crop_roi(img_path, cfg[args.zone]["margin"])
+    # crop = crop_roi(img_path, cfg[args.zone]["area"])
     # cv2.imshow("cropped image", crop)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()

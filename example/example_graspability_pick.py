@@ -53,7 +53,7 @@ def main():
 
     if grasps is not None:
         for i in range(len(grasps)):
-            print(f"[$] #{i}: pixel=({grasps[i][0]},{grasps[i][1]}), angle={grasps[i][2]}")
+            print(f"[*] #{i}: pixel=({grasps[i][0]},{grasps[i][1]}), angle={grasps[i][2]}")
     cv2.imshow("windows", img_grasp)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

@@ -61,7 +61,7 @@ class Gripper(object):
         self.finger_h /= ratio
     
     def print_gripper(self):
-        print(f"[$] Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.tplt_size}")
+        print(f"[*] Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.tplt_size}")
 
     def create_hand_model(self):
         

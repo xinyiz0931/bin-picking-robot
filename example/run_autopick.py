@@ -1,8 +1,7 @@
 import os
 import importlib
-spec = importlib.util.find_spec("cnoid")
-found_cnoid = spec is not None
-if found_cnoid: 
+FOUND_CNOID = importlib.util.find_spec("cnoid") is not None
+if FOUND_CNOID: 
     from cnoid.Util import *
     from cnoid.Base import *
     from cnoid.Body import *
@@ -38,17 +37,6 @@ vis_pp_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_pick
 vis_pd_path = os.path.join(root_dir, "data/depth/pred/picknet_depth_cropped_dropbin.png")
 vis_sd_path = os.path.join(root_dir, "data/depth/pred/sepnet_depth_cropped_dropbin.png")
 vis_path = os.path.join(root_dir, "data/depth/vis.png")
-plt.style.use('dark_background')
-matplotlib.rcParams.update({'font.size': 24}) 
-# fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(24,8), sharey=True, sharex=True)
-fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(24,8))
-# # fig = plt.figure(1, figsize=(24, 8), sharey=True, sharex=True)
-# import matplotlib.gridspec as gridspec
-# gs = gridspec.GridSpec(1,4, width_ratios=[1,1,1,1])
-# f = plt.figure(figsize=(24,8))
-# ax1 = plt.subplot(gs[:1])
-# ax2 = plt.subplot(gs[2])
-# ax3 = plt.subplot(gs[3])
 
 
 # ---------------------- get config info -------------------------
@@ -104,16 +92,16 @@ def pick():
                 p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
                                                                     hand="left", margin="pick")
                 if pickorsep == 0: 
-                    print("[$] **Untangled**! Pick zone --> goal zone!") 
+                    print("[*] **Untangled**! Pick zone --> goal zone!") 
                     gen_motion_picksep(mf_path, g_pick_wrist, dest="side")
                 else: 
-                    print("[$] **Tangled**! Pick zone --> drop zone!") 
+                    print("[*] **Tangled**! Pick zone --> drop zone!") 
                     gen_motion_picksep(mf_path, g_pick_wrist, dest="drop")
 
-                print("[$] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
+                print("[*] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
                 gen_success = True
             else:
-                print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
+                print("[*] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
             
             # visualization
             heatmaps = cv2.imread(vis_pp_path)
@@ -127,7 +115,7 @@ def pick():
 
         if pickorsep == 0:
             _, g_pick = ret_dropbin
-            print("[$] **Untangled**! Drop zone to goal zone! ") 
+            print("[*] **Untangled**! Drop zone to goal zone! ") 
             # img_grasp = draw_grasp(g_pick, crop_db, cfg["hand"]["left"], top_only=True)
             img_grasp = draw_grasp(g_pick, crop_db_path, cfg["hand"]["left"], top_only=True)
             cv2.imwrite(draw_path, img_grasp)
@@ -135,11 +123,11 @@ def pick():
             if point_array is not None:
                 p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfg, 
                                                     hand="left", margin="drop")
-                print("[$] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
+                print("[*] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
                 gen_motion_picksep(mf_path, g_pick_wrist, dest="side")
                 gen_success = True
             else:
-                print("[$] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
+                print("[*] **Pick**! Grasp : (%d,%d,%.1f)" % (*g_pick,))
             
             # visualization
             heatmaps  = cv2.imread(vis_pd_path)
@@ -158,13 +146,13 @@ def pick():
                 v_len = is_colliding(p_pull_tcp[:2], v_pull, cfg, point_array)
                 v_len = 0.1
 
-                print("[$] **Pull**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pull, *p_pull_tcp))
-                print("[$] **Pull**! Direction: (%.2f,%.2f), distance: %.3f" % (*v_pull, v_len))
+                print("[*] **Pull**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pull, *p_pull_tcp))
+                print("[*] **Pull**! Direction: (%.2f,%.2f), distance: %.3f" % (*v_pull, v_len))
                 gen_motion_picksep(mf_path, g_pull_wrist, pulling=[*v_pull_wrist, v_len], dest="side")
                 gen_success = True
             else:
-                print("[$] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
-                print("[$] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
+                print("[*] **Pull**! Grasp : (%d,%d,%.1f)" % (*g_pull,))
+                print("[*] **Pull**! Direction: (%.2f,%.2f)" % (*v_pull,))
             
             # visualization
             h_pick = cv2.imread(vis_pd_path)
@@ -181,7 +169,7 @@ def pick():
         viss.append(v_with_title)
     cv2.imwrite(vis_path, cv2.hconcat(viss))
     
-    if gen_success and found_cnoid: 
+    if gen_success and FOUND_CNOID: 
         
         plan_success = load_motionfile(mf_path, dual_arm=False)
         if plan_success[1] == False: 
@@ -225,7 +213,7 @@ def pick():
     print("[*] Time: {:.2f}s".format(end - start))
 
 # --------------------------------------------------------------------------------
-if found_cnoid:
+if FOUND_CNOID:
     for i in range(N):
         pick()
 else: 

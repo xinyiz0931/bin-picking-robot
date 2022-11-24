@@ -2,8 +2,8 @@ import os
 import random
 import importlib
 spec = importlib.util.find_spec("cnoid")
-found_cnoid = spec is not None
-if found_cnoid: 
+FOUND_CNOID = spec is not None
+if FOUND_CNOID: 
     from cnoid.Util import *
     from cnoid.Base import *
     from cnoid.Body import *
@@ -56,13 +56,13 @@ if point_array is None:
     print("[!] Exit! ")
     sys.exit()
 
-img, img_blur = pc2depth(point_array, cfg["drop"]["distance"], cfg["width"], cfg["height"])
+img, img_blur = pc2depth(point_array, cfg["drop"]["height"], cfg["width"], cfg["height"])
 point_array /= 1000
 cv2.imwrite(img_path, img_blur)
 # import open3d as o3d
 # pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/test_ply.ply")
 # point_array = pcd.points
-img_input = crop_roi(img_path, margins=cfg["drop"]["margin"])
+img_input = crop_roi(img_path, margins=cfg["drop"]["area"])
 cv2.imwrite(crop_path, img_input)
 
 # =======================  compute grasp =============================
@@ -151,14 +151,14 @@ cv2.destroyAllWindows()
 
 # v_len = check_collision(p_r_pull[:2], v_pull, cfg, point_array)
 
-print("[$] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+print("[*] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_pull, *g_r_pull))
-print("[$] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+print("[*] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 % (*g_hold, *g_r_hold))
-print("[$] Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
+print("[*] Vector (pull): (%.2f,%.2f), length: %.3f" % (*v_pull, v_len))
 
 # # =======================  generate motion ===========================
-if found_cnoid: 
+if FOUND_CNOID: 
     plan_success = load_motionfile(mf_path)
     print("plannning success? ", plan_success)
     nxt = NxtRobot(host='[::]:15005')
@@ -169,7 +169,7 @@ if found_cnoid:
 
     nxt.playMotionSeq(motion_seq)
 
-# if found_cnoid: 
+# if FOUND_CNOID: 
 #     # gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="drop")
 #     # gen_success = generate_motion(mf_path, [rx,ry,rz,ra], best_action)
 #     plan_success = load_motionfile(mf_path)

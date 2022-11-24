@@ -2,8 +2,8 @@ import os
 import random
 import importlib
 spec = importlib.util.find_spec("cnoid")
-found_cnoid = spec is not None
-if found_cnoid: 
+FOUND_CNOID = spec is not None
+if FOUND_CNOID: 
     from cnoid.Util import *
     from cnoid.Base import *
     from cnoid.Body import *
@@ -52,10 +52,10 @@ if cfg["depth_mode"] == "table":
     _dist = {"max": cfg["table_distance"], "min": cfg["table_distance"]-100}
     img, img_blur = pc2depth(point_array, _dist, cfg["width"],cfg["height"])
 elif cfg["depth_mode"] == "bin":
-    # img, img_blur = pc2depth(point_array, cfg[bin]["distance"], cfg["width"],cfg["height"])
+    # img, img_blur = pc2depth(point_array, cfg[bin]["height"], cfg["width"],cfg["height"])
     img, img_blur = px2depth(point_array, cfg)
 cv2.imwrite(img_path, img_blur)
-crop = crop_roi(img_path, cfg[bin]["margin"])
+crop = crop_roi(img_path, cfg[bin]["area"])
 
 cv2.imwrite(crop_path, crop)
 
@@ -72,7 +72,7 @@ grasps = detect_grasp(n_grasp=5,
 
 # grasps, img_input = detect_nontangle_grasp(n_grasp=10, 
 #                                 img_path=img_path, 
-#                                 margins=cfg["pick"]["margin"],
+#                                 margins=cfg["pick"]["area"],
 #                                 g_params=cfg["graspability"], 
 #                                 h_params=cfg["hand"],
 #                                 t_params=cfg["tangle"])
@@ -105,8 +105,8 @@ else:
                                                hand="left", margin=bin)
 
 # draw grasp
-    print("[$] Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
-    print("[$] Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+    print("[*] Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
+    print("[*] Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                  % (*best_grasp_tcp, *best_grasp_wrist)) 
 
     # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
@@ -118,7 +118,7 @@ else:
 
 gen_motion_pick(mf_path, best_grasp_wrist, best_action_idx)
 
-if found_cnoid: 
+if FOUND_CNOID: 
     plan_success = load_motionfile(mf_path)
     # if gen_success and plan_success:
     if plan_success.count(True) == len(plan_success):

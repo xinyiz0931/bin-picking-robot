@@ -2,8 +2,8 @@ import os
 import random
 import importlib
 spec = importlib.util.find_spec("cnoid")
-found_cnoid = spec is not None
-if found_cnoid: 
+FOUND_CNOID = spec is not None
+if FOUND_CNOID: 
     from cnoid.Util import *
     from cnoid.Base import *
     from cnoid.Body import *
@@ -49,13 +49,13 @@ cfg = bincfg.data
 # ======================== get depth img =============================
 
 point_array = capture_pc()
-img, img_blur = pc2depth(point_array, cfg["pick"]["distance"], cfg["width"], cfg["height"])
+img, img_blur = pc2depth(point_array, cfg["pick"]["height"], cfg["width"], cfg["height"])
 point_array /= 1000
 cv2.imwrite(img_path, img_blur)
 # import open3d as o3d
 # pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/test_ply.ply")
 # point_array = pcd.points
-img_input = crop_roi(img_path, margins=cfg["pick"]["margin"])
+img_input = crop_roi(img_path, margins=cfg["pick"]["area"])
 cv2.imwrite(crop_path, img_input)
 
 # =======================  compute grasp =============================
@@ -116,19 +116,19 @@ v_pull = ((p_r_pull-p_r_hold) / np.linalg.norm(p_r_pull-p_r_hold))[:2]
 v_pull = [0.533, 0.846]
 v_len = 0.2
 
-print("[$] Joint (hold): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_hold,))
-print("[$] Joint (pull): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_pull,))
+print("[*] Joint (hold): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_hold,))
+print("[*] Joint (pull): (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" % (*g_r_pull,))
 
-#print("[$] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+#print("[*] Grasp (pull): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 #% (*g_pull, *g_r_pull))
-#print("[$] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
+#print("[*] Grasp (hold): (%d,%d,%.1f) -> joint (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                 #% (*g_hold, *g_r_hold))
-print("[$] Vector (pull): (%.3f,%.3f), length: %.3f" % (*v_pull, v_len))
+print("[*] Vector (pull): (%.3f,%.3f), length: %.3f" % (*v_pull, v_len))
 
 gen_motion_test(mf_path, g_wrist_pull, pose_rgt=g_wrist_hold, pulling=[*v_pull,v_len])
 # gen_motion_pickorsep(mf_path, g_wrist_pull, pose_rgt=g_wrist_hold, pulling=[*v_pull,v_len])
 # # =======================  generate motion ===========================
-if found_cnoid: 
+if FOUND_CNOID: 
     plan_success = load_motionfile(mf_path, dual_arm=True)
     print("plannning success? ", plan_success)
     if plan_success.count(True) == len(plan_success):

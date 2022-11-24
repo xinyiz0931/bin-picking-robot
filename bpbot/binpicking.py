@@ -208,7 +208,7 @@ def get_entanglement_map(img, t_params):
     
     em = EntanglementMap(len_thld, dist_thld, sliding_size, sliding_stride)
     emap, wmat_vis,w,d = em.entanglement_map(norm_img)
-    # print("[$] w: {:.2}, d: {:.2}".format(w,d))
+    # print("[*] w: {:.2}, d: {:.2}".format(w,d))
     lmap = em.line_map(norm_img)
     bmap = em.brightness_map(norm_img)
     return emap
@@ -502,7 +502,7 @@ def detect_grasp_width_adjusted(n_grasp, img_path, margins, g_params, h_params):
             all_candidates, n=n_grasp, h=cropped_height, w=cropped_width)
         # print(grasps)
         if grasps != [] :
-            print(f"[$] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
+            print(f"[*] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
             # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
@@ -574,7 +574,7 @@ def detect_target_oriented_grasp(n_grasp, img_dir, margins, g_params, h_params):
             all_candidates, n=n_grasp, h=cropped_height, w=cropped_width, _distance=50)
         # print(grasps)
         if grasps != [] :
-            print(f"[$] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
+            print(f"[*] Success! Detect {len(grasps)} grasps from {len(candidates)} candidates! ")
             # draw grasps
             drawn_input_img = gripper.draw_grasp(grasps, im_adj.copy(), (73,192,236))
             # cv2.imwrite("/home/xinyi/Pictures/g_max_pixel_area.png", drawn_input_img)
@@ -601,7 +601,7 @@ def is_bin_empty(img_path):
         return False
 
 def is_colliding(p, v, cfg, point_cloud, margin="drop"):
-    m = cfg[margin]["margin"]
+    m = cfg[margin]["area"]
     margin_points = [[m["left"], m["top"]], [m["right"], m["top"]], 
                      [m["right"], m["bottom"]], [m["left"], m["bottom"]]]
     margin_points_robot = []
@@ -713,8 +713,8 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
         (u, v) = image_locs 
     
     if margin is not None: 
-        u += cfg[margin]["margin"]["left"]
-        v += cfg[margin]["margin"]["top"]
+        u += cfg[margin]["area"]["left"]
+        v += cfg[margin]["area"]["top"]
     
     u = int(u)
     v = int(v)

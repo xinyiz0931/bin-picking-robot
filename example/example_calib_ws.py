@@ -16,6 +16,10 @@ import argparse
 from bpbot.config import BinConfig
 from bpbot.utils import *
 
+class Workspace(object):
+    def __init__(self):
+        root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+        
 def shape_selection(event, x, y, flags, param):
     global ref_point, crop
 
@@ -28,7 +32,7 @@ def shape_selection(event, x, y, flags, param):
         cv2.rectangle(image, ref_point[0], ref_point[1], (0, 255, 0), 3)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("mode", choices=["dist", "margin", "all"])
+parser.add_argument("mode", choices=["dist", "area", "all"])
 
 parser.add_argument("--zone", "-z", help="capture which zone? ",
                     choices=["pick", "drop", "pick_drop"], default="pick")
@@ -47,6 +51,22 @@ pxc.triggerframe()
 gray = pxc.getgrayscaleimg()
 image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 clone = image.copy()
+if "test" in ws_mode:
+    H = np.loadtxt(cfg.data["calibmat_path"])
+    pc = pxc.getpcd().copy()
+    pc /= 1000
+    
+    pc_ = np.c_[pc, np.ones(pc.shape[0])]
+    pr = np.dot(H, pc_.T).T
+    print(pr.shape)
+    gray_array = pr[:,2]
+    gray_vis = gray_array.reshape((cfg["height"], cfg["width"]))
+
+    max_, min_ = 0.044, -0.060 
+    max_, min_ = 0.044, 0.003 
+    print(max_, min_)
+    vis = cv2.normalize(gray_vis, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8) 
+    plt.imshow(vis), plt.show()
 
 if "dist" in ws_mode and args.zone != "pick_drop":
     H = np.loadtxt(cfg.data["calibmat_path"])
@@ -68,7 +88,7 @@ if "dist" in ws_mode and args.zone != "pick_drop":
         x, y, = id_locs[min_dist_id]
         # offset = y * w + x
         min_distance = int(pr[y*w+x][2])
-        print(f"[$] min_distance:  {min_distance}")
+        print(f"[*] min_distance:  {min_distance}")
         print(pr[y*w+x])
 
     if max_dist_id in id_locs.keys():
@@ -76,16 +96,16 @@ if "dist" in ws_mode and args.zone != "pick_drop":
         x, y, = id_locs[max_dist_id]
         # offset = y * w + x
         max_distance = int(pr[y*w+x][2])
-        print(f"[$] max_distance:  {max_distance}")
+        print(f"[*] max_distance:  {max_distance}")
         print(pr[y*w+x])
 
-    cfg.data[args.zone]["distance"]["max"] = max_distance
-    # cfg.data[args.zone]["distance"]["max"] = max_distance + 5 
-    cfg.data[args.zone]["distance"]["min"] = min_distance - 15
+    cfg.data[args.zone]["height"]["max"] = max_distance
+    # cfg.data[args.zone]["height"]["max"] = max_distance + 5 
+    cfg.data[args.zone]["height"]["min"] = min_distance - 15
     cfg.write()
     print("[*] Successfully defined the max/min distance! ")
 
-if "margin" in ws_mode:
+if "area" in ws_mode:
     print(f"[*] Generating workspace for {args.zone}")
     if "pick" in args.zone:
         cv2.namedWindow("Define pick zone", cv2.WINDOW_NORMAL)
@@ -111,15 +131,15 @@ if "margin" in ws_mode:
         cv2.destroyAllWindows()
 
         if flag:
-            print(f"[$] left_margin:   {ref_point[0][0]}")
-            print(f"[$] top_margin:    {ref_point[0][1]}")
-            print(f"[$] right_margin:  {ref_point[1][0]}")
-            print(f"[$] bottom_margin: {ref_point[1][1]}")
+            print(f"[*] left_margin:   {ref_point[0][0]}")
+            print(f"[*] top_margin:    {ref_point[0][1]}")
+            print(f"[*] right_margin:  {ref_point[1][0]}")
+            print(f"[*] bottom_margin: {ref_point[1][1]}")
 
-            cfg.data["pick"]["margin"]["left"] = ref_point[0][0]
-            cfg.data["pick"]["margin"]["top"] = ref_point[0][1]
-            cfg.data["pick"]["margin"]["right"] = ref_point[1][0]
-            cfg.data["pick"]["margin"]["bottom"] = ref_point[1][1]
+            cfg.data["pick"]["area"]["left"] = ref_point[0][0]
+            cfg.data["pick"]["area"]["top"] = ref_point[0][1]
+            cfg.data["pick"]["area"]["right"] = ref_point[1][0]
+            cfg.data["pick"]["area"]["bottom"] = ref_point[1][1]
             cfg.write()
 
             print("[*] Successfully defined pick workspace size! ")
@@ -150,15 +170,15 @@ if "margin" in ws_mode:
         cv2.destroyAllWindows()
 
         if flag:
-            print(f"[$] left_margin:   {ref_point[0][0]}")
-            print(f"[$] top_margin:    {ref_point[0][1]}")
-            print(f"[$] right_margin:  {ref_point[1][0]}")
-            print(f"[$] bottom_margin: {ref_point[1][1]}")
+            print(f"[*] left_margin:   {ref_point[0][0]}")
+            print(f"[*] top_margin:    {ref_point[0][1]}")
+            print(f"[*] right_margin:  {ref_point[1][0]}")
+            print(f"[*] bottom_margin: {ref_point[1][1]}")
 
-            cfg.data["drop"]["margin"]["left"] = ref_point[0][0]
-            cfg.data["drop"]["margin"]["top"] = ref_point[0][1]
-            cfg.data["drop"]["margin"]["right"] = ref_point[1][0]
-            cfg.data["drop"]["margin"]["bottom"] = ref_point[1][1]
+            cfg.data["drop"]["area"]["left"] = ref_point[0][0]
+            cfg.data["drop"]["area"]["top"] = ref_point[0][1]
+            cfg.data["drop"]["area"]["right"] = ref_point[1][0]
+            cfg.data["drop"]["area"]["bottom"] = ref_point[1][1]
             cfg.write()
 
             print("[*] Successfully defined drop workspace size! ")

@@ -48,7 +48,7 @@ def detect_tangle_grasp(gripper, n_grasp, img_path, margins, g_params):
         candidates, n=n_grasp, h=cropped_height, w=cropped_width, _dismiss=0, _distance=0)
 
     if grasps != []:
-        print(f"[$] Success! Detect {len(grasps)} grasps! ")
+        print(f"[*] Success! Detect {len(grasps)} grasps! ")
         return grasps, im_adj, img
     else:
         print("[!] Grasp detection failed! No grasps!")
