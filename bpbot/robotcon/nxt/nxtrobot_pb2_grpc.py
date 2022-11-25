@@ -104,23 +104,8 @@ class NxtStub(object):
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
-        self.moveArmRelRgt = channel.unary_unary(
-                '/Nxt/moveArmRelRgt',
-                request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
-                response_deserializer=nxtrobot__pb2.Status.FromString,
-                )
-        self.moveArmRelLft = channel.unary_unary(
-                '/Nxt/moveArmRelLft',
-                request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
-                response_deserializer=nxtrobot__pb2.Status.FromString,
-                )
-        self.moveArmAbsRgt = channel.unary_unary(
-                '/Nxt/moveArmAbsRgt',
-                request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
-                response_deserializer=nxtrobot__pb2.Status.FromString,
-                )
-        self.moveArmAbsLft = channel.unary_unary(
-                '/Nxt/moveArmAbsLft',
+        self.moveArmJnt = channel.unary_unary(
+                '/Nxt/moveArmJnt',
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
@@ -242,25 +227,7 @@ class NxtServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def moveArmRelRgt(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def moveArmRelLft(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def moveArmAbsRgt(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def moveArmAbsLft(self, request, context):
+    def moveArmJnt(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -365,23 +332,8 @@ def add_NxtServicer_to_server(servicer, server):
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
             ),
-            'moveArmRelRgt': grpc.unary_unary_rpc_method_handler(
-                    servicer.moveArmRelRgt,
-                    request_deserializer=nxtrobot__pb2.SendValue.FromString,
-                    response_serializer=nxtrobot__pb2.Status.SerializeToString,
-            ),
-            'moveArmRelLft': grpc.unary_unary_rpc_method_handler(
-                    servicer.moveArmRelLft,
-                    request_deserializer=nxtrobot__pb2.SendValue.FromString,
-                    response_serializer=nxtrobot__pb2.Status.SerializeToString,
-            ),
-            'moveArmAbsRgt': grpc.unary_unary_rpc_method_handler(
-                    servicer.moveArmAbsRgt,
-                    request_deserializer=nxtrobot__pb2.SendValue.FromString,
-                    response_serializer=nxtrobot__pb2.Status.SerializeToString,
-            ),
-            'moveArmAbsLft': grpc.unary_unary_rpc_method_handler(
-                    servicer.moveArmAbsLft,
+            'moveArmJnt': grpc.unary_unary_rpc_method_handler(
+                    servicer.moveArmJnt,
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
             ),
@@ -707,7 +659,7 @@ class Nxt(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def moveArmRelRgt(request,
+    def moveArmJnt(request,
             target,
             options=(),
             channel_credentials=None,
@@ -717,58 +669,7 @@ class Nxt(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmRelRgt',
-            nxtrobot__pb2.SendValue.SerializeToString,
-            nxtrobot__pb2.Status.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def moveArmRelLft(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmRelLft',
-            nxtrobot__pb2.SendValue.SerializeToString,
-            nxtrobot__pb2.Status.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def moveArmAbsRgt(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmAbsRgt',
-            nxtrobot__pb2.SendValue.SerializeToString,
-            nxtrobot__pb2.Status.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def moveArmAbsLft(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmAbsLft',
+        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmJnt',
             nxtrobot__pb2.SendValue.SerializeToString,
             nxtrobot__pb2.Status.FromString,
             options, channel_credentials,

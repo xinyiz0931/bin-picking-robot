@@ -19,10 +19,7 @@ service Nxt {
     rpc attachHandToolRgt (Empty) returns (Status) {}
     rpc setHandAnglesDegRgt (SendValue) returns (Status) {}
     rpc setHandAnglesDegLft (SendValue) returns (Status) {}
-    rpc moveArmRelRgt (SendValue) returns (Status) {}
-    rpc moveArmRelLft (SendValue) returns (Status) {}
-    rpc moveArmAbsRgt (SendValue) returns (Status) {}
-    rpc moveArmAbsLft (SendValue) returns (Status) {}
+    rpc moveArmJnt (SendValue) returns (Status) {}
     rpc getJointPosition (SendValue) returns (ReturnValue) {}
 }
 

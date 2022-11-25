@@ -86,7 +86,11 @@ class FlingActor(object):
         xyz = pose[:3]
         rpy = pose[3:]
 
-        seqs = self.get_pick_seq(xyz, rpy) +self.get_wiggle_seq(xyz,rpy,[0.500,-0.010,0.400])+ self.get_fling_seq() + self.get_place_seq(rpy)
+        _m = [
+            "0 1 RARM_XYZ_ABS 0.500 -0.010 0.400 %.1f %.1f %.1f" % (*rpy,)]
+
+        # seqs = self.get_pick_seq(xyz, rpy) +self.get_wiggle_seq(xyz,rpy,[0.500,-0.010,0.400])+ self.get_fling_seq() + self.get_place_seq(rpy)
+        seqs = self.get_pick_seq(xyz, rpy) +_m+ self.get_fling_seq() + self.get_place_seq(rpy)
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
