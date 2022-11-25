@@ -2,7 +2,7 @@ import numpy as np
 import math
 from bpbot import BinConfig
 
-class PullActor(object):
+class FlingActor(object):
     def __init__(self, filepath):
         self.filepath = filepath
         
@@ -60,13 +60,13 @@ class PullActor(object):
 
         if wiggle:
             pull_seq = self.get_wiggle_seq(xyz, rpy, xyz_e, 8) + ["0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_u, *rpy)] 
+            seqs = self.get_pick_seq(xyz, rpy) + pull_seq + self.get_place_seq(rpy)
         else:
-            pull_seq = [
+            p = [
                 "0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_e, *rpy),
                 "0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_u, *rpy)
             ]  
         
-        seqs = self.get_pick_seq(xyz, rpy) + pull_seq + self.get_place_seq(rpy)
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
@@ -82,6 +82,3 @@ class PullActor(object):
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
     
-    def get_holdandpull_seq(self):
-        # TODO
-        return

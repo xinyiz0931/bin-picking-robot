@@ -8,22 +8,22 @@ table_distance: 1195
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
 pick:
   height:
-    max: 0.04547697223871405
-    min: 0.007824434617195175
+    max: -0.04514108846934506
+    min: -0.0496906510970363
   area:
-    left: 825
-    top: 318
-    right: 1177
-    bottom: 658
+    left: 1
+    top: 2
+    right: 3
+    bottom: 4
 drop:
   height:
-    max: 0.046127842904586824
-    min: 0.011011421974975732
+    max: 10
+    min: 0
   area:
-    left: 1379
-    top: 317
-    right: 1666
-    bottom: 588
+    left: 5
+    top: 6
+    right: 7
+    bottom: 8
 graspability:
   rotation_step: 45.0
   depth_step: 10

@@ -1,5 +1,6 @@
 import os
 import yaml
+import numpy as np
 
 class BinConfig(object):
     def __init__(self, config_path=None, pre=True):
@@ -56,7 +57,12 @@ class BinConfig(object):
         self.data["hand"]["right"].update(rhand)
         # depth = 10 * 255 / (self.data["pick"]["height"]["max"] - self.config["pick"]["height"]["min"])
         # self.dpata["graspability"]["hand_depth"] = int(depth)
-
+    def get_all_values(self):
+        for v in self.data.values():
+            if isinstance(v, dict):
+                yield from self.get_all_values(v)
+            else:
+                yield v
     # def all_the_values(self):
     #     # Iterating over all the values of the dictionary
     #     for keys , values in self.data.items():
@@ -73,11 +79,11 @@ class BinConfig(object):
     #     except KeyError:
     #         raise AttributeError
 
-    def set(self, key, value):
-        self.data[key] = value
+    def set(self, keys, values):
+        if isinstance(keys, str):
+            self.data[keys] = values
 
     def write(self):
-
         try:
             with open(self.data_path, 'w') as f:
                 yaml.dump(self.data, stream=f,
@@ -85,14 +91,18 @@ class BinConfig(object):
         except FileNotFoundError:
             print('Wrong file or file path')
 
-    def update(self, key, value):
+    def update(self, key, value, write=False):
+        if isinstance(value, np.floating): 
+            value = float(value)
         self.data[key] = value
-        try:
-            with open(self.data_path, 'w') as f:
-                yaml.dump(self.data, stream=f,
-                        default_flow_style=False, sort_keys=False)
-        except FileNotFoundError:
-            print('Wrong file or file path')
+        if write:
+            self.write()
+        # try:
+        #     with open(self.data_path, 'w') as f:
+        #         yaml.dump(self.data, stream=f,
+        #                 default_flow_style=False, sort_keys=False)
+        # except FileNotFoundError:
+        #     print('Wrong file or file path')
 
     def keys(self):
         return self.data.keys()

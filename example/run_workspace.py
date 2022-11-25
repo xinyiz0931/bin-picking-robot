@@ -23,13 +23,13 @@ class Workspace(object):
 
         self.boxes = []
         self.points = []
-        self.mat =  np.loadtxt(self.cfg["calibmat_path"])
+        self.mat = np.loadtxt(self.cfg["calibmat_path"])
     
     def refresh(self):
         self.vis = self.clone.copy()
         self.boxes.clear()
         self.points.clear()
-    
+
     def capture(self):
         pxc = PhxClient(host='127.0.0.1:18300')
         pxc.triggerframe()
@@ -140,8 +140,8 @@ class Workspace(object):
         elif len(self.points) == 2:
             h = [self.arr[self.points[0][1], self.points[0][0]], self.arr[self.points[1][1], self.points[1][0]]]
             [pick_min, pick_max] = h if h[0] < h[1] else [h[1], h[0]]
-            self.cfg["pick"]["height"]["min"] = pick_min
-            self.cfg["pick"]["height"]["max"] = pick_max
+            self.cfg["pick"]["height"]["min"] = float(pick_min)
+            self.cfg["pick"]["height"]["max"] = float(pick_max)
             print("Successfully defined **height** of picking workspace! ")
 
         else:
