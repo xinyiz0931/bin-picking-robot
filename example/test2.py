@@ -1,26 +1,19 @@
-def NestedDictValues(d):
-  for v in d.values():
-    if isinstance(v, dict):
-      yield from NestedDictValues(v)
-    else:
-        if isinstance(v, np.float64):
-            yield float(v)
-        else:
-            yield v
-
-from bpbot.config import BinConfig
-bincfg = BinConfig()
-cfg = bincfg.data
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy import interpolate
+from scipy.interpolate import interp1d
 
-a = np.array([2.1], dtype=np.float64)
-print(isinstance(a[0], np.floating))
-cfg["pick"]["height"]["min"] = a[0]
-for i in NestedDictValues(cfg):
-    print(i, isinstance(i, np.floating))
-bincfg.write()
-# for i in NestedDictValues(cfg):
-#     if isinstance(i, np.floating): 
-#         print("Still here! ")
+x = np.array([0.5,0.51,0.54])
+y = np.array([0.4,0.42, 0.3])
+tck = interpolate.splrep(x, y, s=0, k=2)
+xnew = np.arange(0.5, 0.54, 0.001)
+print(xnew)
+ynew = interpolate.splev(xnew, tck, der=0)
+plt.figure()
+plt.plot(x, y, 'x', xnew, ynew, x, y, 'b')
+plt.legend(['Linear', 'Cubic Spline', 'True'])
+# plt.axis([-0.05, 6.33, -1.05, 1.05])
+plt.xlim([0.4, 0.6])
+plt.title('Cubic-spline interpolation')
+plt.show()
 
-        

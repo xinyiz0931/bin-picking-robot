@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from scipy import interpolate
 from bpbot import BinConfig
 
 class FlingActor(object):
@@ -19,11 +20,30 @@ class FlingActor(object):
         self.goal_c = [0.480, 0.350]
         self.drop_c = [0.438, 0.200]
 
+    def fit_spline(self, p1, p2, p3, itvl=24):
+        x, y = [], []
+        for p in [p1,p2,p3]:
+            x.append(p[0])
+            y.append(p[1])
+        xnew = np.arange(min(x), max(x), (max(x)-min(x))/itvl)
+
+        tck = interpolate.splrep(x, y, s=0, k=2)
+        ynew = interpolate.splev(xnew, tck, der=0)
+        print(xnew.shape, ynew.shape)
+        import matplotlib.pyplot as plt
+        plt.plot(x, y, 'x', xnew, ynew, x, y, 'b')
+        plt.legend(['Linear', 'Cubic Spline', 'True'])
+        plt.xlim([0.4, 0.6])
+        plt.title('Cubic-spline interpolation')
+        plt.show()
+        return xnew, ynew
+
     def get_pick_seq(self, xyz, rpy): 
         return [
             "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
             "0 1.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
             "0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0"
+            "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
         ]
     
     def get_place_seq(self, rpy, dest="side"):
@@ -42,31 +62,31 @@ class FlingActor(object):
                 self.initpose
             ]
 
-    def get_action(self, pose, v, wiggle=False):
+    def get_fling_seq(self):
         """Get pulling motionfile command
 
         Args:
             xyz (tuple or list): [x,y,z]
             rpy (tuple or list): [r,p,y]
-            v (tuple or list): [x,y,z,length]
             wiggle (bool, optional): pulling with wiggling?. defaults to False.
         """
+
+        p1 = [0.500, 0.400]
+        p2 = [0.510, 0.420]
+        p3 = [0.540, 0.300]
+        itvl = 16
+        tm = 3/itvl
+        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, itvl=itvl)
+        seqs = []
+        for x, z in zip(fitted_x, fitted_z):
+            seqs.append("0 %.2f RARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80 -180" % (tm, x, z))
+        return seqs
+
+    def get_action(self, pose):
         xyz = pose[:3]
         rpy = pose[3:]
 
-        xyz_e = [xyz[i] + v[3]*v[i] for i in range(3)]
-        xyz_u = xyz_e.copy()
-        xyz_u[2] += 0.1 
-
-        if wiggle:
-            pull_seq = self.get_wiggle_seq(xyz, rpy, xyz_e, 8) + ["0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_u, *rpy)] 
-            seqs = self.get_pick_seq(xyz, rpy) + pull_seq + self.get_place_seq(rpy)
-        else:
-            p = [
-                "0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_e, *rpy),
-                "0 3.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_u, *rpy)
-            ]  
-        
+        seqs = self.get_pick_seq(xyz, rpy) +self.get_wiggle_seq(xyz,rpy,[0.500,-0.010,0.400])+ self.get_fling_seq() + self.get_place_seq(rpy)
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
@@ -81,4 +101,8 @@ class FlingActor(object):
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
-    
+
+actor=FlingActor("./data/motion/fling.dat")
+        # x = np.array([0.5,0.51,0.54])
+        # y = np.array([0.4,0.42, 0.3])
+actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
