@@ -86,7 +86,14 @@ class NxtRobot(object):
             raise Exception()
         # else:
         #     print("The robot_s is moved to the given pose.")
-
+    def moveArmJnt(self, radlist, tmlist):
+        returnvalue = self.stub.moveArmJnt(nxt_msg.SendValue(data = yaml.dump([radlist, tmlist]))).value
+        if returnvalue == nxt_msg.Status.ERROR:
+            print("Something went wrong with the server!! Try again!")
+            raise Exception()
+        else:
+            print("The robot_s has finished the given motion.")
+        
     def playPattern(self, angleslist, tmlist = None):
         """
         :param angleslist: [[degree]]
@@ -171,70 +178,70 @@ class NxtRobot(object):
     
     """This is some additional control commands added by xinyi, 20210801"""
 
-    def setHandAnglesDegRgt(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.setHandAnglesDegRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
-    def setHandAnglesDegLft(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.setHandAnglesDegLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
+    # def setHandAnglesDegRgt(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.setHandAnglesDegRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
+    # def setHandAnglesDegLft(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.setHandAnglesDegLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
 
-    def moveArmRelRgt(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.moveArmRelRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
+    # def moveArmRelRgt(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.moveArmRelRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
 
-    def moveArmRelLft(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.moveArmRelLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
+    # def moveArmRelLft(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.moveArmRelLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
 
-    def moveArmAbsRgt(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.moveArmAbsRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
+    # def moveArmAbsRgt(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.moveArmAbsRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
 
-    def moveArmAbsLft(self, angles, tm = None):
-        """
-        add by xinyi
-        """
-        returnvalue = self.stub.moveArmAbsLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-        if returnvalue == nxt_msg.Status.ERROR:
-            print("Something went wrong with the server!! Try again!")
-            raise Exception()
-        else:
-            print("The robot_s is moved to the given pose.")
+    # def moveArmAbsLft(self, angles, tm = None):
+    #     """
+    #     add by xinyi
+    #     """
+    #     returnvalue = self.stub.moveArmAbsLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
+    #     if returnvalue == nxt_msg.Status.ERROR:
+    #         print("Something went wrong with the server!! Try again!")
+    #         raise Exception()
+    #     else:
+    #         print("The robot_s is moved to the given pose.")
     
     def playMotionSeqWithFB(self, motion_seq):
         from bpbot.binpicking import check_force, check_force_file
@@ -317,7 +324,9 @@ class NxtRobot(object):
 
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
+    
 
+    
     def playMotionSeq(self, motion_seq):
         """
         added by xinyi: motion_seq shape = (num_seq x 20)
@@ -344,7 +353,15 @@ class NxtRobot(object):
                 old_lhand = lhand
                 old_rhand = rhand
 
+            else:
                 self.setJointAngles(m[1:], tm=m[0])
+        except grpc.RpcError as rpc_error:
+            print(f"[!] Robotcon failed with {rpc_error.code()}")
+
+    def playSmoothMotionSeq(self, radlist, tmlist):
+        try:
+            self.moveArmJnt(radlist, tmlist)
+
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
 
