@@ -4,19 +4,21 @@ from bpbot import BinConfig
 
 class PullActor(object):
     def __init__(self, filepath):
-        self.filepath = filepath
-        
-        bincfg = BinConfig()
-        cfg = bincfg.data
-        w_lft = (cfg["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
-        w_rgt = (cfg["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
-        
+        cfg = BinConfig()
+        cfgdata = cfg.data
+        if filepath is None: 
+            self.filepath = cfg.motionfile_path
+        else:
+            self.filepath = filepath 
+        w_lft = (cfgdata["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
+        w_rgt = (cfgdata["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi 
+
         self.initpose = "0 0.80 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
         self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (w_rgt,-w_rgt,w_lft,-w_lft) 
         self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (w_lft,-w_lft) 
         self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (w_rgt,-w_rgt) 
        
-        self.goal_c = [0.480, 0.350]
+        self.side_c = [0.070, 0.552]
         self.drop_c = [0.438, 0.200]
 
     def get_pick_seq(self, xyz, rpy): 
@@ -30,14 +32,14 @@ class PullActor(object):
         if dest == "front":
             return [
                 "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.300 %.1f %.1f %.1f" % (*self.drop_c, *rpy),
-                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.drop_c, *rpy),
+                # "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.drop_c, *rpy),
                 "0 0.50 LHAND_JNT_OPEN",
                 self.initpose
             ]
         elif dest == "side":
             return [
-                "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.goal_c, *rpy),
-                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c, *rpy),
+                "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.side_c, *rpy),
+                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.side_c, *rpy),
                 "0 0.50 LHAND_JNT_OPEN",
                 self.initpose
             ]

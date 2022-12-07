@@ -16,14 +16,14 @@ from bpbot.utils import *
 
 class Workspace(object):
     def __init__(self):
-        self.bincfg = BinConfig(pre=False)
-        self.cfg = self.bincfg.data
+        self.cfg = BinConfig(pre=False)
+        self.cfgdata = self.cfg.data
         self.vis = None 
         self.clone = None
 
         self.boxes = []
         self.points = []
-        self.mat = np.loadtxt(self.cfg["calibmat_path"])
+        self.mat = np.loadtxt(self.cfgdata["calibmat_path"])
     
     def refresh(self):
         self.vis = self.clone.copy()
@@ -40,10 +40,10 @@ class Workspace(object):
         self.vis = self.clone.copy()
         
         pc = pc/1000
-        H = np.loadtxt(self.cfg["calibmat_path"])
+        H = np.loadtxt(self.cfgdata["calibmat_path"])
         pc_ = np.c_[pc, np.ones(pc.shape[0])]
         pr = np.dot(H, pc_.T).T
-        self.arr = np.reshape(pr[:,2], (self.cfg["height"], self.cfg["width"]))
+        self.arr = np.reshape(pr[:,2], (self.cfgdata["height"], self.cfgdata["width"]))
     
     def on_drag(self, event, x, y, flags, params):
         # global img
@@ -103,22 +103,22 @@ class Workspace(object):
     def define(self):
 
         if len(self.boxes) == 4:
-            self.cfg["pick"]["area"]["left"] = self.boxes[0][0]
-            self.cfg["pick"]["area"]["top"] = self.boxes[0][1]
-            self.cfg["pick"]["area"]["right"] = self.boxes[1][0]
-            self.cfg["pick"]["area"]["bottom"] = self.boxes[1][1]
-            self.cfg["drop"]["area"]["left"] = self.boxes[2][0]
-            self.cfg["drop"]["area"]["top"] = self.boxes[2][1]
-            self.cfg["drop"]["area"]["right"] = self.boxes[3][0]
-            self.cfg["drop"]["area"]["bottom"] = self.boxes[3][1]
+            self.cfgdata["pick"]["area"]["left"] = self.boxes[0][0]
+            self.cfgdata["pick"]["area"]["top"] = self.boxes[0][1]
+            self.cfgdata["pick"]["area"]["right"] = self.boxes[1][0]
+            self.cfgdata["pick"]["area"]["bottom"] = self.boxes[1][1]
+            self.cfgdata["drop"]["area"]["left"] = self.boxes[2][0]
+            self.cfgdata["drop"]["area"]["top"] = self.boxes[2][1]
+            self.cfgdata["drop"]["area"]["right"] = self.boxes[3][0]
+            self.cfgdata["drop"]["area"]["bottom"] = self.boxes[3][1]
             print("Successfully defined **area** of picking workspace! ")
             print("Successfully defined **area** of dropping workspace! ")
 
         elif len(self.boxes) == 2:
-            self.cfg["pick"]["area"]["left"] = self.boxes[0][0]
-            self.cfg["pick"]["area"]["top"] = self.boxes[0][1]
-            self.cfg["pick"]["area"]["right"] = self.boxes[1][0]
-            self.cfg["pick"]["area"]["bottom"] = self.boxes[1][1]
+            self.cfgdata["pick"]["area"]["left"] = self.boxes[0][0]
+            self.cfgdata["pick"]["area"]["top"] = self.boxes[0][1]
+            self.cfgdata["pick"]["area"]["right"] = self.boxes[1][0]
+            self.cfgdata["pick"]["area"]["bottom"] = self.boxes[1][1]
             print("Successfully defined **area** of picking workspace! ")
 
         else:
@@ -130,25 +130,25 @@ class Workspace(object):
 
             h = [self.arr[self.points[2][1], self.points[2][0]], self.arr[self.points[3][1], self.points[3][0]]]
             [drop_min, drop_max] = h if h[0] < h[1] else [h[1], h[0]]
-            self.cfg["pick"]["height"]["min"] = float(pick_min)
-            self.cfg["pick"]["height"]["max"] = float(pick_max)
-            self.cfg["drop"]["height"]["min"] = float(drop_min)
-            self.cfg["drop"]["height"]["max"] = float(drop_max)
+            self.cfgdata["pick"]["height"]["min"] = float(pick_min)
+            self.cfgdata["pick"]["height"]["max"] = float(pick_max)
+            self.cfgdata["drop"]["height"]["min"] = float(drop_min)
+            self.cfgdata["drop"]["height"]["max"] = float(drop_max)
             print("Successfully defined **height** of picking workspace! ")
             print("Successfully defined **height** of dropping workspace! ")
 
         elif len(self.points) == 2:
             h = [self.arr[self.points[0][1], self.points[0][0]], self.arr[self.points[1][1], self.points[1][0]]]
             [pick_min, pick_max] = h if h[0] < h[1] else [h[1], h[0]]
-            self.cfg["pick"]["height"]["min"] = float(pick_min)
-            self.cfg["pick"]["height"]["max"] = float(pick_max)
+            self.cfgdata["pick"]["height"]["min"] = float(pick_min)
+            self.cfgdata["pick"]["height"]["max"] = float(pick_max)
             print("Successfully defined **height** of picking workspace! ")
 
         else:
             print("Did not define height of workspace! ")
             return 
 
-        self.bincfg.write()
+        self.cfg.write()
 
 def main():
 

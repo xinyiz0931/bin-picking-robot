@@ -16,26 +16,55 @@ from bpbot.motion import PickAndPlaceActor, PullActor, HelixActor
 from bpbot.utils import *
 
 def capture_pc():
+    """Capture point cloud
+
+    Returns:
+        (array): N x 3, unit: m
+    """ 
     import bpbot.driver.phoxi.phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
     pxc.triggerframe()
     pc = pxc.getpcd()
     # gs = pxc.getgrayscaleimg()
-    return pc.copy() if pc is not None else None
+    return (pc.copy()/1000) if pc is not None else None
 
-def px2depth(pcd, cfg, max_=0.07, min_=0.007):
-    pc = pcd/1000
-    G = np.loadtxt(cfg["calibmat_path"])
-    pc_ = np.c_[pc, np.ones(pc.shape[0])]
+def px2depth(pcd, cfgdata, container="pick"):
+
+    G = np.loadtxt(cfgdata["calibmat_path"])
+    pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
     pr = np.dot(G, pc_.T).T
-    gray_pc = pr[:,2]
-    gray_pc[gray_pc > max_] = min_
-    gray_pc[gray_pc < min_] = min_
-    img = ((gray_pc - min_) *
-           (1/(max_ - min_) * 255)).astype('uint8')
-    img = img.reshape((cfg["height"], cfg["width"]))
+    gray = pr[:,2]
+    # max_h = cfgdata[container]['height']['max']
+    max_h = cfgdata[container]['height']['max']+0.025
+    min_h = cfgdata[container]['height']['min']
+    gray[gray>max_h] = min_h
+    gray[gray<min_h] = min_h
+    
+    gray = np.reshape(gray, (cfgdata["height"], cfgdata["width"]))
+    img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
     img_blur = cv2.medianBlur(img, 5)
     return img, img_blur
+
+    # gray_pc[gray_pc > max_] = min_
+    # gray_pc[gray_pc < min_] = min_
+    # img = ((gray_pc - min_) *
+    #        (1/(max_ - min_) * 255)).astype('uint8')
+    # img = img.reshape((cfgdata["height"], cfgdata["width"]))
+    # img_blur = cv2.medianBlur(img, 5)
+    # return img, img_blur
+# def px2depth(pcd, cfgdata, max_=0.07, min_=0.007):
+#     pc = pcd/1000
+#     G = np.loadtxt(cfgdata["calibmat_path"])
+#     pc_ = np.c_[pc, np.ones(pc.shape[0])]
+#     pr = np.dot(G, pc_.T).T
+#     gray_pc = pr[:,2]
+#     gray_pc[gray_pc > max_] = min_
+#     gray_pc[gray_pc < min_] = min_
+#     img = ((gray_pc - min_) *
+#            (1/(max_ - min_) * 255)).astype('uint8')
+#     img = img.reshape((cfgdata["height"], cfgdata["width"]))
+#     img_blur = cv2.medianBlur(img, 5)
+#     return img, img_blur
 
 def pc2depth(pc, distance, width, height):
     """Convert point cloud to depth image
@@ -92,28 +121,44 @@ def get_point_cloud(save_dir, distance, width, height):
     cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
     cv2.imwrite(os.path.join(save_dir, "texture.png"), gs)
 
-def crop_roi(img_path, margins=None, bounding=False):
-    """
-    Read image crop roi
-    """
+def crop_roi(img, cfgdata, container='pick', bounding=False):
 
-    img = cv2.imread(img_path)
-    h, w, _ = img.shape
-    if margins is None:
-        (top_margin,left_margin,bottom_margin,right_margin) = (0,0,h,w)
-    else:
-        top_margin = margins["top"]
-        left_margin = margins["left"]
-        bottom_margin = margins["bottom"]
-        right_margin = margins["right"]
+    margins = cfgdata[container]["area"]
+    top_margin = margins["top"]
+    left_margin = margins["left"]
+    bottom_margin = margins["bottom"]
+    right_margin = margins["right"]
     
     # cropped the necessary region (inside the bin)
     img_crop = img[top_margin:bottom_margin, left_margin:right_margin]
-    h_, w_, _ = img_crop.shape
+    h_, w_= img_crop.shape
     if bounding == True:
         _s = 25
         cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),_s*2)
     return img_crop
+
+# def crop_roi(img_path, margins=None, bounding=False):
+#     """
+#     Read image crop roi
+#     """
+
+#     img = cv2.imread(img_path)
+#     h, w, _ = img.shape
+#     if margins is None:
+#         (top_margin,left_margin,bottom_margin,right_margin) = (0,0,h,w)
+#     else:
+#         top_margin = margins["top"]
+#         left_margin = margins["left"]
+#         bottom_margin = margins["bottom"]
+#         right_margin = margins["right"]
+    
+#     # cropped the necessary region (inside the bin)
+#     img_crop = img[top_margin:bottom_margin, left_margin:right_margin]
+#     h_, w_, _ = img_crop.shape
+#     if bounding == True:
+#         _s = 25
+#         cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),_s*2)
+#     return img_crop
 
 def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255,0,0), top_color=(0,255,0)):
     """Draw grasps for parallel jaw gripper
@@ -214,7 +259,6 @@ def get_entanglement_map(img, t_params):
     return emap
 
 def pick_or_sep(img_path, hand_config, bin="pick"):
-    print(f"[*] Infer {bin} zone using PickNet / SepNet! ")
     img = cv2.imread(img_path)
     # img = adjust_grayscale(img)
     crop_h, crop_w, _ = img.shape
@@ -236,8 +280,19 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         if not ret:
             return
         scores_pn = ret[1]
-        p_pick = ret[0][scores_pn.argmax()]
-        print(f"[!] Pick zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+        print(f"[!] Infer pick bin: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+
+        # p_pick = ret[0][scores_pn.argmax()]
+        if scores_pn[0] < scores_pn[1]:
+            p_pick = ret[0][1]
+            idx = 1
+        elif (scores_pn[0] < 0.3 and scores_pn[1] < 0.3 and scores_pn[0] > scores_pn[1]):
+            print("adjust! ")
+            p_pick = ret[0][1]
+            idx = 1
+        else:
+            p_pick = ret[0][0]
+            idx = 0
 
         g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
         if g_pick is None:
@@ -246,7 +301,8 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         # else: 
         #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
             # else: return 1, g_pick
-        return scores_pn.argmax(), g_pick
+        # return scores_pn.argmax(), g_pick
+        return idx, g_pick
 
     elif bin == "drop": 
         if is_bin_empty(img_path): 
@@ -257,10 +313,11 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         if not ret: 
             return
         scores_pn = ret[1]
-        print(f"[!] Drop zone scores: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
+        print(f"[!] Infer drop bin: {scores_pn[0]:.3f}, {scores_pn[1]:.3f}")
 
         # pick or sep condition
         if scores_pn[0] > scores_pn[1]:
+        # if scores_pn[0] > scores_pn[1] or (scores_pn[0] < scores_pn[1] and scores_pn[0]>0.55):
             p_pick = ret[0][0]
             g_pick = gripper_left.point_oriented_grasp(img, p_pick) # degree
             if g_pick is None:
@@ -303,7 +360,7 @@ def gen_motion_picksep(mf_path, pose_lft, dest, pulling=None, pose_rgt=None):
         print("[!] Wrong type for motion generator ...")    
 
 
-def gen_motion_pick(mf_path, pose_left, sub_action):
+def gen_motion_pick(mf_path, pose_left, action_idx):
     """Generate motion in motion file format for single-arm picking
 
     Args:
@@ -311,15 +368,14 @@ def gen_motion_pick(mf_path, pose_left, sub_action):
         pose_left (array): [x,y,z,roll,pitch,yaw]
         sub_action (int): -1(no motion),0(direct lifting),1,2,3,4,5,6
     """
-    actor = HelixActor(mf_path)
-    sub_action_name = ["a_dl","a_h","a_hs","a_f","a_fs","a_tf","a_tfs"]
-    
-    if sub_action == -1:
-        print("[!] No motion! ")
-        actor.get_empty_action()
-    else: 
-        print(f"[*] Generate motion for {sub_action_name[sub_action]} ... ")
-        actor.get_action(pose_left, sub_action)
+    action_name = ["a_dl","a_h","a_hs","a_f","a_fs","a_tf","a_tfs"]
+    print(f"[*] Generate motion for {action_name[action_idx]} ... ")
+    if action_idx == 0:
+        actor = PickAndPlaceActor(mf_path)
+        actor.get_action(pose_left)
+    else:
+        actor = HelixActor(mf_path)
+        actor.get_action(pose_left, action_idx)
 
 
 def detect_grasp(n_grasp, img_path, g_params, h_params):
@@ -385,8 +441,9 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         (array): grasps = n_grasp * [x,y,r(degree)], return None if no grasp detected
     """
     img = cv2.imread(img_path)
+    img = adjust_grayscale(img)
+
     emap = get_entanglement_map(img, t_params)
-    
 
     _ssz = t_params["sliding_size"]
     _sst = t_params["sliding_stride"]
@@ -600,8 +657,8 @@ def is_bin_empty(img_path):
     else: 
         return False
 
-def is_colliding(p, v, cfg, point_cloud, margin="drop"):
-    m = cfg[margin]["area"]
+def is_colliding(p, v, cfgdata, point_cloud, margin="drop"):
+    m = cfgdata[margin]["area"]
     margin_points = [[m["left"], m["top"]], [m["right"], m["top"]], 
                      [m["right"], m["bottom"]], [m["left"], m["bottom"]]]
     margin_points_robot = []
@@ -663,7 +720,7 @@ def transform_image_to_camera(image_locs, image_width, pc, margins=None):
         camera_locs.append(pc[offset]) # unit: m
     return camera_locs
 
-def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=None, tilt=None, dualarm=None):
+def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", container=None, tilt=None, dualarm=None):
     """
     Transform image locs to robot locs (5-th joint pose in robot coordinate)
     1. p_tcpt -> p_wrist: position of 5-th joint of the arm in robot coordinate
@@ -676,11 +733,11 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     Returns: 
         robot_locs {array} -- N * (rx,ry,rz,ra) at robot coordinate, angle in degree
     """
-    _obj_h = cfg["obj_height"] / 1000
+    _obj_h = cfgdata["obj_height"] / 1000
     # _obj_h += 0.005 
     # _obj_h += 0.01 
-    if margin == "pick":
-        g_rc = np.loadtxt(cfg["calibmat_path"]) # 4x4, unit: m
+    if container == "pick":
+        g_rc = np.loadtxt(cfgdata["calibmat_path"]) # 4x4, unit: m
     else:
         # print("load new matrix")
         g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
@@ -692,7 +749,7 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
         # [1]
         if tilt == None: tilt = 90
         if hand == "left":
-            g_wt = np.array([[1,0,0,-(cfg["hand"]["left"]["height"])],
+            g_wt = np.array([[1,0,0,-(cfgdata["hand"]["left"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
@@ -705,24 +762,24 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
 
         elif hand == "right":
             rpy_wrist = [(theta + 90) % 180, -tilt, -90]
-            g_wt = np.array([[1,0,0,-(cfg["hand"]["right"]["height"])],
+            g_wt = np.array([[1,0,0,-(cfgdata["hand"]["right"]["height"])],
                             [0,1,0,0],
                             [0,0,1,0],
                             [0,0,0,1]])
     elif len(image_locs) == 2: 
         (u, v) = image_locs 
     
-    if margin is not None: 
-        u += cfg[margin]["area"]["left"]
-        v += cfg[margin]["area"]["top"]
+    if container is not None: 
+        u += cfgdata[container]["area"]["left"]
+        v += cfgdata[container]["area"]["top"]
     
     u = int(u)
     v = int(v)
     # [2]
-    point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
+    point_mat = np.reshape(point_array, (cfgdata["height"],cfgdata["width"],3))
     p_c = point_mat[v,u]
     # print("camera_pose", p_c)
-    #p_c = point_array[int(v * cfg["width"] + u)] # unit: m
+    #p_c = point_array[int(v * cfgdata["width"] + u)] # unit: m
     if (p_c == 0).all(): 
         u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
     # u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
@@ -737,7 +794,7 @@ def transform_image_to_robot(image_locs, point_array, cfg, hand="left", margin=N
     p_tcp = np.dot(g_rc, [*p_c, 1])  # unit: m
     p_tcp = p_tcp[:3]
     
-    p_tcp_table = np.dot(g_rc, [*p_c[0:2], cfg["table_distance"]/1000, 1])
+    p_tcp_table = np.dot(g_rc, [*p_c[0:2], cfgdata["table_distance"]/1000, 1])
     p_tcp[2] -= _obj_h
 
     if len(image_locs) == 2: return p_tcp

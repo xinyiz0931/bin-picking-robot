@@ -1,8 +1,7 @@
 import os
 import random
 import importlib
-spec = importlib.util.find_spec("cnoid")
-FOUND_CNOID = spec is not None
+FOUND_CNOID = importlib.util.find_spec("cnoid") is not None
 if FOUND_CNOID: 
     from cnoid.Util import *
     from cnoid.Base import *
@@ -23,11 +22,11 @@ import numpy as np
 start = timeit.default_timer()
 
 # ---------------------- define path -------------------------
+LOG_ON = True
+CONTAINER = "pick"
 
-# get root dir
-#root_dir = os.path.abspath("./")
-root_dir = os.path.join(topdir, "ext/bpbot")
-#root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
+# root_dir = os.path.join(topdir, "ext/bpbot")
+root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../"))
 print(f"[*] Execute script at {root_dir} ")
 
 img_path = os.path.join(root_dir, "data/depth/depth.png")
@@ -39,27 +38,21 @@ traj_path = os.path.join(root_dir, "data/motion/motion_ik.dat")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
 
 # ---------------------- get config info -------------------------
-bincfg = BinConfig(config_path)
-cfg = bincfg.data
+cfg = BinConfig(config_path)
+cfgdata = cfg.data
 
 # ---------------------- get depth img -------------------------
-bin = "pick"
 
-print("[*] Capture point cloud ... ")
 point_array = capture_pc()
-print(point_array is None)
-if cfg["depth_mode"] == "table":
-    _dist = {"max": cfg["table_distance"], "min": cfg["table_distance"]-100}
-    img, img_blur = pc2depth(point_array, _dist, cfg["width"],cfg["height"])
-elif cfg["depth_mode"] == "bin":
-    # img, img_blur = pc2depth(point_array, cfg[bin]["height"], cfg["width"],cfg["height"])
-    img, img_blur = px2depth(point_array, cfg)
-cv2.imwrite(img_path, img_blur)
-crop = crop_roi(img_path, cfg[bin]["area"])
+if point_array is not None:
+    print("[*] Captured point cloud ... ")
+    img, img_blur = px2depth(point_array, cfgdata, container=CONTAINER)
+    cv2.imwrite(img_path, img_blur)
+    
+    crop = crop_roi(img_blur, cfgdata, container=CONTAINER, bounding=True)
 
-cv2.imwrite(crop_path, crop)
+    cv2.imwrite(crop_path, crop)
 
-point_array /= 1000
 # pcd = o3d.io.read_point_cloud("./data/test/out.ply")
 # point_array = pcd.points
 
@@ -67,15 +60,25 @@ point_array /= 1000
 print("[*] Compute grasps... ")
 grasps = detect_grasp(n_grasp=5, 
                             img_path=crop_path, 
-                            g_params=cfg['graspability'],
-                            h_params=cfg["hand"]["left"])
+                            g_params=cfgdata['graspability'],
+                            h_params=cfgdata["hand"]["left"])
 
-# grasps, img_input = detect_nontangle_grasp(n_grasp=10, 
-#                                 img_path=img_path, 
-#                                 margins=cfg["pick"]["area"],
-#                                 g_params=cfg["graspability"], 
-#                                 h_params=cfg["hand"],
-#                                 t_params=cfg["tangle"])
+# h_params = {
+#     "finger_length": 20,
+#     "finger_width":  13, 
+#     "open_width":    40
+# }
+    
+# g_params = {
+#     "rotation_step": 22.5, 
+#     "depth_step":    10,
+#     "hand_depth":    25
+# }
+# grasps = detect_nontangle_grasp(n_grasp=10, 
+#                                 img_path=crop_path, 
+#                                 g_params=g_params, 
+#                                 h_params=h_params,
+#                                 t_params=cfgdata["tangle"])
 
 # ---------------------- picking policy -------------------------
 if grasps is None:
@@ -83,40 +86,40 @@ if grasps is None:
     best_grasp_wrist = 6 * [0]
 
 else:
-    if cfg['exp_mode'] == 0:
+    if cfgdata['exp_mode'] == 0:
         # 0 -> graspaiblity
         best_grasp = grasps[0]
         best_grasp_idx = 0
         best_action_idx = 0 
 
-    elif cfg['exp_mode'] == 1: 
+    elif cfgdata['exp_mode'] == 1: 
         # 1 -> proposed circuclar picking
         grasp_pixels = np.array(grasps)[:, 0:2]
         best_action_idx, best_grasp_idx = predict_action_grasp(grasp_pixels, crop_path)
         best_grasp = grasps[best_grasp_idx]
         
-    elif cfg['exp_mode'] == 2:
+    elif cfgdata['exp_mode'] == 2:
         # 2 -> random circular picking
         best_grasp = grasps[0]
         best_grasp_idx = 0
         best_action_idx = random.sample(list(range(6)),1)[0]
      
-    best_grasp_tcp, best_grasp_wrist = transform_image_to_robot(best_grasp, point_array, cfg, 
-                                               hand="left", margin=bin)
+    best_grasp_tcp, best_grasp_wrist = transform_image_to_robot(best_grasp, point_array, cfgdata, 
+                                               hand="left", container=CONTAINER)
 
 # draw grasp
     print("[*] Pick | Grasp: (%d,%d,%.1f)" % (*best_grasp,)) 
     print("[*] Pick | TCP (%.3f,%.3f,%.3f), Wrist (%.3f,%.3f,%.3f,%.1f,%.1f,%.1f)" 
                  % (*best_grasp_tcp, *best_grasp_wrist)) 
+    gen_motion_pick(mf_path, best_grasp_wrist, action_idx=best_action_idx)
 
-    # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
+    # img_grasp = draw_grasp(grasps, crop.copy(),  cfgdata["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
 
-    img_grasp = draw_grasp(grasps, crop.copy(), cfg["hand"]["left"], top_only=False, top_idx=best_grasp_idx)
+    img_grasp = draw_grasp(grasps, crop_path, cfgdata["hand"]["left"], top_only=False, top_idx=best_grasp_idx)
     cv2.imwrite(draw_path, img_grasp)
+    print("draw and save")
 
 # ---------------------- execute on robot -------------------------
-
-gen_motion_pick(mf_path, best_grasp_wrist, best_action_idx)
 
 if FOUND_CNOID: 
     plan_success = load_motionfile(mf_path)
@@ -130,13 +133,14 @@ if FOUND_CNOID:
 
         nxt.playMotionSeq(motion_seq) 
 
-# ---------------------- record data -------------------------
-        # tdatetime = dt.now()
-        # tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-        # os.mkdir(f"{root_dir}/exp/{tstr}")
-        # np.savetxt(f"{root_dir}/exp/{tstr}/out.txt", np.asarray(best_grasp), delimiter=',')
-        # cv2.imwrite(f"{root_dir}/exp/{tstr}/grasp.png", img_grasp)
-        # cv2.imwrite(f"{root_dir}/exp/{tstr}/depth.png", img_input)
+    if LOG_ON:
+        tdatetime = dt.now()
+        tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+        save_dir = f"/home/hlab/Desktop/exp/{tstr}" 
+        os.mkdir(save_dir)
+        np.savetxt(os.path.join(save_dir, "out.txt"), np.asarray(grasps), delimiter=',')
+        cv2.imwrite(os.path.join(save_dir, "grasp.png"), img_grasp)
+        cv2.imwrite(os.path.join(save_dir, "depth.png"), crop)
 
 end = timeit.default_timer()
 print("[*] Time: {:.2f}s".format(end - start))

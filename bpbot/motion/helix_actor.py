@@ -3,12 +3,15 @@ from bpbot import BinConfig
 
 class HelixActor(object):
     def __init__(self, filepath):
-        self.filepath = filepath
         
-        bincfg = BinConfig()
-        cfg = bincfg.data
-        w_lft = (cfg["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
-        w_rgt = (cfg["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
+        cfg = BinConfig()
+        cfgdata = cfg.data
+        if filepath is None: 
+            self.filepath = cfg.motionfile_path
+        else:
+            self.filepath = filepath 
+        w_lft = (cfgdata["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
+        w_rgt = (cfgdata["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
         
         self.initpose = "0 1.00 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
         self.goal_c = [0.070, 0.552]
@@ -59,7 +62,7 @@ class HelixActor(object):
             self.initpose
         ]
 
-    def get_action(self, xyz, rpy, action_idx):
+    def get_action(self, pose, action_idx):
         """Generate helix motion for picking entangled wire harnesses
 
         Args:
@@ -67,6 +70,8 @@ class HelixActor(object):
             rpy (tuple or list): left arm rpy
             action_no (int): 0,1,2,3,4,5,6
         """
+        xyz = pose[:3]
+        rpy = pose[3:]
         subseqs = [[], self.half_helix, self.half_helix+self.spin,
                 self.helix[:7], self.helix[:7]+self.spin,
                 self.helix, self.helix+self.spin] 

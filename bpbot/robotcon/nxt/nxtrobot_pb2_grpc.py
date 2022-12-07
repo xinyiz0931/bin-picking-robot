@@ -104,8 +104,8 @@ class NxtStub(object):
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
-        self.moveArmJnt = channel.unary_unary(
-                '/Nxt/moveArmJnt',
+        self.playPatternOfGroup = channel.unary_unary(
+                '/Nxt/playPatternOfGroup',
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
@@ -227,7 +227,7 @@ class NxtServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def moveArmJnt(self, request, context):
+    def playPatternOfGroup(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -332,8 +332,8 @@ def add_NxtServicer_to_server(servicer, server):
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
             ),
-            'moveArmJnt': grpc.unary_unary_rpc_method_handler(
-                    servicer.moveArmJnt,
+            'playPatternOfGroup': grpc.unary_unary_rpc_method_handler(
+                    servicer.playPatternOfGroup,
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
             ),
@@ -659,7 +659,7 @@ class Nxt(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def moveArmJnt(request,
+    def playPatternOfGroup(request,
             target,
             options=(),
             channel_credentials=None,
@@ -669,7 +669,7 @@ class Nxt(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Nxt/moveArmJnt',
+        return grpc.experimental.unary_unary(request, target, '/Nxt/playPatternOfGroup',
             nxtrobot__pb2.SendValue.SerializeToString,
             nxtrobot__pb2.Status.FromString,
             options, channel_credentials,

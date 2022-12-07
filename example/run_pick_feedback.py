@@ -38,20 +38,20 @@ mf_path = os.path.join(root_dir, "data/motion/motion.dat")
 traj_path = os.path.join(root_dir, "data/motion/motion_ik.dat")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
 # ---------------------- get config info -------------------------
-bincfg = BinConfig(config_path)
-cfg = bincfg.data
+cfg = BinConfig(config_path)
+cfg = cfg.data
 
 # ---------------------- get depth img -------------------------
 bin = "pick"
 
 print("[*] Capture point cloud ... ")
 point_array = capture_pc()
-point_mat = np.reshape(point_array, (cfg["height"],cfg["width"],3))
-img, img_blur = pc2depth(point_array, cfg[bin]["height"], cfg["width"],cfg["height"])
+point_mat = np.reshape(point_array, (cfgdata["height"],cfgdata["width"],3))
+img, img_blur = pc2depth(point_array, cfgdata[bin]["height"], cfgdata["width"],cfgdata["height"])
 
 cv2.imwrite(img_path, img_blur)
 
-crop = crop_roi(img_path, cfg[bin]["area"])
+crop = crop_roi(img_path, cfgdata[bin]["area"])
 
 cv2.imwrite(crop_path, crop)
 
@@ -63,15 +63,15 @@ point_array /= 1000
 print("[*] Compute grasps... ")
 grasps = detect_grasp(n_grasp=10, 
                             img_path=crop_path, 
-                            g_params=cfg['graspability'],
-                            h_params=cfg["hand"]["left"])
+                            g_params=cfgdata['graspability'],
+                            h_params=cfgdata["hand"]["left"])
 
 # grasps, img_input = detect_nontangle_grasp(n_grasp=10, 
 #                                 img_path=img_path, 
-#                                 margins=cfg["pick"]["area"],
-#                                 g_params=cfg["graspability"], 
-#                                 h_params=cfg["hand"],
-#                                 t_params=cfg["tangle"])
+#                                 margins=cfgdata["pick"]["area"],
+#                                 g_params=cfgdata["graspability"], 
+#                                 h_params=cfgdata["hand"],
+#                                 t_params=cfgdata["tangle"])
 
 # ---------------------- picking policy -------------------------
 if grasps is None:
@@ -79,19 +79,19 @@ if grasps is None:
     best_grasp_r = 6 * [0]
 
 else:
-    if cfg['exp_mode'] == 0:
+    if cfgdata['exp_mode'] == 0:
         # 0 -> graspaiblity
         best_grasp = grasps[0]
         best_grasp_idx = 0
         best_action_idx = 0 
 
-    elif cfg['exp_mode'] == 1: 
+    elif cfgdata['exp_mode'] == 1: 
         # 1 -> proposed circuclar picking
         grasp_pixels = np.array(grasps)[:, 1:3]
         best_action_idx, best_grasp_idx = predict_action_grasp(grasp_pixels, crop_path)
         best_grasp = grasps[best_grasp_idx]
 
-    elif cfg['exp_mode'] == 2:
+    elif cfgdata['exp_mode'] == 2:
         # 2 -> random circular picking
         best_grasp_idx = 0
         best_grasp = grasps[0]
@@ -104,7 +104,7 @@ else:
     print("[*] Grasp (pick) : (%d,%d,%.1f) -> finger (%.3f,%.3f,%.3f)" 
             % (*best_grasp, *best_grasp_fg[0:3])) 
 
-    # img_grasp = draw_grasp(grasps, crop.copy(),  cfg["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
+    # img_grasp = draw_grasp(grasps, crop.copy(),  cfgdata["hand"]["left"], top_only=True, top_idx=best_grasp_idx, color=(73,192,236), top_color=(0,255,0))
     img_grasp = draw_grasp(grasps, crop.copy(), top_only=True, top_idx=best_grasp_idx)
     cv2.imwrite(draw_path, img_grasp)
 

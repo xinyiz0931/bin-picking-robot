@@ -135,6 +135,26 @@ class NxtServer(nxt_rpc.NxtServicer):
             print(e, type(e))
             return nxt_msg.Status(value = nxt_msg.Status.ERROR)
 
+    def playPatternOfGroup(self, request, context):
+        """
+        added by xinyi
+        @angleslist: degree -> radian in this function
+        """
+        try:
+            if self._oldyaml:
+                angleslist, tmlist = yaml.load(request.data)
+            else:
+                angleslist, tmlist = yaml.load(request.data, Loader = yaml.UnsafeLoader)
+            
+            gname = 'rarm'
+            angleslist_rad = [self._deg2rad(x) for x in angleslist]
+            self._robot.playPatternOfGroup(gname, angleslist_rad, tmlist)
+            return nxt_msg.Status(value = nxt_msg.Status.DONE)
+
+        except Exception as e:
+            print(e, type(e))
+            return nxt_msg.Status(value = nxt_msg.Status.ERROR)
+
     def closeHandToolRgt(self, request, context):
         try:
             self._robot._hands.gripper_r_close()
@@ -235,94 +255,6 @@ class NxtServer(nxt_rpc.NxtServicer):
             print(e, type(e))
             return nxt_msg.Status(value = nxt_msg.Status.ERROR)
     
-    def moveArmJnt(self, request, context):
-        """
-        added by xinyi
-        angles in radian
-        """
-        try:
-            if self._oldyaml:
-                rad, tm = yaml.load(request.data)
-            else:
-                rad, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
-            if tm is None:
-                tm = 10.0
-            self._robot.playPatternOfGroup('rarm', rad, tm)
-            return nxt_msg.Status(value = nxt_msg.Status.DONE)
-        except Exception as e:
-            print(e, type(e))
-            return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-
-    # def moveArmRelRgt(self, request, context):
-    #     """
-    #     add by xinyi
-    #     """
-    #     try:
-    #         if self._oldyaml:
-    #             angles, tm = yaml.load(request.data)
-    #         else:
-    #             angles, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
-    #         if tm is None:
-    #             tm = 10.0
-    #         dx, dy, dz, dr, dp, dw = angles
-    #         self._robot.setTargetPoseRelative('rarm', 'RHAND_JOINT5', dx, dy, dz, dr, dp, dw, tm)
-    #         return nxt_msg.Status(value = nxt_msg.Status.DONE)
-    #     except Exception as e:
-    #         print(e, type(e))
-    #         return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-
-    # def moveArmRelLft(self, request, context):
-    #     """
-    #     add by xinyi
-    #     """
-    #     try:
-    #         if self._oldyaml:
-    #             angles, tm = yaml.load(request.data)
-    #         else:
-    #             angles, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
-    #         if tm is None:
-    #             tm = 10.0
-    #         dx, dy, dz, dr, dp, dw = angles
-    #         self._robot.setTargetPoseRelative('rarm', 'RHAND_JOINT5', dx, dy, dz, dr, dp, dw, tm)
-    #         return nxt_msg.Status(value = nxt_msg.Status.DONE)
-    #     except Exception as e:
-    #         print(e, type(e))
-    #         return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-    
-    # def moveArmAbsRgt(self, request, context):
-    #     """
-    #     add by xinyi
-    #     """
-    #     try:
-    #         if self._oldyaml:
-    #             angles, tm = yaml.load(request.data)
-    #         else:
-    #             angles, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
-    #         if tm is None:
-    #             tm = 10.0
-    #         self._robot.setTargetPose('rarm',angles[0:3], [v * math.pi / 180.0 for v in angles[3:6]], tm)
-    #         return nxt_msg.Status(value = nxt_msg.Status.DONE)
-    #     except Exception as e:
-    #         print(e, type(e))
-    #         return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-
-    # def moveArmAbsLft(self, request, context):
-    #     """
-    #     add by xinyi
-    #     """
-    #     try:
-    #         if self._oldyaml:
-    #             angles, tm = yaml.load(request.data)
-    #         else:
-    #             angles, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
-    #         if tm is None:
-    #             tm = 10.0
-    #         self._robot.setTargetPose('larm',angles[0:3], [v * math.pi / 180.0 for v in angles[3:6]], tm)
-    #         return nxt_msg.Status(value = nxt_msg.Status.DONE)
-    #     except Exception as e:
-    #         print(e, type(e))
-    #         return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-
 def serve():
     _ONE_DAY_IN_SECONDS = 60 * 60 * 24
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

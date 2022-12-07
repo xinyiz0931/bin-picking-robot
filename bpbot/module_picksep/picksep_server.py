@@ -17,14 +17,17 @@ class PickSepServer(psrpc.PickSepServicer):
             "infer": 
             {
                 "net_type": "pick_sep",
-                "backbone": "resnet50",
+                "backbone": "resnet34",
                 "mode": "test",
                 "use_cuda": True,
                 "batch_size": 1,
                 "img_height": 512,
                 "img_width": 512,
-                "pick_ckpt_folder": ["ckpt_picknet", "model_epoch_8.pth"], 
-                "sep_ckpt_folder": ["try_sep_mask", "model_epoch_17.pth"]
+                # "pick_ckpt_folder": ["ckpt_picknet", "model_epoch_8.pth"], 
+                "pick_ckpt_folder": ["try_pick_no_augdata", "model_epoch_15.pth"], 
+                # epoch17 is tested, but with some redundant actions
+                "sep_ckpt_folder": ["try_sep_gauss2d_aug", "model_epoch_20.pth"],
+                # "sep_ckpt_folder": ["try_sep_mask", "model_epoch_20.pth"]
             }
         }
         

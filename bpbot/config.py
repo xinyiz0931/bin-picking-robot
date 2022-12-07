@@ -4,13 +4,14 @@ import numpy as np
 
 class BinConfig(object):
     def __init__(self, config_path=None, pre=True):
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.root_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../.."))
+        self.depth_dir = os.path.join(self.root_dir, "data/depth")
         if config_path is None: 
-            config_path = os.path.realpath(os.path.join(dir_path, "../cfg/config.yaml"))
-        hand_path = os.path.realpath(os.path.join(dir_path, "../cfg/hand.yaml"))
+            config_path = os.path.join(self.root_dir, "cfg/config.yaml")
+        hand_path = os.path.join(self.root_dir, "cfg/hand.yaml")
         self.hand_path = hand_path
 
+        self.motionfile_path = os.path.join(self.root_dir, "data/motion/motion.dat")
         self.data_path = config_path
         self.data = {}
         self.load()

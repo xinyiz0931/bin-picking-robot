@@ -66,6 +66,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"
+    img_path = "/home/hlab/bpbot/data/depth/depth_cropped.png"
     txt_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\grasp.txt"
     g = detect(img_path, args.mode)
     print(g)

@@ -24,8 +24,8 @@ def main():
         "sliding_stride": 25
     }
     
-    bincfg = BinConfig()
-    cfg = bincfg.data
+    cfg = BinConfig()
+    cfg = cfg.data
     # img_path = os.path.join("./data", "test", "depth4.png")
 
     img_path = "C:\\Users\\xinyi\\Documents\\XYBin_Pick\\bin\\tmp\\depth.png"

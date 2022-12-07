@@ -80,6 +80,7 @@ class NxtRobot(object):
         author: weiwei
         date: 20190417
         """
+        
         returnvalue = self.stub.setJointAngles(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
         if returnvalue == nxt_msg.Status.ERROR:
             print("Something went wrong with the server!! Try again!")
@@ -87,6 +88,9 @@ class NxtRobot(object):
         # else:
         #     print("The robot_s is moved to the given pose.")
     def moveArmJnt(self, radlist, tmlist):
+        """
+        added by xinyi 2022/11/28
+        """
         returnvalue = self.stub.moveArmJnt(nxt_msg.SendValue(data = yaml.dump([radlist, tmlist]))).value
         if returnvalue == nxt_msg.Status.ERROR:
             print("Something went wrong with the server!! Try again!")
@@ -175,74 +179,6 @@ class NxtRobot(object):
         else:
             print("The robot_s has ejected its left handtool.")
     
-    
-    """This is some additional control commands added by xinyi, 20210801"""
-
-    # def setHandAnglesDegRgt(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.setHandAnglesDegRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-    # def setHandAnglesDegLft(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.setHandAnglesDegLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-
-    # def moveArmRelRgt(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.moveArmRelRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-
-    # def moveArmRelLft(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.moveArmRelLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-
-    # def moveArmAbsRgt(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.moveArmAbsRgt(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-
-    # def moveArmAbsLft(self, angles, tm = None):
-    #     """
-    #     add by xinyi
-    #     """
-    #     returnvalue = self.stub.moveArmAbsLft(nxt_msg.SendValue(data = yaml.dump([angles, tm]))).value
-    #     if returnvalue == nxt_msg.Status.ERROR:
-    #         print("Something went wrong with the server!! Try again!")
-    #         raise Exception()
-    #     else:
-    #         print("The robot_s is moved to the given pose.")
-    
     def playMotionSeqWithFB(self, motion_seq):
         from bpbot.binpicking import check_force, check_force_file
         import numpy as np
@@ -325,8 +261,6 @@ class NxtRobot(object):
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
     
-
-    
     def playMotionSeq(self, motion_seq):
         """
         added by xinyi: motion_seq shape = (num_seq x 20)
@@ -341,7 +275,6 @@ class NxtRobot(object):
                 if (m[-4:-2] != 0).all(): rhand = "OPEN"
                 else: rhand = "CLOSE"
 
-                # print(f"left hand: {lhand}, right hand {rhand}")
                 if old_rhand != rhand:
                     if rhand == "OPEN": self.openHandToolRgt()
                     elif rhand == "CLOSE": self.closeHandToolRgt()
@@ -353,17 +286,37 @@ class NxtRobot(object):
                 old_lhand = lhand
                 old_rhand = rhand
 
-            else:
                 self.setJointAngles(m[1:], tm=m[0])
-        except grpc.RpcError as rpc_error:
-            print(f"[!] Robotcon failed with {rpc_error.code()}")
-
-    def playSmoothMotionSeq(self, radlist, tmlist):
-        try:
-            self.moveArmJnt(radlist, tmlist)
 
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
+
+    def playSmoothMotionSeq(self, gname, motion_seq):
+        """Given the complete motion_seq and play smoothly, motion must be planned without torso or head joint
+
+        Args:
+            gname (str): 4 classes 
+                         ['torso': (1) motion_seq[:,1:2]
+                          'head' : (2) motion_seq[:,2:4]
+                          'rarm' : (6) motion_seq[:,4:10]
+                          'larm' : (6) motion_seq[:,10:16]]
+            motion_seq (array): Nx20
+        """
+        tmlist = motion_seq[:,0].tolist()
+        if gname == 'torso':
+            angleslist = motion_seq[:,1:2]
+        elif gname == 'head':
+            angleslist = motion_seq[:,2:4]
+        elif gname == 'rarm':
+            angleslist = motion_seq[:,4:10]
+        elif gname == 'larm':
+            angleslist = motion_seq[:,10:16]
+
+        returnvalue = self.stub.playPatternOfGroup(nxt_msg.SendValue(data = yaml.dump([angleslist, tmlist]))).value
+        if returnvalue == nxt_msg.Status.ERROR:
+            print("Something went wrong with the server!! Try again!")
+            raise Exception()
+
 
 if __name__ == "__main__":
     

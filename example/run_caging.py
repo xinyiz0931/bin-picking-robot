@@ -43,19 +43,19 @@ draw_path = os.path.join(root_dir, "data/depth/result.png")
 
 # ======================= get config info ============================
 
-bincfg = BinConfig(config_path)
-cfg = bincfg.data
+cfg = BinConfig(config_path)
+cfg = cfg.data
 
 # ======================== get depth img =============================
 
 point_array = capture_pc()
-img, img_blur = pc2depth(point_array, cfg["pick"]["height"], cfg["width"], cfg["height"])
+img, img_blur = pc2depth(point_array, cfgdata["pick"]["height"], cfgdata["width"], cfgdata["height"])
 point_array /= 1000
 cv2.imwrite(img_path, img_blur)
 # import open3d as o3d
 # pcd = o3d.io.read_point_cloud("/home/hlab/Desktop/test_ply.ply")
 # point_array = pcd.points
-img_input = crop_roi(img_path, margins=cfg["pick"]["area"])
+img_input = crop_roi(img_path, margins=cfgdata["pick"]["area"])
 cv2.imwrite(crop_path, img_input)
 
 # =======================  compute grasp =============================
@@ -83,8 +83,8 @@ p_hold, p_pull = np.array(p_clicked)
 
 # =======================  picking policy ===========================
 
-right_attr = [cfg["hand"]["right"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
-left_attr = [cfg["hand"]["left"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
+right_attr = [cfgdata["hand"]["right"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
+left_attr = [cfgdata["hand"]["left"].get(k) for k in ["finger_width", "finger_length", "open_width"]]
 
 gripper_right = Gripper(*right_attr)
 gripper_left = Gripper(*left_attr)

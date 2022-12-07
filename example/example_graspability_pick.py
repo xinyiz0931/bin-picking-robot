@@ -9,8 +9,8 @@ def main():
     img_path = os.path.join(root_dir, "./roi.png")
     config_path = os.path.join(root_dir, "cfg/config.yaml")
 
-    bincfg = BinConfig(config_path)
-    cfg = bincfg.data
+    cfg = BinConfig(config_path)
+    cfg = cfg.data
 
     # ============== REAL WORLD SETUP ==============
     # finger_w=6.5
@@ -21,11 +21,11 @@ def main():
     h_params = {"finger_length": 30,
                 "finger_width":  12, 
                 "open_width":    40}
-    # h_params = cfg["hand"] 
+    # h_params = cfgdata["hand"] 
     g_params = {"rotation_step": 22.5, 
                 "depth_step":    50,
                 "hand_depth":    50}
-    # g_params = cfg["graspability"]
+    # g_params = cfgdata["graspability"]
 
     # ============== SIMBIM SETUP (225x225)==============
     # finger_w=5.85

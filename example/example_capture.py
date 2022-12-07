@@ -18,15 +18,15 @@ def main():
     depth_dir = os.path.join(root_dir, "data/depth/")
     img_path = os.path.join(depth_dir, "depth.png") 
     save_path = os.path.join(depth_dir, "capture.png")
-    bincfg = BinConfig()
-    cfg = bincfg.data
-    H = np.loadtxt(cfg["calibmat_path"])
+    cfg = BinConfig()
+    cfg = cfg.data
+    H = np.loadtxt(cfgdata["calibmat_path"])
     
     # ---------------------- get depth img -------------------------
     pc = capture_pc()
     # img, img_blur = px2depth(pc, cfg)
-    # crop_pb = crop_roi(img_path, cfg["pick"]["area"])
-    # crop_db = crop_roi(img_path, cfg["drop"]["area"])
+    # crop_pb = crop_roi(img_path, cfgdata["pick"]["area"])
+    # crop_db = crop_roi(img_path, cfgdata["drop"]["area"])
     
     # plt.imshow(crop_pb, cmap='gray'), plt.show()
     # plt.imshow(crop_db, cmap='gray'), plt.show()
@@ -41,7 +41,7 @@ def main():
     max_, min_ = 0.044, -0.060 
     max_, min_ = 0.044, 0.003 
     print(max_, min_)
-    gray_vis = gray_array.reshape((cfg["height"], cfg["width"]))
+    gray_vis = gray_array.reshape((cfgdata["height"], cfgdata["width"]))
     vis = cv2.normalize(gray_vis, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8) 
     cv2.imwrite(save_path, vis)
     plt.imshow(vis), plt.show()
@@ -50,14 +50,14 @@ def main():
     # # gray_array = - gray_array
     # img = ((gray_array - min_) *
     #        (1/(max_ - min_) * 255)).astype('uint8')
-    # img = img.reshape((cfg["height"], cfg["width"]))
+    # img = img.reshape((cfgdata["height"], cfgdata["width"]))
     # plt.imshow(img), plt.show()
     
-    # get_point_cloud(depth_dir, cfg[args.zone]["height"],
-    #                               cfg["width"],cfg["height"])
+    # get_point_cloud(depth_dir, cfgdata[args.zone]["height"],
+    #                               cfgdata["width"],cfgdata["height"])
     
     # ---------------------- visualize -------------------------
-    # crop = crop_roi(img_path, cfg[args.zone]["area"])
+    # crop = crop_roi(img_path, cfgdata[args.zone]["area"])
     # cv2.imshow("cropped image", crop)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
