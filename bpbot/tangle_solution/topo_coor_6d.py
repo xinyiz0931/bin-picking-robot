@@ -161,7 +161,7 @@ class TopoCoor6D(object):
         if proj_ea is None:
             for i in range(nodes.shape[0] - 1):
                 ax.plot([nodes[i][0], nodes[i + 1][0]], [nodes[i][2], nodes[i + 1][2]],
-                            color=color, alpha=alpha)
+                            color=color, alpha=alpha, linewidth=5)
         else:
             projection_mat = simrpy2mat(proj_ea)
             nodes_proj = (np.dot(projection_mat, nodes.T)).T
@@ -169,7 +169,7 @@ class TopoCoor6D(object):
             # draw_ax.scatter(nodes_proj[1:, 0], nodes_proj[1:, 2], color=color, alpha=alpha)
             for i in range(nodes_proj.shape[0] - 1):
                 ax.plot([nodes_proj[i][0], nodes_proj[i + 1][0]], [nodes_proj[i][2], nodes_proj[i + 1][2]],
-                            color=color, alpha=alpha)
+                            color=color, alpha=alpha, linewidth=5)
         return ax
 
     def sample_view(self, phi_xz, phi_y):
@@ -296,9 +296,9 @@ class TopoCoor6D(object):
         """
         
         m = quat2mat(q)
-        # trans = -self.cube1
-        # trans_ = m.dot(trans)
-        # p += trans_
+        trans = -self.cube1
+        trans_ = m.dot(trans)
+        p += trans_
         return rotate_3d(node, m) + p
 
     def create_sim_graph(self, pose):

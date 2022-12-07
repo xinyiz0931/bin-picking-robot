@@ -7,6 +7,66 @@ from matplotlib.lines import Line2D
 from bpbot.utils import * 
 from bpbot.tangle_solution import TopoCoor6D
 
+def load(tc6d, graph, proj_ea=[0,0,0]):
+    [xz, y, _] = proj_ea
+
+    proj_view_ea = [xz,-y,0] # 'xyz' seq
+    proj_obj_ea = [y,-xz,0] # 'yzx' seq
+    obj_num = len(graph)
+    """visualize all objects and tangleship"""
+    fig = plt.figure(figsize=(7, 7))
+    ax2 = fig.add_subplot(111)
+
+    crossings = tc6d.compute_tangleship(graph, proj_obj_ea)
+    
+    # visualize the objects
+    cmap = get_cmap(obj_num)
+    cmap_list = [
+                 (145/255,174/255,253/255,1),
+                 (51/255,102/255,255/255,1),
+                 (190/255, 190/255,190/255,1),
+                 (244/255,89/255,144/255,1),
+                 (244/255,89/255,144/255,1)]                 
+    print(np.round(cmap_list, 3))
+    # cmap_list = [
+    #              (190/255, 190/255,190/255,1),
+    #              (244/255,89/255,144/255,1)
+    # ]
+
+    for i, j in zip(range(obj_num), range(obj_num)):
+        node = graph[i]
+        # node_cmap = cmap(j)
+        node_cmap = cmap_list[j]
+        tc6d.draw_node_2d(node, ax2, alpha=1, color=node_cmap, proj_ea=proj_obj_ea)
+    
+    # tc6d.draw_node_2d(graph[1], ax2, alpha=1, color=cmap_list[1], proj_ea=proj_obj_ea)
+    # tc6d.draw_node_2d(graph[0], ax2, alpha=1, color=cmap_list[0], proj_ea=proj_obj_ea)
+    # count for under-crossings
+    undercrossings = []
+    for i in range(obj_num):
+        under_num = 0
+        for k, l in enumerate(crossings["label"][i]):
+            # check for number of undercrossing
+            if l == -1:
+                under_num += 1
+                cpoint = crossings["point"][i][k]
+                other_index = crossings["obj"][i][k]
+                # ax2.scatter(cpoint[0],cpoint[2],color=cmap(other_index),zorder=2)
+                ax2.scatter(cpoint[0],cpoint[2],color=cmap_list[other_index],zorder=2, s=300, edgecolors='white')
+    
+    
+        undercrossings.append(under_num)
+    min_under_idx = undercrossings.index(min(undercrossings))
+    print(f"[*] Grasp object index: {min_under_idx}")
+    legend_elements = []
+    for i in range(obj_num):
+        # legend_elements.append(Line2D([0], [0], color=cmap(i), lw=4, label=f'Object {i}'))
+        legend_elements.append(Line2D([0], [0], color=cmap_list[i], lw=4, label=f'Object {i}'))
+    ax2.set_xlim(-112.5, 112.5)
+    ax2.set_ylim(112.5, -112.5)
+    plt.show()
+
+
 def view(tc6d, pose, proj_ea=[0,0,0]):
 
     [xz,y,_] = proj_ea # z=0 here
@@ -81,10 +141,11 @@ def view(tc6d, pose, proj_ea=[0,0,0]):
 
 def main():
 
-    root_dir =  "C:\\Users\\xinyi\\Documents\\Dataset\\exp\\data\\20220316213747"
+    root_dir =  "C:\\Users\\xinyi\\Documents\\XYBin_Collected\\example_u"
     pose_path = os.path.join(root_dir, "pose.txt")
-    shape = "scylinder"
-    phi_xz = 45 # [0, 90]
+    node_path = os.path.join(root_dir, "node.txt")
+    shape = "u"
+    phi_xz = 20 # [0, 90]
     phi_y = 45 # [0, 360]
 
 
@@ -93,11 +154,19 @@ def main():
     
     tc6d = TopoCoor6D(sk_path, cd_path)
 
-    pose = np.loadtxt(pose_path)
     views = tc6d.sample_view(phi_xz, phi_y)
-
-    view(tc6d, pose)
+    print(views)
+    
+    # pose = np.loadtxt(pose_path)
+    # view(tc6d, pose)
+    graph = np.loadtxt(node_path, delimiter=',')
+    graph = np.reshape(graph, (5, 9, 3))
+    load(tc6d, graph, proj_ea=[0,0,0])
+    graph = graph[:2]
+    # load(tc6d, graph, proj_ea=[70,20,0])
+    # load(tc6d, graph, proj_ea=[45,10,0])
     # for v in views:
+    #     load(tc6d, graph, proj_ea=v)
 
 if __name__ == "__main__":
     

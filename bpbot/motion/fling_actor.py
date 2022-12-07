@@ -20,19 +20,39 @@ class FlingActor(object):
         self.goal_c = [0.480, 0.350]
         self.drop_c = [0.438, 0.200]
 
-    def fit_spline(self, p1, p2, p3, itvl=24):
+    def fit_ellipse(self, p1, p2, freq=24):
+        u, v = p1[0], p2[1]
+        print(u,v  )
+        a,b = np.abs(np.array(p1)-np.array(p2))
+        # t = np.linspace(0, math.pi/2, freq)
+        t = np.linspace(3*math.pi/2, 2*math.pi, freq)
+        xnew = u+a*np.cos(t)
+        ynew = v+b*np.sin(t)
+        import matplotlib.pyplot as plt
+        plt.plot(xnew, ynew, color='b')
+        plt.plot([p1[0],p2[0]],[p1[1], p2[1]], 'o', color='r')
+        plt.legend(['Trajectory', 'Waypoints'])
+        plt.xlim([0.4,0.6])
+        plt.show()
+        return xnew, ynew
+
+    def fit_spline(self, p1, p2, p3, freq=24):
         x, y = [], []
         for p in [p1,p2,p3]:
             x.append(p[0])
             y.append(p[1])
-        xnew = np.arange(min(x), max(x), (max(x)-min(x))/itvl)
+        # itvl = (max(x) - min(x)) / freq
+        xnew = np.linspace(min(x), max(x), freq)
+        # xnew = np.arange(min(x), max(x), itvl)
 
         tck = interpolate.splrep(x, y, s=0, k=2)
         ynew = interpolate.splev(xnew, tck, der=0)
         print(xnew.shape, ynew.shape)
         import matplotlib.pyplot as plt
-        plt.plot(x, y, 'x', xnew, ynew, x, y, 'b')
-        plt.legend(['Linear', 'Cubic Spline', 'True'])
+        plt.plot(xnew, ynew, color='b')
+        plt.plot(x,y, 'o', color='r')
+        # plt.plot(xnew, ynew, x,y, 'o')
+        plt.legend(['Trajectory', 'Waypoints'])
         plt.xlim([0.4, 0.6])
         plt.title('Cubic-spline interpolation')
         plt.show()
@@ -74,9 +94,9 @@ class FlingActor(object):
         p1 = [0.500, 0.400]
         p2 = [0.510, 0.420]
         p3 = [0.540, 0.300]
-        itvl = 16
-        tm = 3/itvl
-        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, itvl=itvl)
+        n = 16
+        tm = 3/n
+        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, freq=n)
         seqs = []
         for x, z in zip(fitted_x, fitted_z):
             seqs.append("0 %.2f RARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80 -180" % (tm, x, z))
@@ -103,6 +123,12 @@ class FlingActor(object):
         return seq
 
 actor=FlingActor("./data/motion/fling.dat")
-        # x = np.array([0.5,0.51,0.54])
-        # y = np.array([0.4,0.42, 0.3])
-actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
+p1 = [0.500, 0.400]
+p2 = [0.510, 0.420]
+p3 = [0.540, 0.300]
+actor.fit_spline(p1, p2, p3)
+p1 = [0.500, 0.300]
+p2 = [0.540, 0.420]
+actor.fit_ellipse(p1=p1, p2=p2)
+
+# actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
