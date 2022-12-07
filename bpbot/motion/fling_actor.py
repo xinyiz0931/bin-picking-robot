@@ -136,18 +136,7 @@ class FlingActor(object):
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
 
-<<<<<<< HEAD
-actor=FlingActor()
-        # x = np.array([0.5,0.51,0.54])
-        # y = np.array([0.4,0.42, 0.3])
 # actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
-p = [
-    [0.500, 0.430],
-    [0.510, 0.450],
-    [0.540, 0.250]
-]
-actor.get_fling_seq(waypoint=p)
-=======
 actor=FlingActor("./data/motion/fling.dat")
 p1 = [0.500, 0.400]
 p2 = [0.510, 0.420]
@@ -156,6 +145,3 @@ actor.fit_spline(p1, p2, p3)
 p1 = [0.500, 0.300]
 p2 = [0.540, 0.420]
 actor.fit_ellipse(p1=p1, p2=p2)
-
-# actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
->>>>>>> 6a420999ea9af2578d32bbee2ca8138469e84dc3
