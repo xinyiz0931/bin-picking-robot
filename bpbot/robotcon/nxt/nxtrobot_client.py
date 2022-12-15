@@ -179,7 +179,7 @@ class NxtRobot(object):
         else:
             print("The robot_s has ejected its left handtool.")
     
-    def playMotionSeqWithFB(self, motion_seq):
+    def playMotionWithFB(self, motion_seq):
         from bpbot.binpicking import check_force, check_force_file
         import numpy as np
         m_rcvr = np.array([[1,-5.43324762,0,0,-10.00000429,-25.7000219,-127.49972519,0,0,0,-19.17583008,-62.94312106,-86.38696242,-30.22589964,60.94772867,-1.75656712,1.31780293,-1.31780293,0,0],[0.5,-5.43324762,0.,0.,-10.00000429,-25.7000219,-127.49972519,0.,0.,0.,-19.17583008,-62.94312106,-86.38696242,-30.22589964,60.94772867,-1.75656712,1.31780293,-1.31780293,0.97402825,-0.97402825],[0.8,0.,0.,0.,-9.99999792,-25.69999465,-127.49997347,0.,0.,0.,22.99999521,-25.69999465,-127.49997347,-6.99999854,0.,0.,1.31799973,-1.31799973,1.31799973,-1.31799973]])
@@ -261,7 +261,7 @@ class NxtRobot(object):
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
     
-    def playMotionSeq(self, motion_seq):
+    def playMotion(self, motion_seq):
         """
         added by xinyi: motion_seq shape = (num_seq x 20)
         including both hands open/closing
@@ -291,7 +291,7 @@ class NxtRobot(object):
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
 
-    def playSmoothMotionSeq(self, gname, motion_seq):
+    def playSmoothMotion(self, gname, motion_seq):
         """Given the complete motion_seq and play smoothly, motion must be planned without torso or head joint
 
         Args:

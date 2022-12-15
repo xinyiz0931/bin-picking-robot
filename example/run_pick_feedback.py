@@ -120,8 +120,8 @@ if FOUND_CNOID:
         num_seq = int(len(motion_seq)/20)
         print(f"Success! Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 20))
-        #nxt.playMotionSeq(motion_seq) 
-        nxt.playMotionSeqWithFB(motion_seq)
+        #nxt.playMotion(motion_seq) 
+        nxt.playMotionWithFB(motion_seq)
 
 # ---------------------- record data -------------------------
         # tdatetime = dt.now()

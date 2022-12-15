@@ -17,6 +17,7 @@ from bpbot.robotcon.nxt.nxtrobot_client import NxtRobot
 
 import numpy as np
 import timeit
+import pickle
 
 N = 1
 LOG_ON = True
@@ -43,6 +44,8 @@ draw_path = os.path.join(cfg.depth_dir, "result.png")
 vis_pp_path = os.path.join(cfg.depth_dir, "pred/picknet_depth_cropped_pickbin.png")
 vis_pd_path = os.path.join(cfg.depth_dir, "pred/picknet_depth_cropped_dropbin.png")
 vis_sd_path = os.path.join(cfg.depth_dir, "pred/sepnet_depth_cropped_dropbin.png")
+score_pn_path = os.path.join(cfg.depth_dir, "pred/picknet_score.pickle")
+score_sn_path = os.path.join(cfg.depth_dir, "pred/sepnet_score.pickle")
 vis_path = os.path.join(cfg.depth_dir, "vis.png")
 
 mf_path = cfg.motionfile_path
@@ -109,6 +112,7 @@ def pick():
                 j["grasp"] = g_pick
                 j["pull"] = []
                 j["container"] = "pick"
+                j["picknet_score"] = pickle.load(open(score_pn_path, 'rb'))
 
         else: 
             print("[!] Pick bin detection failed! ")
@@ -137,6 +141,7 @@ def pick():
                 j["grasp"] = g_pick
                 j["pull"] = []
                 j["container"] = "drop"
+                j["picknet_score"] = pickle.load(open(score_pn_path, 'rb'))
 
         else: 
             if MODE == "pnsn":
@@ -148,10 +153,10 @@ def pick():
 
                 if point_array is not None:
                     p_pull_tcp, g_pull_wrist = transform_image_to_robot(g_pull, point_array, cfgdata, hand="left", container="drop",dualarm=True)
-                    v_pull_wrist = [v_pull[1], v_pull[0],0.02] # swap x and y from image to robot coordinate:w
+                    v_pull_wrist = [v_pull[1], v_pull[0],0.06] # swap x and y from image to robot coordinate:w
 
                     # v_len = is_colliding(p_pull_tcp[:2], v_pull, cfg, point_array)
-                    v_len = 0.10
+                    v_len = 0.08
 
                     print("[*] **Pull**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pull, *p_pull_tcp))
                     print("[*] **Pull**! Direction: (%.2f,%.2f), distance: %.3f" % (*v_pull, v_len))
@@ -187,6 +192,8 @@ def pick():
                     j["grasp"] = g_drop
                     j["pull"] = []
                 j["container"] = "drop"
+                j["picknet_score"] = pickle.load(open(score_pn_path, 'rb'))
+                j["sepnet_score"] = pickle.load(open(score_sn_path, 'rb'))
 
     viss = []
     for v, s in zip([heatmaps, vis_pb, vis_db], ["Predicted Heatmaps", "Action in Picking Bin", "Action in Dropping Bin"]):
@@ -195,6 +202,7 @@ def pick():
         viss.append(v_with_title)
     ret = cv2.hconcat(viss)
     cv2.imwrite(vis_path,ret) 
+    print(j)
 
     
     if gen_success and FOUND_CNOID: 
@@ -211,7 +219,7 @@ def pick():
             num_seq = int(len(motion_seq)/20)
             motion_seq = np.reshape(motion_seq, (num_seq, 20))
             
-            nxt.playMotionSeq(motion_seq) 
+            nxt.playMotion(motion_seq) 
 
         else:
             print("[!] Motion plannin failed ...")
@@ -219,7 +227,6 @@ def pick():
         # ----------------------------- save log ----------------------------------
         if LOG_ON:
             import shutil
-            import pickle
             tdatetime = dt.now()
             tstr = tdatetime.strftime('%Y%m%d%H%M%S')
             save_dir = "/home/hlab/Desktop/exp" 

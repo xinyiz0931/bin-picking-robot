@@ -24,9 +24,9 @@ class PickSepServer(psrpc.PickSepServicer):
                 "img_height": 512,
                 "img_width": 512,
                 # "pick_ckpt_folder": ["ckpt_picknet", "model_epoch_8.pth"], 
-                "pick_ckpt_folder": ["try_pick_no_augdata", "model_epoch_15.pth"], 
+                "pick_ckpt_folder": ["try_pick_no_augdata", "model_epoch_16.pth"], 
                 # epoch17 is tested, but with some redundant actions
-                "sep_ckpt_folder": ["try_sep_gauss2d_aug", "model_epoch_20.pth"],
+                "sep_ckpt_folder": ["try_sep_gauss2d_aug", "model_epoch_16.pth"],
                 # "sep_ckpt_folder": ["try_sep_mask", "model_epoch_20.pth"]
             }
         }

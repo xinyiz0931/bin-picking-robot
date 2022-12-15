@@ -4,7 +4,7 @@ from scipy import interpolate
 from bpbot import BinConfig
 
 class FlingActor(object):
-    def __init__(self, arm="R", filepath=None):
+    def __init__(self, filepath=None, arm='R'):
         
         cfg = BinConfig()
         cfgdata = cfg.data
@@ -18,7 +18,7 @@ class FlingActor(object):
         w_lft = (cfgdata["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
         w_rgt = (cfgdata["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
         
-        self.initpose = "0 0.80 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
+        self.initpose = "0 3.00 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
         self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (w_rgt,-w_rgt,w_lft,-w_lft) 
         self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (w_lft,-w_lft) 
         self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (w_rgt,-w_rgt) 
@@ -27,9 +27,9 @@ class FlingActor(object):
         self.drop_c = [0.438, 0.200]
 
         self.waypoint = [
-            [0.500, 0.400],
-            [0.510, 0.420],
-            [0.540, 0.300]
+            [0.450, 0.500],
+            [0.460, 0.520],
+            [0.490, 0.300]
         ]
 
     def fit_ellipse(self, p1, p2, freq=24):
@@ -72,10 +72,11 @@ class FlingActor(object):
 
     def get_pick_seq(self, xyz, rpy): 
         return [
-            "0 1.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
-            "0 1.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
-            "0 0.50 "+self.arm+"HAND_JNT_CLOSE 0 0 0 0 0 0", 
-            "0 1.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
+            "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
+            "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
+            "0 1.00 "+self.arm+"HAND_JNT_CLOSE 0 0 0 0 0 0", 
+
+            # "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (self.waypoint[0][0], self.waypoint[0][1])
         ]
     
     def get_place_seq(self, rpy, dest="side"):
@@ -94,7 +95,7 @@ class FlingActor(object):
                 self.initpose
             ]
 
-    def get_fling_seq(self, waypoint=None, itvl=16):
+    def get_fling_seq(self, waypoint=None, freq=16, n=1):
         """Get pulling motionfile command
 
         Args:
@@ -103,24 +104,29 @@ class FlingActor(object):
             wiggle (bool, optional): pulling with wiggling?. defaults to False.
         """
         p1, p2, p3 = self.waypoint if waypoint is None else waypoint
-        
 
-        p1 = [0.500, 0.400]
-        p2 = [0.510, 0.420]
-        p3 = [0.540, 0.300]
-        n = 16
-        tm = 3/n
-        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, freq=n)
+        # tm = 3/freq
+        tm = 0.4
+        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, freq=freq)
         seqs = []
-        for x, z in zip(fitted_x, fitted_z):
-            seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80 -180" % (x, z))
-        return seqs
+        for i, (x, z) in enumerate(zip(fitted_x, fitted_z)):
+            if i == 0:
+                seqs.append("0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+            elif i <=9: 
+                tm = 0.12
+                seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+            else:
+                tm = 0.1
+                seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+        # return seqs
+        return seqs*n
 
     def get_action(self, pose, waypoint=None):
         xyz = pose[:3]
         rpy = pose[3:]
 
-        seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint) + self.get_place_seq(rpy)
+        # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint) + self.get_place_seq(rpy)
+        seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint, n=3)
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
@@ -136,12 +142,15 @@ class FlingActor(object):
             seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
 
-# actor.get_action([0.500, -0.010, 0.104, -90, -90, 90])
-actor=FlingActor("./data/motion/fling.dat")
-p1 = [0.500, 0.400]
-p2 = [0.510, 0.420]
-p3 = [0.540, 0.300]
-actor.fit_spline(p1, p2, p3)
-p1 = [0.500, 0.300]
-p2 = [0.540, 0.420]
-actor.fit_ellipse(p1=p1, p2=p2)
+if __name__ == '__main__':
+
+    actor=FlingActor(arm="R")
+    actor.get_action([0.500, -0.010, 0.134, -90, -90, 90])
+
+    # p1 = [0.500, 0.400]
+    # p2 = [0.510, 0.420]
+    # p3 = [0.540, 0.300]
+    # actor.fit_spline(p1, p2, p3)
+    # p1 = [0.500, 0.300]
+    # p2 = [0.540, 0.420]
+    # actor.fit_ellipse(p1=p1, p2=p2)

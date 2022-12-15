@@ -59,8 +59,8 @@ if __name__ == "__main__":
 
     # print("[*] Start robot execution .. ")
 
-    # # nxt.playMotionSeq(motion_seq)
-    # nxt.playMotionSeq(final_seq)
+    # # nxt.playMotion(motion_seq)
+    # nxt.playMotion(final_seq)
     # print("[*] Finish! ")
 
         

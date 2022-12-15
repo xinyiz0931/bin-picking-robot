@@ -167,7 +167,7 @@ if FOUND_CNOID:
     print(f"[*] Total {num_seq} motion sequences! ")
     motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
-    nxt.playMotionSeq(motion_seq)
+    nxt.playMotion(motion_seq)
 
 # if FOUND_CNOID: 
 #     # gen_success = gen_motion_pickorsep(mf_path, [rx,ry,rz,ra], dest="drop")
@@ -181,7 +181,7 @@ if FOUND_CNOID:
 #         print(f"Total {num_seq} motion sequences! ")
 #         motion_seq = np.reshape(motion_seq, (num_seq, 21))
 
-#         # nxt.playMotionSeq(motion_seq)    
+#         # nxt.playMotion(motion_seq)    
 # # ======================= Record the data ===================s=========
 
 # end = timeit.default_timer()

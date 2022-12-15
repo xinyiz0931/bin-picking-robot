@@ -34,8 +34,8 @@ def px2depth(pcd, cfgdata, container="pick"):
     pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
     pr = np.dot(G, pc_.T).T
     gray = pr[:,2]
-    # max_h = cfgdata[container]['height']['max']
-    max_h = cfgdata[container]['height']['max']+0.025
+    max_h = cfgdata[container]['height']['max']
+    max_h = cfgdata[container]['height']['max']+0.02
     min_h = cfgdata[container]['height']['min']
     gray[gray>max_h] = min_h
     gray[gray<min_h] = min_h
@@ -354,7 +354,7 @@ def gen_motion_picksep(mf_path, pose_lft, dest, pulling=None, pose_rgt=None):
         actor_pick.get_action(pose_lft, dest=dest)
 
     elif pose_rgt is None:
-        actor_pull.get_action(pose_lft, pulling, wiggle=True)
+        actor_pull.get_action(pose_lft, pulling, wiggle=False)
     
     else:
         print("[!] Wrong type for motion generator ...")    

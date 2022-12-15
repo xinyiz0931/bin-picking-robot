@@ -138,7 +138,7 @@ if FOUND_CNOID:
         print(f"[*] Total {num_seq} motion sequences! ")
         motion_seq = np.reshape(motion_seq, (num_seq, 20))
 
-        nxt.playMotionSeq(motion_seq)
+        nxt.playMotion(motion_seq)
 
 # end = timeit.default_timer()
 # print("[*] Time: {:.2f}s".format(end - start))
