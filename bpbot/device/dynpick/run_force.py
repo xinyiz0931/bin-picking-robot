@@ -64,8 +64,7 @@ os.write(fdc, r_)
 
 # initialization
 fp = open('./out.txt','wt')
-init = [7982,8247,8599]
-#init = [7984,8292,8572]
+init = [8150.66326531, 8256.54081633, 8700.98979592, 8328.57142857, 8133.97959184, 8383.14285714]
 
 def vector_rotate(x,y,theta):
     """Only for 2D"""
@@ -94,16 +93,24 @@ def sensor_to_robot(s_x,s_y,s_z):
 
 # start recording
 def plot_f(force, x):
-    colors = [[ 78.0/255.0,121.0/255.0,167.0/255.0], # 0_blue
-              [255.0/255.0, 87.0/255.0, 89.0/255.0], # 1_red
-              [ 89.0/255.0,169.0/255.0, 79.0/255.0], # 2_green
-              [237.0/255.0,201.0/255.0, 72.0/255.0], # 3_yellow
-              [242.0/255.0,142.0/255.0, 43.0/255.0], # 4_orange
-              [176.0/255.0,122.0/255.0,161.0/255.0], # 5_purple
-              [255.0/255.0,157.0/255.0,167.0/255.0], # 6_pink
-              [118.0/255.0,183.0/255.0,178.0/255.0], # 7_cyan
-              [156.0/255.0,117.0/255.0, 95.0/255.0], # 8_brown
-              [186.0/255.0,176.0/255.0,172.0/255.0]] # 9_gray
+    colors = [
+        [255.0/255.0, 87.0/255.0, 89.0/255.0], # fx_red
+        [ 89.0/255.0,169.0/255.0, 79.0/255.0], # fy_green
+        [ 78.0/255.0,121.0/255.0,167.0/255.0], # fz_blue
+        [242.0/255.0,142.0/255.0, 43.0/255.0], # mx_orange
+        [237.0/255.0,201.0/255.0, 72.0/255.0], # my_yellow
+        [176.0/255.0,122.0/255.0,161.0/255.0], # mz_purple
+    ] 
+    # colors = [[ 78.0/255.0,121.0/255.0,167.0/255.0], # 0_blue
+    #           [255.0/255.0, 87.0/255.0, 89.0/255.0], # 1_red
+    #           [ 89.0/255.0,169.0/255.0, 79.0/255.0], # 2_green
+    #           [237.0/255.0,201.0/255.0, 72.0/255.0], # 3_yellow
+    #           [242.0/255.0,142.0/255.0, 43.0/255.0], # 4_orange
+    #           [176.0/255.0,122.0/255.0,161.0/255.0], # 5_purple
+    #           [255.0/255.0,157.0/255.0,167.0/255.0], # 6_pink
+    #           [118.0/255.0,183.0/255.0,178.0/255.0], # 7_cyan
+    #           [156.0/255.0,117.0/255.0, 95.0/255.0], # 8_brown
+    #           [186.0/255.0,176.0/255.0,172.0/255.0]] # 9_gray
 
     f_new = np.asarray(force)
     ax1 = fig.add_subplot(111)
@@ -138,8 +145,9 @@ def plot_f(force, x):
     # ax1.axhspan(0, 6, facecolor=colors[0], alpha=.1)
     ax1.grid(which='minor', linestyle='dotted', alpha=.5)
     ax1.grid(which='major', linestyle='dotted', alpha=1)
-    ax1.plot(x, f_new, label=['Fx', 'Fy', 'Fz'])
-    ax1.legend()
+    # ax1.plot(x, f_new, label=['Fx', 'Fy', 'Fz'])
+    ax1.plot(x, f_new, label=['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'])
+    ax1.legend(loc='upper right')
     #handles, labels = ax1.get_legend_handles_labels()
     #ax1.legend(handles=handles, labels=eval(labels[0]), loc='upper left')
     plt.ion()
@@ -179,11 +187,15 @@ while True:
     #fp.write(",".join(map(str,data)))
     #fp.write("\n")
 
-    plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
+    # plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000])
+    # print(plot_data)
+    plot_data.append([(data[1]-init[0])/1000, (data[2]-init[1])/1000, (data[3]-init[2])/1000,
+                      (data[4]-init[3])/1000, (data[5]-init[4])/1000, (data[6]-init[5])/1000])
     j+=1 
     fig = plt.figure(1, figsize=(16, 6))
     if len(plot_data) <= 50:
-        force = [[0,0,0] for _ in range(50-j)] + plot_data
+        # force = [[0,0,0] for _ in range(50-j)] + plot_data
+        force = [[0,0,0,0,0,0] for _ in range(50-j)] + plot_data
     else:
         force = plot_data[j-50:]
     plt.clf()

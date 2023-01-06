@@ -46,7 +46,7 @@ cfgdata = cfg.data
 point_array = capture_pc()
 if point_array is not None:
     print("[*] Captured point cloud ... ")
-    img, img_blur = px2depth(point_array, cfgdata, container=CONTAINER)
+    img, img_blur = pc2depth(point_array, cfgdata, container=CONTAINER)
     cv2.imwrite(img_path, img_blur)
     
     crop = crop_roi(img_blur, cfgdata, container=CONTAINER, bounding=True)

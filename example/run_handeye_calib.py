@@ -14,7 +14,7 @@ if FOUND_CNOID:
     from cnoid.BinPicking import *
 
 from bpbot.robotcon import NxtRobot
-from bpbot.driver import PhxClient
+from bpbot.device import PhxClient
 from bpbot.utils import *
 
 def main():

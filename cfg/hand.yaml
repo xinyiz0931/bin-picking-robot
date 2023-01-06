@@ -23,7 +23,7 @@ smc_ft:
   gripper_height: 25
   finger_height: 72
   force_sensor_height: 32
-  force_sensor_flange_height: 3
+  force_sensor_flange_height: 6
 smc_ft_caging:
   finger_length: 12
   finger_width: 6

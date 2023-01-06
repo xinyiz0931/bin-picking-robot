@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
 from bpbot.grasping import Graspability, Gripper
-from bpbot.motion import PickAndPlaceActor, PullActor, HelixActor
+from bpbot.motion import *
 from bpbot.utils import *
 
 def capture_pc():
@@ -21,68 +21,30 @@ def capture_pc():
     Returns:
         (array): N x 3, unit: m
     """ 
-    import bpbot.driver.phoxi.phoxi_client as pclt
+    import bpbot.device.phoxi.phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
     pxc.triggerframe()
     pc = pxc.getpcd()
     # gs = pxc.getgrayscaleimg()
     return (pc.copy()/1000) if pc is not None else None
 
-def px2depth(pcd, cfgdata, container="pick"):
+def pc2depth(pcd, cfgdata, container="pick"):
 
     G = np.loadtxt(cfgdata["calibmat_path"])
     pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
     pr = np.dot(G, pc_.T).T
     gray = pr[:,2]
     max_h = cfgdata[container]['height']['max']
-    max_h = cfgdata[container]['height']['max']+0.02
+    # max_h = cfgdata[container]['height']['max']+0.02
     min_h = cfgdata[container]['height']['min']
+    # max_h = min_h + 0.08
+
     gray[gray>max_h] = min_h
     gray[gray<min_h] = min_h
     
     gray = np.reshape(gray, (cfgdata["height"], cfgdata["width"]))
     img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
     img_blur = cv2.medianBlur(img, 5)
-    return img, img_blur
-
-    # gray_pc[gray_pc > max_] = min_
-    # gray_pc[gray_pc < min_] = min_
-    # img = ((gray_pc - min_) *
-    #        (1/(max_ - min_) * 255)).astype('uint8')
-    # img = img.reshape((cfgdata["height"], cfgdata["width"]))
-    # img_blur = cv2.medianBlur(img, 5)
-    # return img, img_blur
-# def px2depth(pcd, cfgdata, max_=0.07, min_=0.007):
-#     pc = pcd/1000
-#     G = np.loadtxt(cfgdata["calibmat_path"])
-#     pc_ = np.c_[pc, np.ones(pc.shape[0])]
-#     pr = np.dot(G, pc_.T).T
-#     gray_pc = pr[:,2]
-#     gray_pc[gray_pc > max_] = min_
-#     gray_pc[gray_pc < min_] = min_
-#     img = ((gray_pc - min_) *
-#            (1/(max_ - min_) * 255)).astype('uint8')
-#     img = img.reshape((cfgdata["height"], cfgdata["width"]))
-#     img_blur = cv2.medianBlur(img, 5)
-#     return img, img_blur
-
-def pc2depth(pc, distance, width, height):
-    """Convert point cloud to depth image
-
-    Args:
-        pc (array): N * 3 numpy array
-        distance (dictionary): {"max": 0, "min": 0}
-        width (int): 
-        height (int): 
-
-    Returns:
-        (array, array): converted depth image and blurred depth image
-    """
-    rotated_pc = rotate_point_cloud(pc)
-    gray_array = rotated_pc[:, 2] 
-    max_distance, min_distance = distance["max"], distance['min']
-    img = normalize_depth_map(gray_array, max_distance, min_distance, width, height)
-    img_blur= cv2.medianBlur(img, 5)
     return img, img_blur
 
 def get_point_cloud(save_dir, distance, width, height):
@@ -99,8 +61,7 @@ def get_point_cloud(save_dir, distance, width, height):
 
     # [1] ----------------------------------------------------
     print("[*] Capture! ")
-    import bpbot.driver.phoxi.phoxi_client as pclt
-    # from bpbot.driver import phoxi_client as pclt
+    import bpbot.device.phoxi.phoxi_client as pclt
     pxc = pclt.PhxClient(host="127.0.0.1:18300")
     pxc.triggerframe()
     pc = pxc.getpcd()
@@ -177,7 +138,6 @@ def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255
     """
     if isinstance(img, str) and os.path.exists(img):
         img = cv2.imread(img)
-
     if h_params is not None: 
         finger_w = h_params["finger_width"]
         finger_h = h_params["finger_length"]
@@ -360,7 +320,7 @@ def gen_motion_picksep(mf_path, pose_lft, dest, pulling=None, pose_rgt=None):
         print("[!] Wrong type for motion generator ...")    
 
 
-def gen_motion_pick(mf_path, pose_left, action_idx):
+def gen_motion_pick(mf_path, pose_left, action_idx=0):
     """Generate motion in motion file format for single-arm picking
 
     Args:
@@ -377,7 +337,18 @@ def gen_motion_pick(mf_path, pose_left, action_idx):
         actor = HelixActor(mf_path)
         actor.get_action(pose_left, action_idx)
 
+def gen_motion_dynamic(mf_path, pose, orientation='h'):
+    actor = FlingActor(mf_path, arm='R')
+    actor.get_action(pose, orientation=orientation)
 
+def detect_grasp_orientation(p, img_path, g_params, h_params):
+    img = cv2.imread(img_path)
+    
+    gripper_attr = [h_params.get(k) for k in ["finger_width", "finger_length", "open_width"]]
+    gripper = Gripper(*gripper_attr)
+    g = gripper.point_oriented_grasp(img, p)
+    return g
+    
 def detect_grasp(n_grasp, img_path, g_params, h_params):
     """Detect grasp point using fast graspability evaluation
 

@@ -11,7 +11,7 @@ Step 2 - Click to select 2 or 4 points and press [ENTER]
 """
 import cv2
 from bpbot.config import BinConfig
-from bpbot.driver import PhxClient
+from bpbot.device import PhxClient
 from bpbot.utils import *
 
 class Workspace(object):
@@ -24,11 +24,6 @@ class Workspace(object):
         self.boxes = []
         self.points = []
         self.mat = np.loadtxt(self.cfgdata["calibmat_path"])
-    
-    def refresh(self):
-        self.vis = self.clone.copy()
-        self.boxes.clear()
-        self.points.clear()
 
     def capture(self):
         pxc = PhxClient(host='127.0.0.1:18300')
@@ -45,6 +40,13 @@ class Workspace(object):
         pr = np.dot(H, pc_.T).T
         self.arr = np.reshape(pr[:,2], (self.cfgdata["height"], self.cfgdata["width"]))
     
+    def refresh_drag(self): 
+        self.vis = self.clone.copy()
+        self.boxes.clear()
+    def refresh_click(self):
+        self.vis = self.clone.copy()
+        self.points.clear()
+
     def on_drag(self, event, x, y, flags, params):
         # global img
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -72,7 +74,7 @@ class Workspace(object):
             cv2.imshow("Click", self.vis)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('r'):
-                self.refresh()
+                self.refresh_click()
             if key == ord('q'):
                 cv2.destroyAllWindows()
                 break
@@ -88,7 +90,7 @@ class Workspace(object):
             cv2.imshow("Drag", self.vis)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('r'):
-                self.refresh()
+                self.refresh_drag()
             if key == ord('q'):
                 cv2.destroyAllWindows()
                 break
@@ -101,7 +103,6 @@ class Workspace(object):
         self.select_points()
 
     def define(self):
-
         if len(self.boxes) == 4:
             self.cfgdata["pick"]["area"]["left"] = self.boxes[0][0]
             self.cfgdata["pick"]["area"]["top"] = self.boxes[0][1]

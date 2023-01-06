@@ -24,7 +24,7 @@ def main():
     
     # ---------------------- get depth img -------------------------
     pc = capture_pc()
-    # img, img_blur = px2depth(pc, cfg)
+    # img, img_blur = pc2depth(pc, cfg)
     # crop_pb = crop_roi(img_path, cfgdata["pick"]["area"])
     # crop_db = crop_roi(img_path, cfgdata["drop"]["area"])
     

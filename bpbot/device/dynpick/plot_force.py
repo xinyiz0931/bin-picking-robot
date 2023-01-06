@@ -58,55 +58,29 @@ def plot_animation(force, x):
     #plt.ylim(-2, 2)
     plt.ylim(-0.5, 0.5)
     plt.show()
-fig = plt.figure(1)
+#fig = plt.figure(1)
+fig = plt.figure(1, figsize=(8, 3))
 
-ax1 = fig.add_subplot(311)
+#ax1 = fig.add_subplot(311)
+ax1 = fig.add_subplot(111)
 init = [7984,8292,8572]
 plot_data = []
 j = 0
 # 1
-F = np.loadtxt("./out_no_picking.txt")
+F = np.loadtxt("./out.txt")
 print(F.shape)
 F /= 1000
-F = F[71:]
+#F = F[71:]
 X = F[:,0] - F[0][0]
 ax1.plot(X, F[:,1]-init[0]/1000, color=colors[1], label="Fx")
 ax1.plot(X, F[:,2]-init[1]/1000, color=colors[2], label="Fy")
 ax1.plot(X, F[:,3]-init[2]/1000, color=colors[0], label="Fz")
-ax1.axhline(y=0.25, color=colors[7], alpha=.7, linestyle='dashed')
+ax1.axhline(y=0.20, color=colors[7], alpha=.7, linestyle='dashed')
 plt.ylim(-0.5,0.5)
-plt.xlim(0, 12)
+#plt.xlim(0, 12)
 plt.legend(loc='upper right')
-ax1.set_xticks([])
+#ax1.set_xticks([])
 
-#2
-ax2= fig.add_subplot(312)
-F = np.loadtxt("./out_nobutyes_picking.txt")
-print(F.shape)
-F /= 1000
-F = F[51:]
-X = F[:,0] - F[0][0]
-ax2.plot(X, F[:,1]-init[0]/1000, color=colors[1])
-ax2.plot(X, F[:,2]-init[1]/1000, color=colors[2])
-ax2.plot(X, F[:,3]-init[2]/1000, color=colors[0])
-ax2.axhline(y=0.25, color=colors[7], alpha=.7, linestyle='dashed')
-ax2.set_xticks([])
-plt.ylim(-0.5, 0.5)
-plt.xlim(0, 12)
-
-#3
-ax3= fig.add_subplot(313)
-F = np.loadtxt("./out_yes_picking.txt")
-print(F.shape)
-F /= 1000
-F = F[34:]
-X = F[:,0] - F[0][0]
-ax3.plot(X, F[:,1]-init[0]/1000, color=colors[1])
-ax3.plot(X, F[:,2]-init[1]/1000, color=colors[2])
-ax3.plot(X, F[:,3]-init[2]/1000, color=colors[0])
-ax3.axhline(y=0.25, color=colors[7], alpha=.7, linestyle='dashed')
-plt.ylim(-0.5, 0.5)
-plt.xlim(0, 12)
 
 plt.rcParams.update({'font.family':'Times New Roman'})
 plt.tight_layout()

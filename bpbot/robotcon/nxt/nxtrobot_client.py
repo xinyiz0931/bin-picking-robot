@@ -285,11 +285,76 @@ class NxtRobot(object):
                 
                 old_lhand = lhand
                 old_rhand = rhand
-
+                
                 self.setJointAngles(m[1:], tm=m[0])
 
         except grpc.RpcError as rpc_error:
             print(f"[!] Robotcon failed with {rpc_error.code()}")
+    
+    def playMotionFT(self, motion_seq):
+        from bpbot.device import FTSensor
+        import numpy as np
+        sensor = FTSensor()
+        # def record():
+        #     os.system("bash /home/hlab/bpbot/script/force.sh")
+                
+            # os.system("bash /home/hlab/bpbot/script/stop_ft.sh")
+            # proc_ft.terminate()
+
+        try:
+            old_lhand = "STANDBY"
+            old_rhand = "STANDBY"
+            for i, m in enumerate(motion_seq):
+                if (m[-2:] != 0).all(): lhand = "OPEN"
+                else: lhand = "CLOSE"
+                if (m[-4:-2] != 0).all(): rhand = "OPEN"
+                else: rhand = "CLOSE"
+
+                if old_rhand != rhand:
+                    if rhand == "OPEN": self.openHandToolRgt()
+                    elif rhand == "CLOSE": self.closeHandToolRgt()
+
+                if old_lhand != lhand:
+                    if lhand == "OPEN": self.openHandToolLft()
+                    elif lhand == "CLOSE": self.closeHandToolLft()
+                
+                old_lhand = lhand
+                old_rhand = rhand
+                
+                self.setJointAngles(m[1:], tm=m[0])
+
+                with open("/home/hlab/bpbot/data/force/out.txt", 'a') as fp:
+                    print(*([-1]*7), file=fp)
+                # if i == 4:
+                #     _data = np.loadtxt("/home/hlab/bpbot/data/force/out.txt")
+                #     _idx = np.where(np.any(_data==([-1]*7), axis=1))[0][-2]
+                #     ft = _data[_idx+1:-1]
+                #     sensor.plot_file(_data=ft)
+                # if i == len(motion_seq)-5: 
+                #     _data = np.loadtxt("/home/hlab/bpbot/data/force/out.txt")
+                #     _idx = np.where(np.any(_data==([-1]*7), axis=1))[0][-2]
+                #     ft = _data[_idx+1:-1]
+                #     sensor.plot_file(_data=ft)
+                # if i == len(motion_seq)-4: 
+                #     _data = np.loadtxt("/home/hlab/bpbot/data/force/out.txt")
+                #     _idx = np.where(np.any(_data==([-1]*7), axis=1))[0][-2]
+                #     ft = _data[_idx+1:-1]
+                #     sensor.plot_file(_data=ft)
+
+            # from multiprocessing import Process
+            # proc_ft = Process(target=record, args=())
+            # proc_nxt = Process(target=move, args=())
+            # proc_ft.start()
+            # proc_nxt.start()
+            # proc_ft.join()
+            # proc_nxt.join()
+            # proc_ft.start()
+            # proc_ft.terminate()
+            # print("terminated!")
+        except grpc.RpcError as rpc_error:
+            print(f"[!] Robocon failed with {rpc_error.code()}")
+        
+
 
     def playSmoothMotion(self, gname, motion_seq):
         """Given the complete motion_seq and play smoothly, motion must be planned without torso or head joint
@@ -354,16 +419,16 @@ if __name__ == "__main__":
         nxt.servoOn()
         nxt.goinitial()
 
-    elif args.movement == "closelhand":
+    elif args.movement == "closel":
         print("Close left hand ... ")
         nxt.closeHandToolLft()
-    elif args.movement == "openlhand":
+    elif args.movement == "openl":
         print("Open left hand ... ")
         nxt.openHandToolLft() 
-    elif args.movement == "closerhand":
+    elif args.movement == "closer":
         print("Close right hand ... ")
         nxt.closeHandToolRgt()
-    elif args.movement == "openrhand":
+    elif args.movement == "openr":
         print("Open right hand ... ")
         nxt.openHandToolRgt() 
     

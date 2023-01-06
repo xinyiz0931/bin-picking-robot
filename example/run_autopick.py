@@ -67,8 +67,8 @@ def pick():
     if point_array is not None: 
         print("[*] Capture point cloud ... ")
 
-        img_pb, img_pb_blur = px2depth(point_array, cfgdata, container='pick')
-        img_db, img_db_blur = px2depth(point_array, cfgdata, container='drop')
+        img_pb, img_pb_blur = pc2depth(point_array, cfgdata, container='pick')
+        img_db, img_db_blur = pc2depth(point_array, cfgdata, container='drop')
 
         cv2.imwrite(img_pb_path, img_pb_blur)
         cv2.imwrite(img_db_path, img_db_blur)
@@ -220,23 +220,23 @@ def pick():
             motion_seq = np.reshape(motion_seq, (num_seq, 20))
             
             nxt.playMotion(motion_seq) 
+            # ----------------------------- save log ----------------------------------
+            if LOG_ON:
+                import shutil
+                tdatetime = dt.now()
+                tstr = tdatetime.strftime('%Y%m%d%H%M%S')
+                save_dir = "/home/hlab/Desktop/exp" 
+                shutil.copytree(os.path.join(cfg.depth_dir, "pred"), os.path.join(save_dir, tstr))
+                shutil.copyfile(crop_pb_path, os.path.join(save_dir, tstr, "depth_pick.png"))
+                shutil.copyfile(crop_db_path, os.path.join(save_dir, tstr, "depth_drop.png"))
+                with open(os.path.join(save_dir, tstr, "out.pickle"), 'wb') as f:
+                    pickle.dump(j, f, protocol=pickle.HIGHEST_PROTOCOL)
+                cv2.imwrite(os.path.join(save_dir, tstr, "vis.png"), ret)
+            # ----------------------------- save log ----------------------------------
 
         else:
-            print("[!] Motion plannin failed ...")
+            print("[!] Motion planning failed ...")
 
-        # ----------------------------- save log ----------------------------------
-        if LOG_ON:
-            import shutil
-            tdatetime = dt.now()
-            tstr = tdatetime.strftime('%Y%m%d%H%M%S')
-            save_dir = "/home/hlab/Desktop/exp" 
-            shutil.copytree(os.path.join(cfg.depth_dir, "pred"), os.path.join(save_dir, tstr))
-            shutil.copyfile(crop_pb_path, os.path.join(save_dir, tstr, "depth_pick.png"))
-            shutil.copyfile(crop_db_path, os.path.join(save_dir, tstr, "depth_drop.png"))
-            with open(os.path.join(save_dir, tstr, "out.pickle"), 'wb') as f:
-                pickle.dump(j, f, protocol=pickle.HIGHEST_PROTOCOL)
-            cv2.imwrite(os.path.join(save_dir, tstr, "vis.png"), ret)
-        # ----------------------------- save log ----------------------------------
 
     end = timeit.default_timer()
     print("[*] Time: {:.2f}s".format(end - start))

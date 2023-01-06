@@ -31,14 +31,14 @@ class PickAndPlaceActor(object):
             "0 0.80 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
             "0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",
             # "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.320 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
-            "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.370 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
+            "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
         ]
 
     def get_place_seq(self, rpy, dest):
         if dest == "front":
             return [
-                "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.370 %.1f %.1f %.1f" % (*self.front_c,*rpy),
-                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.front_c,*rpy),
+                "0 0.80 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.front_c,*rpy),
+                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.front_c,*rpy),
                 "0 0.50 LHAND_JNT_OPEN",
                 self.initpose
             ]
@@ -46,8 +46,8 @@ class PickAndPlaceActor(object):
             return [
                 # "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.350 -90.0 -90.0 90.0" % (*self.goal_c,),
                 # "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.200 -90.0 -90.0 90.0" % (*self.goal_c,),
-                "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.320 %.1f %.1f %.1f" % (*self.side_c,*rpy),
-                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.side_c,*rpy),
+                "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.side_c,*rpy),
+                "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.side_c,*rpy),
                 "0 0.50 LHAND_JNT_OPEN",
                 self.initpose
             ]

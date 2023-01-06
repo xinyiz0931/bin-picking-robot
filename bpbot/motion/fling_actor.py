@@ -22,9 +22,15 @@ class FlingActor(object):
         self.bothhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f %.3f %.3f"% (w_rgt,-w_rgt,w_lft,-w_lft) 
         self.lhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f"% (w_lft,-w_lft) 
         self.rhand_close = "0 0.50 JOINT_REL 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 %.3f %.3f 0 0"% (w_rgt,-w_rgt) 
+
+        self.wrist_y_limit = 263 # unit: deg/s, horizontal fling
+        self.wrist_p_limit = 224 # unit: deg/s, vertically fling
+        self.wrist_y_index = 3
+        self.wrist_p_index = 4
        
-        self.goal_c = [0.480, 0.350]
-        self.drop_c = [0.438, 0.200]
+        self.front_bin = [0.438, 0.200]
+        self.right_bin = [0.000, -0.500]
+        self.left_bin = [0.000, 0.550]
 
         self.waypoint = [
             [0.450, 0.500],
@@ -75,25 +81,37 @@ class FlingActor(object):
             "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
             "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
             "0 1.00 "+self.arm+"HAND_JNT_CLOSE 0 0 0 0 0 0", 
-
             # "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (self.waypoint[0][0], self.waypoint[0][1])
         ]
     
-    def get_place_seq(self, rpy, dest="side"):
+    def get_place_seq(self, rpy=None, dest="right"):
+        if rpy is None:
+            rpy = [-90.0, -90.0, 90.0]
         if dest == "front":
             return [
-                "0 0.80 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.300 %.1f %.1f %.1f" % (*self.drop_c, *rpy),
-                "0 0.50 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.drop_c, *rpy),
+                "0 0.80 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.300 %.1f %.1f %.1f" % (*self.front_bin, *rpy),
+                "0 0.50 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*self.front_bin, *rpy),
                 "0 0.50 "+self.arm+"HAND_JNT_OPEN",
                 self.initpose
             ]
-        elif dest == "side":
+        elif dest == "right":
             return [
-                "0 1.50 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.goal_c, *rpy),
-                "0 0.50 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.goal_c, *rpy),
+                "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.500 %.1f %.1f %.1f" % (*self.right_bin, *rpy),
+                "0 1.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.right_bin, *rpy),
+                self.rhand_close if self.arm == 'R' else self.lhand_close,
+                # "0 0.50 "+self.arm+"HAND_JNT_OPEN",
+                self.initpose
+            ]
+        elif dest == "left":
+            return [
+                "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.350 %.1f %.1f %.1f" % (*self.left_bin, *rpy),
+                "0 0.50 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.200 %.1f %.1f %.1f" % (*self.left_bin, *rpy),
                 "0 0.50 "+self.arm+"HAND_JNT_OPEN",
                 self.initpose
             ]
+    def get_throw_seq(self):
+        seq = []
+
 
     def get_fling_seq(self, waypoint=None, freq=16, n=1):
         """Get pulling motionfile command
@@ -121,31 +139,86 @@ class FlingActor(object):
         # return seqs
         return seqs*n
 
-    def get_action(self, pose, waypoint=None):
+    def get_action(self, pose, waypoint=None, orientation='h'):
         xyz = pose[:3]
         rpy = pose[3:]
-
+        print(rpy)
         # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint) + self.get_place_seq(rpy)
-        seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint, n=3)
+        # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint, n=3)
+        if orientation == 'h':
+            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_h_seq(angle=85) + self.get_place_seq(dest="right")
+        elif orientation == 'v':
+            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_v_seq(angle=80) + self.get_place_seq(dest="right")
+        elif orientation == 'hv':
+            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_h_seq(angle=40)+self.get_shake_v_seq(angle=70) + self.get_place_seq(dest="right")
+        elif orientation == 'vh':
+            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_v_seq(angle=70)+self.get_shake_h_seq(angle=35) + self.get_place_seq(dest="right")
+        
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
 
-    def get_wiggle_seq(self, xyz_s, rpy, xyz_e, itvl=8):
-        seq = []
+    def get_shake_h_seq(self, angle=35, v=160, freq=3):
+        tm = angle/v
+        seq = [
+            "0 2.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.550 -90.0 -90.0 90.0",
+            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.500 -180.0 -60.0 180.0",
+            "0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle)
+        ]
+        # for i in range(freq):
+        #     if i == freq-1:
+        #         seq.append("0 0.40 JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (-2*angle))
+        #     else:
+        #         seq.append("0 0.40 JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (-2*angle))
+        #         seq.append("0 0.40 JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (2*angle))
+
+        for i in range(freq):
+            if i == freq-1:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (tm, angle))
+            else:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (tm, angle))
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle))
+        return seq
+        
+    def get_shake_v_seq(self, angle=50, v=160, freq=3):
+        tm = angle/v
+        seq = [
+            "0 2.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.550 -90.0 -90.0 90.0",
+            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.390 -90.0 -90.0 90.0",
+            "0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle)
+        ]
+        for i in range(freq):
+            if i == freq-1:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, angle))
+            else:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, angle))
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle))
+        return seq
+
+    def get_wiggle_seq(self, xyz, rpy, itvl=3):
+        _h = 0.45
+        xyz_e = xyz.copy()
+        xyz_e[2] = _h
+        xyz_s = xyz_e
+        seq = ["0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz[:2], _h, *rpy)]
+
         rpy_bfr, rpy_aft = rpy.copy(), rpy.copy()
-        rpy_bfr[1] += 3
-        rpy_aft[1] -= 3
+        # rpy_bfr[1] += 3
+        # rpy_aft[1] -= 3
+        rpy_bfr[1] += 30
+        rpy_aft[1] -= 30
         for i in range(itvl):
             _xyz = [xyz_s[k]+(xyz_e[k]-xyz_s[k])/itvl*(i+1) for k in range(3)]
-            seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
-            seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
+            # seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
+            # seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
+            # seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
+            # seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
         return seq
 
 if __name__ == '__main__':
 
     actor=FlingActor(arm="R")
-    actor.get_action([0.500, -0.010, 0.134, -90, -90, 90])
+    actor.get_action([0.500, -0.010, 0.184, -90, -90, 90])
 
     # p1 = [0.500, 0.400]
     # p2 = [0.510, 0.420]
