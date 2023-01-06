@@ -163,6 +163,7 @@ def main():
     graph = np.reshape(graph, (5, 9, 3))
     load(tc6d, graph, proj_ea=[0,0,0])
     graph = graph[:2]
+    load(tc6d, graph, proj_ea=[0,0,0])
     # load(tc6d, graph, proj_ea=[70,20,0])
     # load(tc6d, graph, proj_ea=[45,10,0])
     # for v in views:

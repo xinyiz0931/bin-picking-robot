@@ -413,24 +413,29 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
     """
     img = cv2.imread(img_path)
     img = adjust_grayscale(img)
+    plt.imshow(img), plt.show()
 
     emap = get_entanglement_map(img, t_params)
 
-    _ssz = t_params["sliding_size"]
-    _sst = t_params["sliding_stride"]
     height, width, _ = img.shape
+    # _ssz = int(t_params["sliding_size"] * height / t_params["compressed_size"])
+    # _sst = int(t_params["sliding_stride"] * height / t_params["compressed_size"])
+    _ssz = 175
+    _sst = 50
     
-    emap /= (emap.max() / 255.0) # real writhe value
-    emap = np.uint8(255 - cv2.resize(emap, (width, height)))
+    # emap /= (emap.max() / 255.0) # real writhe value
+    emap = cv2.normalize(emap, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    emap = cv2.resize(emap, (width, height))
     region_min = 9999
     region_oi = None
     roi_left_top = [0, 0]
     for y in range(0,height-_ssz + 1, _sst): 
         for x in range(0,width-_ssz + 1, _sst): 
-            cropped = img[y:y + _ssz , x:x + _ssz]
+            cropped = emap[y:y + _ssz , x:x + _ssz]
             if cropped.mean() <= region_min: 
                 region_min = cropped.mean()
-                region_oi = cropped
+
+                region_oi = img[y:y + _ssz , x:x + _ssz]
                 roi_left_top = [x, y]
     finger_w = int(h_params["finger_width"] * _ssz / width)
     finger_h = int(h_params["finger_length"] * _ssz / width)
@@ -451,9 +456,14 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
     hand_open_mask, hand_close_mask = gripper.create_hand_model()
 
     # generate graspability map
+    
     candidates = method.graspability_map(region_oi, 
                                          hand_open_mask=hand_open_mask, 
                                          hand_close_mask=hand_close_mask)
+    
+    loc = (int(candidates[0][1]), int(candidates[0][2]))
+    cv2.circle(region_oi, loc, 5, (0,255,0), -1)
+    plt.imshow(region_oi), plt.show()
     # candidates = method.combined_graspability_map(img, hand_open_mask, hand_close_mask, emap)
     # roi -> complete depth map
     if candidates != []:
@@ -461,7 +471,7 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         # ranking grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
         print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
-        return grasps 
+        return grasps, emap
     return
 
 def predict_action_grasp(grasps, imgpath):
