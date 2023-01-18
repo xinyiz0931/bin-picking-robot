@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # img_path = "C:\\Users\\xinyi\\Desktop\\_tmp\\000132.png"
     
     start = timeit.default_timer()
-    ret = psc.infer_sepnet(imgpath=img_path)
+    ret = psc.infer_picknet(imgpath=img_path)
     for k, r in zip(psc.keys, ret):
         print(k, "=>", r)
     print("Time cost (SepNet):", timeit.default_timer() - start)

@@ -58,35 +58,40 @@ crop = crop_roi(img_blur, cfgdata, container=container, bounding=False)
 cv2.imwrite(crop_path, crop)
 
 # =======================  compute grasp =============================
+# grasps = [] 
+# drawn = cv2.cvtColor(crop, cv2.COLOR_GRAY2BGR)
+# def on_click(event,x,y,flags,param):
+#     if event == cv2.EVENT_LBUTTONDOWN:
+#         # cv2.circle(drawn,(x,y),5,(0,255,0),-1)
+#         g = detect_grasp_orientation((x,y), crop_path, g_params=cfgdata["graspability"], h_params=cfgdata["hand"]["right"])
+#         print(f"[{x},{y}] => {g}")
+#         draw_grasp(g, drawn)
+#         grasps.append(g)
 
-drawn = cv2.cvtColor(crop, cv2.COLOR_GRAY2BGR)
-grasps = [] 
-def on_click(event,x,y,flags,param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        # cv2.circle(drawn,(x,y),5,(0,255,0),-1)
-        g = detect_grasp_orientation((x,y), crop_path, g_params=cfgdata["graspability"], h_params=cfgdata["hand"]["right"])
-        print(f"[{x},{y}] => {g}")
-        draw_grasp(g, drawn)
-        grasps.append(g)
+# # p_clicked = [[102,107], [308, 243]]
+# cv2.namedWindow("Click to select grasp")
+# cv2.setMouseCallback("Click to select grasp", on_click)
+# while(True):
+#     cv2.imshow("Click to select grasp", drawn)
+#     key = cv2.waitKey(1) & 0xFF
+#     if key == ord('r'):
+#         print("Refresh! ")
+#         drawn = cv2.cvtColor(crop, cv2.COLOR_GRAY2BGR)
+#         grasps = []
+#     if key == ord('q') or key == 13:
+#         cv2.destroyAllWindows()
+#         break
+# g_pick = grasps[-1]
 
-# p_clicked = [[102,107], [308, 243]]
-cv2.namedWindow("Click to select grasp")
-cv2.setMouseCallback("Click to select grasp", on_click)
-while(True):
-    cv2.imshow("Click to select grasp", drawn)
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('r'):
-        print("Refresh! ")
-        drawn = cv2.cvtColor(crop, cv2.COLOR_GRAY2BGR)
-        grasps = []
-    if key == ord('q') or key == 13:
-        cv2.destroyAllWindows()
-        break
+grasps = detect_grasp(n_grasp=5, 
+                            img_path=crop_path, 
+                            g_params=cfgdata['graspability'],
+                            h_params=cfgdata["hand"]["left"])
 
-g_pick = grasps[-1]
+g_pick = grasps[0]
 p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfgdata, hand="right", container="pick")
 
-gen_motion_dynamic(mf_path, g_pick_wrist, orientation='h')
+gen_motion_dynamic(mf_path, g_pick_wrist, orientation='v')
 # gen_motion_pick(mf_path, g_pick_wrist)
 print("[*] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
 

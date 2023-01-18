@@ -80,9 +80,10 @@ class FlingActor(object):
         return [
             "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
             "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
-            "0 1.00 "+self.arm+"HAND_JNT_CLOSE 0 0 0 0 0 0", 
-            # "0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (self.waypoint[0][0], self.waypoint[0][1])
-        ]
+            "0 1.00 "+self.arm+"HAND_JNT_CLOSE 0 0 0 0 0 0",
+            "0 3.00 RARM_XYZ_ABS 0.480 -0.010 0.550 -90.0 -90.0 90.0",
+            "0 PAUSE",]
+        # ] + self.get_wiggle_seq(xyz_s=[0.480, -0.010, xyz[2]], xyz_e=[0.480, -0.010, 0.550], rpy=[-90.0, -90.0, 90.0])
     
     def get_place_seq(self, rpy=None, dest="right"):
         if rpy is None:
@@ -109,60 +110,78 @@ class FlingActor(object):
                 "0 0.50 "+self.arm+"HAND_JNT_OPEN",
                 self.initpose
             ]
-    def get_throw_seq(self):
-        seq = []
 
+    # def get_fling_seq(self, waypoint=None, freq=16, n=1):
+    #     """Get pulling motionfile command
 
-    def get_fling_seq(self, waypoint=None, freq=16, n=1):
-        """Get pulling motionfile command
+    #     Args:
+    #         xyz (tuple or list): [x,y,z]
+    #         rpy (tuple or list): [r,p,y]
+    #         wiggle (bool, optional): pulling with wiggling?. defaults to False.
+    #     """
+    #     p1, p2, p3 = self.waypoint if waypoint is None else waypoint
 
-        Args:
-            xyz (tuple or list): [x,y,z]
-            rpy (tuple or list): [r,p,y]
-            wiggle (bool, optional): pulling with wiggling?. defaults to False.
-        """
-        p1, p2, p3 = self.waypoint if waypoint is None else waypoint
-
-        # tm = 3/freq
-        tm = 0.4
-        fitted_x, fitted_z = self.fit_spline(p1, p2, p3, freq=freq)
-        seqs = []
-        for i, (x, z) in enumerate(zip(fitted_x, fitted_z)):
-            if i == 0:
-                seqs.append("0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
-            elif i <=9: 
-                tm = 0.12
-                seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
-            else:
-                tm = 0.1
-                seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
-        # return seqs
-        return seqs*n
+    #     # tm = 3/freq
+    #     tm = 0.4
+    #     fitted_x, fitted_z = self.fit_spline(p1, p2, p3, freq=freq)
+    #     seqs = []
+    #     for i, (x, z) in enumerate(zip(fitted_x, fitted_z)):
+    #         if i == 0:
+    #             seqs.append("0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+    #         elif i <=9: 
+    #             tm = 0.12
+    #             seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+    #         else:
+    #             tm = 0.1
+    #             seqs.append("0 %.2f " % (tm,)+self.arm+"ARM_XYZ_ABS %.3f -0.010 %.3f 180.0 -80.0 -180.0" % (x, z))
+    #     # return seqs
+    #     return seqs*n
 
     def get_action(self, pose, waypoint=None, orientation='h'):
         xyz = pose[:3]
         rpy = pose[3:]
-        print(rpy)
         # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint) + self.get_place_seq(rpy)
         # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint, n=3)
-        if orientation == 'h':
-            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_h_seq(angle=85) + self.get_place_seq(dest="right")
-        elif orientation == 'v':
-            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_v_seq(angle=80) + self.get_place_seq(dest="right")
-        elif orientation == 'hv':
-            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_h_seq(angle=40)+self.get_shake_v_seq(angle=70) + self.get_place_seq(dest="right")
-        elif orientation == 'vh':
-            seqs = self.get_pick_seq(xyz, rpy) + self.get_shake_v_seq(angle=70)+self.get_shake_h_seq(angle=35) + self.get_place_seq(dest="right")
+        seqs = self.get_pick_seq(xyz, rpy)
+        # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq() + self.get_place_seq(dest="right")
         
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)
+    
+    def add_fling_action(self, j3, j4, h):
+        seqs = self.get_fling_seq(j3=j3, j4=j4, h=h) + self.get_place_seq(dest="right")
+            # seqs = self.get_place_seq(dest="right")
+        with open(self.filepath, 'a') as fp:
+            for s in seqs:
+                print(s, file=fp)
+    
+    def add_place_action(self, dest="right"):
+        seqs = self.get_place_seq(dest=dest)
+        with open(self.filepath, 'a') as fp:
+            for s in seqs:
+                print(s, file=fp)
+
+    
+    def get_fling_seq(self, j3=60, j4=60, v=120, freq=2, h=0.48):
+        tm = max(np.abs(j3)/v, np.abs(j4)/v)
+        seq = [
+            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.480 -0.010 %.3f -180.0 -60.0 180.0" % (h,),
+            "0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -j3, -j4)
+        ]
+        for i in range(freq):
+            if i == freq-1:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, j3, j4))
+            else:
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, j3, j4))
+                seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -j3, -j4))
+        seq.append("0 3.00 RARM_XYZ_ABS 0.350 -0.350 0.500 -90.0 -90.0 90.0")
+        return seq
 
     def get_shake_h_seq(self, angle=35, v=160, freq=3):
         tm = angle/v
         seq = [
-            "0 2.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.550 -90.0 -90.0 90.0",
-            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.500 -180.0 -60.0 180.0",
+            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.480 -0.010 0.500 -180.0 -60.0 180.0",
             "0 %.2f JOINT_REL 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle)
         ]
         # for i in range(freq):
@@ -183,8 +202,7 @@ class FlingActor(object):
     def get_shake_v_seq(self, angle=50, v=160, freq=3):
         tm = angle/v
         seq = [
-            "0 2.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.550 -90.0 -90.0 90.0",
-            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.500 -0.010 0.390 -90.0 -90.0 90.0",
+            "0 1.00 "+self.arm+"ARM_XYZ_ABS 0.480 -0.010 0.330 -90.0 -90.0 90.0",
             "0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle)
         ]
         for i in range(freq):
@@ -195,29 +213,31 @@ class FlingActor(object):
                 seq.append("0 %.2f JOINT_REL 0 0 0 0 0 0 0 %.3f 0 0 0 0 0 0 0 0 0 0 0" % (tm, -angle))
         return seq
 
-    def get_wiggle_seq(self, xyz, rpy, itvl=3):
-        _h = 0.45
-        xyz_e = xyz.copy()
-        xyz_e[2] = _h
-        xyz_s = xyz_e
-        seq = ["0 2.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz[:2], _h, *rpy)]
+    def get_wiggle_seq(self, xyz_s, xyz_e, rpy, freq=3):
+        seq = ["0 1.00 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_s, *rpy)]
 
         rpy_bfr, rpy_aft = rpy.copy(), rpy.copy()
         # rpy_bfr[1] += 3
         # rpy_aft[1] -= 3
-        rpy_bfr[1] += 30
-        rpy_aft[1] -= 30
-        for i in range(itvl):
-            _xyz = [xyz_s[k]+(xyz_e[k]-xyz_s[k])/itvl*(i+1) for k in range(3)]
+        rpy_bfr[1] += 3
+        rpy_aft[1] -= 3
+        for i in range(freq):
+            delta_xyz = [xyz_s[k]+(xyz_e[k]-xyz_s[k])*(i*2+1)/(freq*2+1) for k in range(3)]
+            delta2_xyz = [xyz_s[k]+(xyz_e[k]-xyz_s[k])*(i*2+2)/(freq*2+1) for k in range(3)]
             # seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
             # seq.append("0 0.15 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
-            # seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_bfr))
-            # seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*_xyz, *rpy_aft))
+            seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*delta_xyz, *rpy_bfr))
+            seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*delta2_xyz, *rpy_aft))
+        seq.append("0 0.66 "+self.arm+"ARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz_e, *rpy))
+        seq.append("0 PAUSE")
         return seq
 
 if __name__ == '__main__':
 
     actor=FlingActor(arm="R")
+    # A = actor.get_fling_seq(j4=60, j5=60, freq=2)
+    
+
     actor.get_action([0.500, -0.010, 0.184, -90, -90, 90])
 
     # p1 = [0.500, 0.400]

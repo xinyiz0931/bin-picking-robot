@@ -8,7 +8,7 @@ cat << EOF > pyscript.py
 from bpbot.device import FTSensor
 print ('Monitoring from force/torque sensor...')
 sensor = FTSensor()
-sensor.record(plot=True)
+sensor.record(plot=False)
 
 EOF
 

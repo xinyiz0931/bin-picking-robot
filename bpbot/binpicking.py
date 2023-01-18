@@ -362,8 +362,8 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
         (array): grasps = n_grasp * [x,y,r(degree)], return None if no grasp detected
     """
     img = cv2.imread(img_path)
-    img_adj = adjust_grayscale(img)
-    # img_adj = img
+    # img_adj = adjust_grayscale(img)
+    img_adj = img
     height, width, _ = img.shape
     
     finger_w = h_params["finger_width"]
@@ -761,9 +761,10 @@ def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", cont
     p_c = point_mat[v,u]
     # print("camera_pose", p_c)
     #p_c = point_array[int(v * cfgdata["width"] + u)] # unit: m
-    if (p_c == 0).all(): 
-        u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
-    # u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
+    # if (p_c == 0).all(): :w
+
+    #     u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
+    u,v = replace_bad_point(point_mat[:,:,2], [u,v], "min", 25)
     p_c = point_mat[v,u]
     # print("==> new camera_pose", p_c)
     #if np.count_nonzero(p_c) == 0:
