@@ -127,13 +127,14 @@ def demoEmergencyStopJointAngle():
 def demo(key_interaction=False):
     init()
     from distutils.version import StrictVersion
+    if hcf.es != None:
+        print "EmergencyStopper found"
+    else: 
+        print "EmergencyStopper not found"
+    
     if StrictVersion(hrpsys_version) >= StrictVersion('315.6.0'):
-        print hrpsys_version
         if hcf.es != None:
-            print "EmergencyStopper found"
             demoEmergencyStopJointAngle()
-        else: 
-            print "EmergencyStopper not found"
     else: 
         print "hrpsys version is lower than 315.6.0"
 
