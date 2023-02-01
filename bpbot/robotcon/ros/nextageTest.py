@@ -59,17 +59,16 @@ def getWrenchArray ():
     return reduce(lambda x,y: x+y, (map(lambda fs : checkParameterFromLog(fs+"Out", save_log=False), ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])))
 
 def init():
-    print "init()"
     robotname = "HiroNX(Robot)0"
     url = ""
     # ---------------- for real robot --------------------
-    #robotname = "RobotHardware0"
-    #host = '192.168.128.10'
-    #port = '15005'
-    #print('host:' + host)
-    #print('port:' + port)
-    #rtm.nshost = host
-    #rtm.nsport = port
+    robotname = "RobotHardware0"
+    host = '192.168.128.10'
+    port = '15005'
+    print('host:' + host)
+    print('port:' + port)
+    rtm.nshost = host
+    rtm.nsport = port
     # ----------------------------------------------------
 
     global hcf, init_pose, reset_pose, hrpsys_version
@@ -79,9 +78,7 @@ def init():
     _reset_pose = [32.957, 0, 0, 8.96503, -45.1829, -69.629, 16.559, 26.2259, -34.7475, 23.0007, -25.7008, -127.504, -7.0002, 0, 0]
     reset_pose = [x / 180.0 * math.pi for x in _reset_pose] 
     
-    print "----------------------------------------------------"
     print hcf.getRTCList()
-    print "----------------------------------------------------"
     #hcf.getRTCList = hcf.getRTCListUnstable
     
     hcf.init(robotname=robotname, url=url)
@@ -137,6 +134,8 @@ def demo(key_interaction=False):
             demoEmergencyStopJointAngle()
         else: 
             print "EmergencyStopper not found"
+    else: 
+        print "hrpsys version is lower than 315.6.0"
 
 if __name__ == '__main__':
     demo()
