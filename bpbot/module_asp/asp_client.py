@@ -29,7 +29,6 @@ class ASPClient(object):
     def infer(self,imgpath, grasps):
         try:
             g2bytes = np.ndarray.tobytes(grasps)             
-            print(np.frombuffer(g2bytes))
             out = self.stub.action_success_prediction(aspmsg.ASPInput(imgpath=imgpath, grasps=g2bytes))
             res = self.stub.action_grasp_inference(out)
             return res.action, res.graspidx

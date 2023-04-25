@@ -413,11 +413,12 @@ class Graspability(object):
         # candidates.sort(key=self.takefirst, reverse=True)
         i = 0
         k = 0
+        # _dismiss = 120
         grasps = []
         # print("Computing grasps! ")
         if len(candidates) < n:
             n = len(candidates)
-        while (len(candidates) and i < n):
+        while (len(candidates) and k < n):
             x = candidates[i][1]
             y = candidates[i][2]
             ## consider dismiss/distance to rank grasp candidates

@@ -45,7 +45,7 @@ class PickSepClient(object):
         """
         self.keys = ["pull_p", "pull_v"]
         try: 
-            out_buffer = self.stub.infer_sepnet(psmsg.ImgPath(imgpath=imgpath))
+            out_buffer = self.stub.infer_pullnet(psmsg.ImgPath(imgpath=imgpath))
             out = np.frombuffer(out_buffer.ret, dtype=float) 
             return out[:2].astype(int), out[2:]
 

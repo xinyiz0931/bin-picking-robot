@@ -68,8 +68,8 @@ class ASPServer(asprpc.ASPServicer):
                     break
                 elif alist.count(6)==len(alist) and (np.array(plist) < self.threshold).all()==True:
                     final_a = 6
-                    # final_gindex = plist.index(max(plist))
-                    final_gindex = 0 
+                    final_gindex = plist.index(max(plist))
+                    #final_gindex = 0 
                     break
                 else:
                     indexes = [j for j,x in enumerate(alist) if x == i]
@@ -86,7 +86,6 @@ class ASPServer(asprpc.ASPServicer):
         img = cv2.imread(request.imgpath)
         img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
         grasps = np.frombuffer(request.grasps)
-        print(grasps)
         ch, cw, _ = img.shape
         
         g_num = int(len(grasps)/2)

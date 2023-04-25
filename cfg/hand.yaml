@@ -15,24 +15,34 @@ smc:
   gripper_height: 25
   finger_height: 80
 smc_ft:
-  finger_length: 15
+  finger_length: 25
   finger_width: 8
-  open_width: 25
+  open_width: 48
   tool_changer_height: 31
-  flange_height: 3
-  gripper_height: 25
-  finger_height: 72
+  flange1_height: 6
   force_sensor_height: 32
-  force_sensor_flange_height: 6
-smc_ft_caging:
-  finger_length: 12
-  finger_width: 6
-  open_width: 25
+  flange2_height: 11
+  gripper_height: 25
+  finger_height: 86
+smc_rcc:
+  finger_length: 25
+  finger_width: 8
+  open_width: 48
   tool_changer_height: 31
-  flange_height: 3
+  flange1_height: 6
+  rrc_height: 25
+  flange2_height: 5
   gripper_height: 25
-  finger_height: 64
-  force_sensor_height: 32
-  force_sensor_flange_height: 3
+  finger_height: 66
+smc_rcc_small:
+  finger_length: 14
+  finger_width: 6.5
+  open_width: 48
+  tool_changer_height: 31
+  flange1_height: 6
+  rrc_height: 25
+  flange2_height: 5
+  gripper_height: 25
+  finger_height: 79
 
 

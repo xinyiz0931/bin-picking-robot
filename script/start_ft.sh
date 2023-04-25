@@ -5,9 +5,10 @@ export bashvar=100
 
 cat << EOF > pyscript.py
 #!/home/hlab/anaconda3/envs/xy/bin/python
-from bpbot.device import FTSensor
-print ('Monitoring from force/torque sensor...')
-sensor = FTSensor()
+import time
+from bpbot.device import DynPickControl
+print ('Record from force/torque sensor...')
+sensor = DynPickControl()
 sensor.record(plot=False)
 
 EOF

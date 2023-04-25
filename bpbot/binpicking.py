@@ -28,16 +28,27 @@ def capture_pc():
     # gs = pxc.getgrayscaleimg()
     return (pc.copy()/1000) if pc is not None else None
 
+def transform_depth(pcd, mat, max_h, min_h, h, w):
+    pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
+    pr = np.dot(mat, pc_.T).T
+
+    gray = pr[:,2]
+    gray[gray>max_h] = min_h
+    gray[gray<min_h] = min_h
+
+    gray = np.reshape(gray, (h, w))
+    img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    return img
+
 def pc2depth(pcd, cfgdata, container="pick"):
 
     G = np.loadtxt(cfgdata["calibmat_path"])
     pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
     pr = np.dot(G, pc_.T).T
+
     gray = pr[:,2]
     max_h = cfgdata[container]['height']['max']
-    # max_h = cfgdata[container]['height']['max']+0.02
     min_h = cfgdata[container]['height']['min']
-    # max_h = min_h + 0.08
 
     gray[gray>max_h] = min_h
     gray[gray<min_h] = min_h
@@ -47,55 +58,22 @@ def pc2depth(pcd, cfgdata, container="pick"):
     img_blur = cv2.medianBlur(img, 5)
     return img, img_blur
 
-def get_point_cloud(save_dir, distance, width, height):
-    """Obtain point cloud, convert to depth images and save
-        1. Capture point cloud and get numpy array
-        2. Pose refinement and convert to depth map
-        3. Save images (raw, smoothed)
-    Args:
-        save_dir (str): directory for saving
-        distance (dictionary): {"max": 0, "min": 0}
-        width (int): 
-        height (int): 
-    """
-
-    # [1] ----------------------------------------------------
-    print("[*] Capture! ")
-    import bpbot.device.phoxi.phoxi_client as pclt
-    pxc = pclt.PhxClient(host="127.0.0.1:18300")
-    pxc.triggerframe()
-    pc = pxc.getpcd()
-    gs = pxc.getgrayscaleimg()
-    if pc is None: return
-
-    # [2] ----------------------------------------------------
-    print("[*] Convert point cloud to depth map ... ")
-    rotated_pc = rotate_point_cloud(pc)
-    gray_array = rotated_pc[:, 2]
-
-    # [3] ----------------------------------------------------
-    max_distance, min_distance = distance["max"], distance['min']
-    img = normalize_depth_map(gray_array, max_distance, min_distance, width, height)
-    # temp: 5 -> 3
-    img_blur = cv2.medianBlur(img,5)
-    cv2.imwrite(os.path.join(save_dir, "depth_raw.png"), img)
-    cv2.imwrite(os.path.join(save_dir, "depth.png"), img_blur)
-    cv2.imwrite(os.path.join(save_dir, "texture.png"), gs)
-
-def crop_roi(img, cfgdata, container='pick', bounding=False):
+def crop_roi(img, cfgdata, container='pick', bounding_size=25):
 
     margins = cfgdata[container]["area"]
     top_margin = margins["top"]
     left_margin = margins["left"]
     bottom_margin = margins["bottom"]
     right_margin = margins["right"]
+    # print("top-lft point: ", pr[top_margin*cfgdata["width"]+left_margin])
+    # print("btm-rgt point: ", pr[bottom_margin*cfgdata["width"]+right_margin])
     
     # cropped the necessary region (inside the bin)
     img_crop = img[top_margin:bottom_margin, left_margin:right_margin]
     h_, w_= img_crop.shape
-    if bounding == True:
-        _s = 25
-        cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),_s*2)
+    if bounding_size > 0:
+        # _s = 25
+        cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),bounding_size*2)
     return img_crop
 
 # def crop_roi(img_path, margins=None, bounding=False):
@@ -121,7 +99,7 @@ def crop_roi(img, cfgdata, container='pick', bounding=False):
 #         cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),_s*2)
 #     return img_crop
 
-def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255,0,0), top_color=(0,255,0)):
+def draw_grasp(grasps, img, h_params=None, top_idx=0, top_only=False, color=(255,255,0), top_color=(0,255,0)):
     """Draw grasps for parallel jaw gripper
 
     Args:
@@ -218,6 +196,23 @@ def get_entanglement_map(img, t_params):
     bmap = em.brightness_map(norm_img)
     return emap
 
+def picknet(img_path, hand_config):
+    img = cv2.imread(img_path)
+    hand_attr = [hand_config.get(k) for k in ["finger_width", "finger_length", "open_width"]]
+    gripper = Gripper(*hand_attr)
+    
+    from bpbot.module_picksep import PickSepClient
+    psc = PickSepClient()
+    ret = psc.infer_picknet(imgpath=img_path)
+    if not ret:
+        return
+    print("[*] Successfully infer grasps by PickNet")
+    # ----- temporal add 
+    g_pick = gripper.calc_grasp_orientation(img, ret[0][0]) # degree
+    print(g_pick)
+    return np.array([g_pick])
+    # ----- end
+    
 def pick_or_sep(img_path, hand_config, bin="pick"):
     img = cv2.imread(img_path)
     # img = adjust_grayscale(img)
@@ -262,6 +257,8 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
             # else: return 1, g_pick
         # return scores_pn.argmax(), g_pick
+
+
         return idx, g_pick
 
     elif bin == "drop": 
@@ -307,20 +304,20 @@ def gen_motion_picksep(mf_path, pose_lft, dest, pulling=None, pose_rgt=None):
         pose_right (array, optional): [x,y,z,roll,pitch,yaw] right palm pose. Defaults to None.
         pulling (array, optional): [pull_x, pull_y, pull_len]. Defaults to None.
     """
-    actor_pick = PickAndPlaceActor(mf_path)
+    actor_pick = PickAndPlaceActor(mf_path, arm="L")
     actor_pull = PullActor(mf_path)
 
     if pulling is None:
         actor_pick.get_action(pose_lft, dest=dest)
 
     elif pose_rgt is None:
-        actor_pull.get_action(pose_lft, pulling, wiggle=False)
+        actor_pull.get_action(pose_lft, pulling, wiggle=True)
     
     else:
         print("[!] Wrong type for motion generator ...")    
 
 
-def gen_motion_pick(mf_path, pose_left, action_idx=0):
+def gen_motion_pick(mf_path, pose_left, arm="L", action_idx=0):
     """Generate motion in motion file format for single-arm picking
 
     Args:
@@ -331,7 +328,7 @@ def gen_motion_pick(mf_path, pose_left, action_idx=0):
     action_name = ["a_dl","a_h","a_hs","a_f","a_fs","a_tf","a_tfs"]
     print(f"[*] Generate motion for {action_name[action_idx]} ... ")
     if action_idx == 0:
-        actor = PickAndPlaceActor(mf_path)
+        actor = PickAndPlaceActor(mf_path, arm)
         actor.get_action(pose_left)
     else:
         actor = HelixActor(mf_path)
@@ -362,22 +359,25 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
         (array): grasps = n_grasp * [x,y,r(degree)], return None if no grasp detected
     """
     img = cv2.imread(img_path)
-    # img_adj = adjust_grayscale(img)
     img_adj = img
+    # img_adj = adjust_grayscale(img)
     height, width, _ = img.shape
     
     finger_w = h_params["finger_width"]
     finger_h = h_params["finger_length"]
     # open_w = h_params["open_width"] + random.rand'int(0, 5)
     open_w = h_params["open_width"]
+    r2p = h_params["real2pixel"]
 
     gripper = Gripper(finger_w=finger_w, 
                       finger_h=finger_h, 
-                      open_w=open_w)
-    # gripper.tplt_size = max(height, width, (finger_w*2 + open_w))
+                      open_w=open_w,
+                      real2pixel=r2p)
+    # # gripper.tplt_size = max(height, width, (finger_w*2 + open_w))
 
     hand_open_mask, hand_close_mask = gripper.create_hand_model()
 
+    # hand_open_mask, hand_close_mask = gripper.create_suction_model()
     rstep = g_params["rotation_step"]
     dstep = g_params["depth_step"]
     hand_depth = g_params["hand_depth"]
@@ -392,8 +392,7 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
     
     if candidates != []:
     # rank grasps
-        grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
-        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
+        grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width, _dismiss=gripper.open_w/2+gripper.finger_w*2+70)
         return grasps
 
     return
@@ -470,7 +469,6 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         candidates[:,1:3] += roi_left_top
         # ranking grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
-        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
         return grasps, emap
     return
 
@@ -701,7 +699,7 @@ def transform_image_to_camera(image_locs, image_width, pc, margins=None):
         camera_locs.append(pc[offset]) # unit: m
     return camera_locs
 
-def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", container=None, tilt=None, dualarm=None):
+def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", container="pick", tilt=None, dualarm=None):
     """
     Transform image locs to robot locs (5-th joint pose in robot coordinate)
     1. p_tcpt -> p_wrist: position of 5-th joint of the arm in robot coordinate
@@ -717,12 +715,12 @@ def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", cont
     _obj_h = cfgdata["obj_height"] / 1000
     # _obj_h += 0.005 
     # _obj_h += 0.01 
-    if container == "pick":
-        g_rc = np.loadtxt(cfgdata["calibmat_path"]) # 4x4, unit: m
-    else:
-        # print("load new matrix")
-        g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
-
+    g_rc = np.loadtxt(cfgdata["calibmat_path"]) # 4x4, unit: m
+    # if container == "pick":
+    #     g_rc = np.loadtxt(cfgdata["calibmat_path"]) # 4x4, unit: m
+    # else:
+    #     # print("load new matrix")
+    #     g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
     if len(image_locs) == 3: 
         # including calculate euler angle 
         (u, v, theta) = image_locs # theta: degree

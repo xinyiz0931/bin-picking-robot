@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+service DynPick {
+    rpc get (Nothing) returns (Data) {}
+	rpc save (Nothing) returns (Nothing) {}
+	rpc save_ok (Nothing) returns (Nothing) {}
+}
+
+message Nothing {
+}
+
+message Data {
+    bytes data = 1;
+}

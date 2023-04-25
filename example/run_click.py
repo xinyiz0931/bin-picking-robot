@@ -112,8 +112,8 @@ if FOUND_CNOID:
         os.system("bash /home/hlab/bpbot/script/start_ft.sh")
         nxt.playMotionFT(motion_seq)
         os.system("bash /home/hlab/bpbot/script/stop_ft.sh")
-        from bpbot.device import FTSensor
-        ft = FTSensor()
+        from bpbot.device import DynPick
+        ft = DynPick()
         ft.plot_file()
         if LOG_ON:
             print("[*] Save results")

@@ -3,7 +3,7 @@ syntax = "proto3";
 service PickSep {
     rpc infer_picknet (ImgPath) returns (Ret) {}
     rpc infer_picknet_sepnet_pos (ImgPath) returns (Ret) {}
-    rpc infer_sepnet(ImgPath) returns (Ret) {}
+    rpc infer_pullnet(ImgPath) returns (Ret) {}
     rpc infer_picknet_sepnet (ImgPath) returns (Ret) {}
 
 }

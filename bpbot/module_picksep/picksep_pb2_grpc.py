@@ -24,8 +24,8 @@ class PickSepStub(object):
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
                 response_deserializer=picksep__pb2.Ret.FromString,
                 )
-        self.infer_sepnet = channel.unary_unary(
-                '/PickSep/infer_sepnet',
+        self.infer_pullnet = channel.unary_unary(
+                '/PickSep/infer_pullnet',
                 request_serializer=picksep__pb2.ImgPath.SerializeToString,
                 response_deserializer=picksep__pb2.Ret.FromString,
                 )
@@ -51,7 +51,7 @@ class PickSepServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def infer_sepnet(self, request, context):
+    def infer_pullnet(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -76,8 +76,8 @@ def add_PickSepServicer_to_server(servicer, server):
                     request_deserializer=picksep__pb2.ImgPath.FromString,
                     response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
-            'infer_sepnet': grpc.unary_unary_rpc_method_handler(
-                    servicer.infer_sepnet,
+            'infer_pullnet': grpc.unary_unary_rpc_method_handler(
+                    servicer.infer_pullnet,
                     request_deserializer=picksep__pb2.ImgPath.FromString,
                     response_serializer=picksep__pb2.Ret.SerializeToString,
             ),
@@ -131,7 +131,7 @@ class PickSep(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def infer_sepnet(request,
+    def infer_pullnet(request,
             target,
             options=(),
             channel_credentials=None,
@@ -141,7 +141,7 @@ class PickSep(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/PickSep/infer_sepnet',
+        return grpc.experimental.unary_unary(request, target, '/PickSep/infer_pullnet',
             picksep__pb2.ImgPath.SerializeToString,
             picksep__pb2.Ret.FromString,
             options, channel_credentials,

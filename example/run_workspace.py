@@ -78,9 +78,40 @@ class Workspace(object):
             if key == ord('q'):
                 cv2.destroyAllWindows()
                 break
+            if key == ord('a'):
+                self.auto_define()
+                break
+
             if len(self.points) <= 4 and key == 13: # enter
                 cv2.destroyAllWindows()
                 break
+
+    def auto_define(self):
+        self.points = []
+        top_id = 28
+        bottom_ids = [21,22]
+        real_d = 20+20+29/3
+
+        image = cv2.cvtColor(self.grayscale, cv2.COLOR_GRAY2RGB)
+        ids = detect_ar_marker(image.copy(), show=True)
+        cv2.waitKey(2)
+        if top_id in ids:
+            x,y = ids[top_id]
+            pick_max = self.arr[y,x]
+            print(f"Detected top: {x},{y}, => {pick_max:.3f}")
+        if bottom_ids[0] in ids and bottom_ids[1] in ids:
+            x0, y0 = ids[bottom_ids[0]]
+            x1, y1 = ids[bottom_ids[1]]
+            pixel_d = calc_2points_distance((x0,y0),(x1,y1))
+            pick_min = (self.arr[y0,x0]+self.arr[y1,x1])/2
+            print(f"Detected bottom: {x},{y}, => {pick_min:.3f}")
+        
+            self.cfgdata["pick"]["height"]["min"] = float(pick_min)-0.002
+            self.cfgdata["pick"]["height"]["max"] = float(pick_max)
+            self.cfgdata["real2pixel"] = float(pixel_d/real_d)
+            self.cfg.write()
+
+            print("Successfully defined **height** of picking workspace! ")
 
     def select_boxes(self):
         self.boxes = []
@@ -112,6 +143,7 @@ class Workspace(object):
             self.cfgdata["drop"]["area"]["top"] = self.boxes[2][1]
             self.cfgdata["drop"]["area"]["right"] = self.boxes[3][0]
             self.cfgdata["drop"]["area"]["bottom"] = self.boxes[3][1]
+            self.cfg.write()
             print("Successfully defined **area** of picking workspace! ")
             print("Successfully defined **area** of dropping workspace! ")
 
@@ -120,6 +152,7 @@ class Workspace(object):
             self.cfgdata["pick"]["area"]["top"] = self.boxes[0][1]
             self.cfgdata["pick"]["area"]["right"] = self.boxes[1][0]
             self.cfgdata["pick"]["area"]["bottom"] = self.boxes[1][1]
+            self.cfg.write()
             print("Successfully defined **area** of picking workspace! ")
 
         else:
@@ -135,6 +168,7 @@ class Workspace(object):
             self.cfgdata["pick"]["height"]["max"] = float(pick_max)
             self.cfgdata["drop"]["height"]["min"] = float(drop_min)
             self.cfgdata["drop"]["height"]["max"] = float(drop_max)
+            self.cfg.write()
             print("Successfully defined **height** of picking workspace! ")
             print("Successfully defined **height** of dropping workspace! ")
 
@@ -143,13 +177,10 @@ class Workspace(object):
             [pick_min, pick_max] = h if h[0] < h[1] else [h[1], h[0]]
             self.cfgdata["pick"]["height"]["min"] = float(pick_min)
             self.cfgdata["pick"]["height"]["max"] = float(pick_max)
+            self.cfg.write()
             print("Successfully defined **height** of picking workspace! ")
 
-        else:
-            print("Did not define height of workspace! ")
-            return 
 
-        self.cfg.write()
 
 def main():
 
@@ -158,6 +189,7 @@ def main():
     print("Step 2 - Click to select 2 or 4 points and press [ENTER]")
     print("[r] - refresh and reselect")
     print("[q] - quit")
+    print("[a] - automatically define the height")
     
     ws = Workspace()
     ws.capture()
