@@ -16,17 +16,16 @@ class PickSepServer(psrpc.PickSepServicer):
             "root_dir_linux": "/home/hlab/Documents/",
             "infer": 
             {
-                "net_type": "pick_sep",
-                "backbone": "resnet34",
+                "net_type": "auto",
                 "mode": "test",
                 "use_cuda": True,
                 "batch_size": 1,
                 "img_height": 512,
                 "img_width": 512,
                 # "pick_ckpt_folder": ["ckpt_picknet", "model_epoch_8.pth"], 
-                "pick_ckpt_folder": ["try_pick_no_augdata", "model_epoch_16.pth"], 
+                "pick_ckpt_folder": ["try_pick_no_augdata", "model_epoch_17.pth"], 
                 # epoch17 is tested, but with some redundant actions
-                "sep_ckpt_folder": ["try_sep_gauss2d_aug", "model_epoch_16.pth"],
+                "pull_ckpt_folder": ["try_sep_gauss2d_aug", "model_epoch_18.pth"],
                 # "sep_ckpt_folder": ["try_sep_mask", "model_epoch_20.pth"]
             }
         }
@@ -42,11 +41,11 @@ class PickSepServer(psrpc.PickSepServicer):
 
         return psmsg.Ret(ret=l2bytes)
 
-    def infer_sepnet(self, resquest, context):
+    def infer_pullnet(self, resquest, context):
         """
         1x(2,), 1x(2,) => [p_x,p_y,v_x,v_y]
         """
-        out = self.inference.infer(data_dir=resquest.imgpath, net_type="sep")
+        out = self.inference.infer(data_dir=resquest.imgpath, net_type="pull")
         l = np.concatenate([x[0].ravel() for x in out])
         l2bytes = np.ndarray.tobytes(l)
         return psmsg.Ret(ret=l2bytes)

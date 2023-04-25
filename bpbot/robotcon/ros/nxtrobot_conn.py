@@ -99,13 +99,42 @@ def setJointAngles(angles,tm=1.0):
     robot.setJointAnglesOfGroup('rarm', angles[3:9], tm, False)
     robot.setJointAnglesOfGroup('larm', angles[9:15], tm, True)
 
-# def movejnts15(nxjnts):
-
-
+def setJointAnglesNew(angles, tm=5.0):
+    robot.setJointAnglesOfGroup('torso', angles[0:1], tm, False)
+    robot.setJointAnglesOfGroup('head', angles[1:3], tm, False)
+    robot.setJointAnglesOfGroup('rarm', angles[3:9], tm, False)
+    robot.setJointAnglesOfGroup('larm', angles[9:15], tm, False)
 
 if __name__ == "__main__":
+
+    init_pose = [0, 0, 0, -10.0003, -25.7008, -127.504, 0, 0, 0, 23.0007, -25.7008, -127.504, -7.0002, 0, 0]
+    reset_pose = [-32.957, 0, 0, 8.96503, -45.1829, -69.629, 16.559, 26.2259, -34.7475, 23.0007, -25.7008, -127.504, -7.0002, 0, 0]
+
     nxt = init()
     connect()
+    tm = 20
+
+    setJointAnglesNew(reset_pose, tm)
+    # robot.setJointAnglesOfGroup('torso', [-32] , tm, False)
+    # robot.setJointAnglesOfGroup('torso', [-32] , tm, False)
+    time.sleep(7)
+    p = robot.getActualState().command
+    p_angle = [x*180/pi for x in p]
+    
+    setJointAnglesNew(p_angle, tm=0.1)
+    
+    
+    # robot.setJointAnglesOfGroup('torso', p_angle[:1] , 0.1, False)
+    # print("time to stop, send", p_angle)
+    
+    #for i in range(tm):
+    #    p = robot.getActualState().command
+    #    p_angle = [x*180/pi for x in p]
+    #    print(i, p_angle)
+    #    time.sleep(1)
+    #    if i == 6: 
+    #        print("time to stop!")
+
     #calibrateJoint()
     # servoOFF()
     # servoON()

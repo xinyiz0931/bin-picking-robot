@@ -396,7 +396,6 @@ class Graspability(object):
         return candidates
 
     def grasp_ranking(self, candidates, w, h, n=10, _dismiss=50, _distance=50):
-        print("dismiss=",_dismiss)
         """Detect grasp with graspability
 
         Arguments:
@@ -414,7 +413,7 @@ class Graspability(object):
         # candidates.sort(key=self.takefirst, reverse=True)
         i = 0
         k = 0
-        _dismiss = 120
+        # _dismiss = 120
         grasps = []
         # print("Computing grasps! ")
         if len(candidates) < n:

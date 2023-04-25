@@ -6,7 +6,10 @@ import math
 from concurrent import futures
 import nxtrobot_pb2 as nxt_msg
 import nxtrobot_pb2_grpc as nxt_rpc
-import nxtlib.predefinition.predefinition as pre_def
+from nextage_ros_bridge import nextage_client
+from hrpsys import rtm
+
+# import nxtlib.predefinition.predefinition as pre_def
 
 class NxtServer(nxt_rpc.NxtServicer):
     """
@@ -19,7 +22,8 @@ class NxtServer(nxt_rpc.NxtServicer):
                          'RARM_JOINT3', 'RARM_JOINT4', 'RARM_JOINT5']],
                ['larm', ['LARM_JOINT0', 'LARM_JOINT1', 'LARM_JOINT2',
                          'LARM_JOINT3', 'LARM_JOINT4', 'LARM_JOINT5']]]
-    _initpose = [0,0,0,-15,0,-143,0,0,0,15,0,-143,0,0,0]
+    # _initpose = [0,0,0,-15,0,-143,0,0,0,15,0,-143,0,0,0]
+    _initpose = [0,0,0,-10,-25.7,-127.5,0,0,0,23,-25.7,-127.5,-7,0,0,0.716,-0.716,0.716,-0.716]
     _offpose = OffPose = [0,0,0,25,-140,-150,45,0,0,-25,-140,-150,-45,0,0]
 
     def _deg2rad(self, degreelist):
@@ -27,15 +31,29 @@ class NxtServer(nxt_rpc.NxtServicer):
 
     def _rad2deg(self, radianlist):
         return list(map(math.degrees, radianlist))
+    
+    def init(self):
+        host = '192.168.128.10'
+        port = '15005'
+        print('host:' + host)
+        print('port:' + port)
+        
+        rtm.nshost = host
+        rtm.nsport = port
 
-    def initialize(self):
+        robot = nxc = nextage_client.NextageClient()
+        return robot
+
+    def connect(self):
         """
         MUST configure the robot_s in the very beginning
         :return:
         author: weiwei
         date: 20190417
         """
-        self._robot = pre_def.pred()
+        self._robot = self.init()
+        robot_name = "RobotHardware0"
+        self._robot.init(robotname=robot_name, url="")
         self._oldyaml = True
         if int(yaml.__version__[0]) >= 5:
             self._oldyaml = False
@@ -81,7 +99,11 @@ class NxtServer(nxt_rpc.NxtServicer):
             return nxt_msg.Status(value = nxt_msg.Status.ERROR)
 
     def getJointAngles(self, request, context):
-        jntangles = self._robot.getJointAngles()
+        """
+        added by xinyi
+        angles in radian
+        """
+        jntangles = self._robot.getActualState().command # rad
         return nxt_msg.ReturnValue(data = yaml.dump(jntangles))
     
     def getJointPosition(self, request, context):
@@ -99,6 +121,28 @@ class NxtServer(nxt_rpc.NxtServicer):
             print(e, type(e))
             return nxt_msg.Status(value = nxt_msg.Status.ERROR)
 
+    def setInitial(self,request,context):
+        try:
+            if self._oldyaml:
+                arm, tm = yaml.load(request.data)
+            else:
+                arm, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
+            if tm is None:
+                tm = 10.0
+            angles = self._initpose
+            if arm == 'rarm':
+                self._robot.setJointAnglesOfGroup('rarm', angles[3:9], tm, True)
+            elif arm == 'larm':
+                self._robot.setJointAnglesOfGroup('rarm', angles[9:15], tm, True)
+            elif arm == 'all':
+                self._robot.goInitial(tm=tm)
+            
+            return nxt_msg.Status(value = nxt_msg.Status.DONE)
+
+        except Exception as e:
+            print(e, type(e))
+            return nxt_msg.Status(value = nxt_msg.Status.ERROR)
+        
     def setJointAngles(self, request, context):
         """
         :param request: request.data is in degree
@@ -109,20 +153,22 @@ class NxtServer(nxt_rpc.NxtServicer):
         """
         try:
             if self._oldyaml:
-                angles, tm = yaml.load(request.data)
+                angles, tm, wait = yaml.load(request.data)
             else:
-                angles, tm = yaml.load(request.data, Loader = yaml.UnsafeLoader)
+                angles, tm, wait = yaml.load(request.data, Loader = yaml.UnsafeLoader)
             if tm is None:
                 tm = 10.0
             self._robot.setJointAnglesOfGroup('torso', angles[0:1], tm, False)
             self._robot.setJointAnglesOfGroup('head', angles[1:3], tm, False)
             self._robot.setJointAnglesOfGroup('rarm', angles[3:9], tm, False)
-            self._robot.setJointAnglesOfGroup('larm', angles[9:15], tm, True)
+            # here, set waitInterpolation, revised by xinyi/2023/2/1
+            self._robot.setJointAnglesOfGroup('larm', angles[9:15], tm, wait)
             return nxt_msg.Status(value = nxt_msg.Status.DONE)
+
         except Exception as e:
             print(e, type(e))
             return nxt_msg.Status(value = nxt_msg.Status.ERROR)
-
+    
     def playPattern(self, request, context):
         try:
             if self._oldyaml:
@@ -259,7 +305,7 @@ def serve():
     _ONE_DAY_IN_SECONDS = 60 * 60 * 24
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     nxtserver = NxtServer()
-    nxtserver.initialize()
+    nxtserver.connect()
     nxt_rpc.add_NxtServicer_to_server(nxtserver, server)
     server.add_insecure_port('[::]:15005')
     server.start()

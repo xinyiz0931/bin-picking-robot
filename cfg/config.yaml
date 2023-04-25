@@ -3,34 +3,35 @@ depth_mode: bin
 author: xinyi
 height: 1544
 width: 2064
-obj_height: 8
+obj_height: 14
 table_distance: 1195
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
+real2pixel: 1.857703087963384
 pick:
   height:
-    max: 0.053012736791248294
-    min: -0.04901074964897156
+    max: 0.06966930030492402
+    min: -0.05288012453755697
   area:
-    left: 811
-    top: 371
-    right: 1647
-    bottom: 1038
+    left: 707
+    top: 329
+    right: 1775
+    bottom: 1232
 drop:
   height:
     max: 0.04533891982656879
     min: 0.010372077580194539
   area:
-    left: 1440
+    left: 1434
     top: 314
     right: 1902
-    bottom: 824
+    bottom: 829
 graspability:
-  rotation_step: 45
+  rotation_step: 22.5
   depth_step: 10
-  hand_depth: 10
+  hand_depth: 20
 hand:
   left:
-    type: schunk
+    type: smc_rcc
   right:
     type: smc_ft
 tangle:

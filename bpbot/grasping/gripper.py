@@ -10,58 +10,35 @@ from PIL import Image
 from bpbot.utils import *
 
 class Gripper(object):
-    def __init__(self, finger_w, finger_h, open_w):
+    def __init__(self, finger_w, finger_h, open_w, real2pixel=2.0):
         self.open_w = open_w
         self.finger_w = finger_w
         self.finger_h = finger_h
 
-        self.real2image()
+        # self.real2image()
+        self.finger_h
+        self.open_w *= real2pixel
+        self.finger_w *= real2pixel
+        self.finger_h *= real2pixel
         self.tplt_size = 500
-
-    # a series of transformations: sim <-> image <-> real world
-    def image2real(self):
-        ratio = 500/250
-        self.open_w /= ratio
-        self.tplt_size /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio
-        
-    def image2sim(self):
-        ratio = 500/225
-        self.open_w /= ratio
-        self.tplt_size /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio
-
-    def sim2image(self):
-        ratio = 225/500
-        self.open_w /= ratio
-        self.tplt_size /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio    
-
-    def sim2real(self):
-        ratio = 225/250
-        self.open_w /= ratio
-        self.tplt_size /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio    
-
-    def real2image(self):
-        ratio = 1/2
-        self.open_w /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio
-
-    def real2sim(self):
-        ratio = 250/225
-        self.open_w /= ratio
-        self.tplt_size /= ratio
-        self.finger_w /= ratio
-        self.finger_h /= ratio
     
     def print_gripper(self):
         print(f"[*] Finger=({self.finger_w},{self.finger_h}),open={self.open_w},size={self.tplt_size}")
+
+    def create_suction_model(self):
+        c = int(self.tplt_size/2)
+        how = int(self.finger_h/3)
+        hfh = int(self.finger_h/3)
+        # fw = int(self.finger_w)
+
+        ho = np.zeros((self.tplt_size, self.tplt_size), dtype = "uint8") # open
+        hc = np.zeros((self.tplt_size, self.tplt_size), dtype = "uint8") # close
+        
+        # ho[(c-hfh):(c+hfh), (c-how-fw):(c-how)]=255
+        # ho[(c-hfh):(c+hfh), (c+how):(c+how+fw)]=255
+        hc[(c-hfh):(c+hfh), (c-how):(c+how)]=255
+
+        return ho, hc
 
     def create_hand_model(self):
         
@@ -230,6 +207,57 @@ class Gripper(object):
         cv2.line(img, (lx, ly), (rx, ry), (b,g,r), 2)
         return img
     
+    def calc_grasp_orientation(self, img, loc):
+        down_depth = 20
+        _p = 5
+
+        start_rotation = 0
+        stop_rotation = 180
+        rotation_step = 22.5
+        (x,y) = loc
+
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        h, w = gray.shape
+        p_depth = gray[y,x]
+        
+        _, Wc = cv2.threshold(gray, max(1, p_depth-down_depth), 255, cv2.THRESH_BINARY)
+        
+        # object touch mask
+        Wt = gray.copy()
+        h,w = gray.shape
+
+        Wt[Wt < (p_depth-_p)] = 0
+        Wt[Wt > (p_depth)] = 0
+        Wt[Wt > 0] = 255
+        
+        _dismiss = self.open_w*2 + self.finger_w*2 + 40
+        max_r, max_g = 0, 0
+        scores = []
+        rotations = np.arange(start_rotation, stop_rotation, rotation_step)
+        for r in rotations:
+            Hc = self.get_hand_model('open', w=w,h=h,open_w=self.open_w,theta=r)
+            Ht = self.get_hand_model('close',w=w,h=h,open_w=self.open_w,theta=r)
+            rect = self.get_hand_model("close", w=w,h=h,open_w=self.open_w, x=x, y=y, theta=r)
+            comb_Wt = Wt & rect
+
+            C = cv2.filter2D(Wc, -1, Hc) #Hc
+            T = cv2.filter2D(comb_Wt, -1, Ht) #Ht
+            C_ = 255-C
+            
+            comb = T & C_
+            G = cv2.GaussianBlur(comb, (75, 75), 25, 25)
+            scores.append(G[y,x])
+            
+            if G[y,x] >= max_g and (_dismiss < x) and (x < w-_dismiss) and (_dismiss < y) and (y < h-_dismiss):
+                max_r = r
+                max_g = G[y,x]
+        scores = np.asarray(scores)
+        if np.count_nonzero(scores) == 0: 
+            # print("Detection failed! ")
+            return None
+        else:
+            return [x,y,rotations[np.argmax(scores)]]
+    
     def point_oriented_grasp(self, img, loc):
         """
         open_w (int): open width in pixel
@@ -255,8 +283,10 @@ class Gripper(object):
         h, w = gray.shape
         # print(f"[!] Old point: {loc} = {gray[y,x]}")
         # (x,y) = replace_bad_point(img, loc)
-        if gray[y,x] <= 10: (x,y) = replace_bad_point(img, loc)
+
+        # if gray[y,x] <= 10: (x,y) = replace_bad_point(img, loc)
         # print(f"[*] New point: [{x}, {y}] = {gray[y,x]}")
+        
         # test = img.copy()
         # cv2.circle(test, loc, 5, (0,0,255), 3)
         # cv2.circle(test, (x,y), 5, (0,255,0), -1)
@@ -290,6 +320,7 @@ class Gripper(object):
         # plt.imshow(overlay), plt.title("Conflict mask & Touch mask")
         # plt.show() 
         
+        _dismiss = self.open_w/2 + self.finger_h*2
         max_r, max_g = 0, 0
         scores = []
         rotations = np.arange(start_rotation, stop_rotation, rotation_step)
@@ -316,7 +347,8 @@ class Gripper(object):
             # plt.imshow(cv2.hconcat([vis1, vis2, vis3])), plt.show()
             scores.append(G[y,x])
             # print(r, " => ", G[y,x])
-            if G[y,x] >= max_g: 
+            # if G[y,x] >= max_g: 
+            if G[y,x] >= max_g and (_dismiss < x) and (x < w-_dismiss) and (_dismiss < y) and (y < h-_dismiss):
                 max_r = r
                 max_g = G[y,x]
         scores = np.asarray(scores)

@@ -8,6 +8,7 @@ service Nxt {
     rpc goOffPose (Empty) returns (Status) {}
     rpc getJointAngles (Empty) returns (ReturnValue) {}
     rpc setJointAngles (SendValue) returns (Status) {}
+    rpc setInitial (SendValue) returns (Status) {}
     rpc playPattern (SendValue) returns (Status) {}
     rpc closeHandToolLft (Empty) returns (Status) {}
     rpc closeHandToolRgt (Empty) returns (Status) {}

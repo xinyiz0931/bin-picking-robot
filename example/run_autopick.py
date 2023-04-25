@@ -15,12 +15,11 @@ from bpbot.binpicking import *
 from bpbot.config import BinConfig
 from bpbot.robotcon.nxt.nxtrobot_client import NxtRobot
 
-import numpy as np
 import timeit
 import pickle
 
 N = 1
-LOG_ON = True
+LOG_ON = False
 MODE = "pnsn"
 # MODE = "pn"
 
@@ -43,9 +42,9 @@ draw_path = os.path.join(cfg.depth_dir, "result.png")
 
 vis_pp_path = os.path.join(cfg.depth_dir, "pred/picknet_depth_cropped_pickbin.png")
 vis_pd_path = os.path.join(cfg.depth_dir, "pred/picknet_depth_cropped_dropbin.png")
-vis_sd_path = os.path.join(cfg.depth_dir, "pred/sepnet_depth_cropped_dropbin.png")
+vis_sd_path = os.path.join(cfg.depth_dir, "pred/pullnet_depth_cropped_dropbin.png")
 score_pn_path = os.path.join(cfg.depth_dir, "pred/picknet_score.pickle")
-score_sn_path = os.path.join(cfg.depth_dir, "pred/sepnet_score.pickle")
+score_sn_path = os.path.join(cfg.depth_dir, "pred/pullnet_score.pickle")
 vis_path = os.path.join(cfg.depth_dir, "vis.png")
 
 mf_path = cfg.motionfile_path
@@ -193,33 +192,47 @@ def pick():
                     j["pull"] = []
                 j["container"] = "drop"
                 j["picknet_score"] = pickle.load(open(score_pn_path, 'rb'))
-                j["sepnet_score"] = pickle.load(open(score_sn_path, 'rb'))
+                j["pullnet_score"] = pickle.load(open(score_sn_path, 'rb'))
 
     viss = []
-    for v, s in zip([heatmaps, vis_pb, vis_db], ["Predicted Heatmaps", "Action in Picking Bin", "Action in Dropping Bin"]):
+    for v, s in zip([heatmaps, vis_pb, vis_db], ["Predicted Heatmaps", "Action in Picking Bin", "Action in Buffer Bin"]):
         v = cv2.resize(v, (int(500*v.shape[1]/v.shape[0]),500))
         v_with_title = cv_plot_title(v, s)
         viss.append(v_with_title)
     ret = cv2.hconcat(viss)
     cv2.imwrite(vis_path,ret) 
-    print(j)
 
     
     if gen_success and FOUND_CNOID: 
         
-        plan_success = load_motionfile(mf_path, dual_arm=False)
-        if plan_success[1] == False: 
-            print(f"[!] Approaching the target failed! ")
+        plan_success = load_motionfile(mf_path)
 
-        print(f"[*] Motion planning succeed? ==> {plan_success.count(True) == len(plan_success)}")
+        print(f"[*] Motion planning succeed? ==> {plan_success}")
         
-        if plan_success.count(True) == len(plan_success):
+        if plan_success:
             nxt = NxtRobot(host='[::]:15005')
             motion_seq = get_motion()
-            num_seq = int(len(motion_seq)/20)
-            motion_seq = np.reshape(motion_seq, (num_seq, 20))
+            print(motion_seq.shape)
             
-            nxt.playMotion(motion_seq) 
+            old_lhand = "STANDBY"
+            old_rhand = "STANDBY"
+            for m in motion_seq:
+                if (m[-2:] != 0).all(): lhand = "OPEN"
+                else: lhand = "CLOSE"
+                if (m[-4:-2] != 0).all(): rhand = "OPEN"
+                else: rhand = "CLOSE"
+                if old_rhand != rhand:
+                    if rhand == "OPEN": nxt.openHandToolRgt()
+                    elif rhand == "CLOSE": nxt.closeHandToolRgt()
+                if old_lhand != lhand:
+                    if lhand == "OPEN": nxt.openHandToolLft()
+                    elif lhand == "CLOSE": nxt.closeHandToolLft()
+                old_lhand = lhand
+                old_rhand = rhand
+                nxt.setJointAngles(m[3:], tm=m[0])
+
+            # nxt.playMotion(motion_seq) 
+
             # ----------------------------- save log ----------------------------------
             if LOG_ON:
                 import shutil

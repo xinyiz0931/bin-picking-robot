@@ -45,8 +45,11 @@ class BinConfig(object):
         
         self.data["hand"]["left"]["height"]=left_len/1000
         self.data["hand"]["right"]["height"]=right_len/1000
+        self.data["hand"]["left"]["real2pixel"] = self.data["real2pixel"]
+        self.data["hand"]["right"]["real2pixel"] = self.data["real2pixel"]
         self.data["hand"]["left"].update(lhand)
         self.data["hand"]["right"].update(rhand)
+
 
     def get_all_values(self):
         for v in self.data.values():

@@ -142,8 +142,8 @@ class FlingActor(object):
         rpy = pose[3:]
         # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint) + self.get_place_seq(rpy)
         # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq(waypoint, n=3)
-        seqs = self.get_pick_seq(xyz, rpy)
-        # seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq() + self.get_place_seq(dest="right")
+        # seqs = self.get_pick_seq(xyz, rpy)
+        seqs = self.get_pick_seq(xyz, rpy) + self.get_fling_seq() + self.get_place_seq(dest="right")
         
         with open(self.filepath, 'wt') as fp:
             for s in seqs:

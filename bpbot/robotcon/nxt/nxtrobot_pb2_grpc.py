@@ -49,6 +49,11 @@ class NxtStub(object):
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
                 response_deserializer=nxtrobot__pb2.Status.FromString,
                 )
+        self.setInitial = channel.unary_unary(
+                '/Nxt/setInitial',
+                request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
+                response_deserializer=nxtrobot__pb2.Status.FromString,
+                )
         self.playPattern = channel.unary_unary(
                 '/Nxt/playPattern',
                 request_serializer=nxtrobot__pb2.SendValue.SerializeToString,
@@ -156,6 +161,12 @@ class NxtServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def setJointAngles(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def setInitial(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -274,6 +285,11 @@ def add_NxtServicer_to_server(servicer, server):
             ),
             'setJointAngles': grpc.unary_unary_rpc_method_handler(
                     servicer.setJointAngles,
+                    request_deserializer=nxtrobot__pb2.SendValue.FromString,
+                    response_serializer=nxtrobot__pb2.Status.SerializeToString,
+            ),
+            'setInitial': grpc.unary_unary_rpc_method_handler(
+                    servicer.setInitial,
                     request_deserializer=nxtrobot__pb2.SendValue.FromString,
                     response_serializer=nxtrobot__pb2.Status.SerializeToString,
             ),
@@ -466,6 +482,23 @@ class Nxt(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Nxt/setJointAngles',
+            nxtrobot__pb2.SendValue.SerializeToString,
+            nxtrobot__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def setInitial(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Nxt/setInitial',
             nxtrobot__pb2.SendValue.SerializeToString,
             nxtrobot__pb2.Status.FromString,
             options, channel_credentials,

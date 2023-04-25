@@ -28,6 +28,18 @@ def capture_pc():
     # gs = pxc.getgrayscaleimg()
     return (pc.copy()/1000) if pc is not None else None
 
+def transform_depth(pcd, mat, max_h, min_h, h, w):
+    pc_ = np.c_[pcd, np.ones(pcd.shape[0])]
+    pr = np.dot(mat, pc_.T).T
+
+    gray = pr[:,2]
+    gray[gray>max_h] = min_h
+    gray[gray<min_h] = min_h
+
+    gray = np.reshape(gray, (h, w))
+    img = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    return img
+
 def pc2depth(pcd, cfgdata, container="pick"):
 
     G = np.loadtxt(cfgdata["calibmat_path"])
@@ -46,7 +58,7 @@ def pc2depth(pcd, cfgdata, container="pick"):
     img_blur = cv2.medianBlur(img, 5)
     return img, img_blur
 
-def crop_roi(img, cfgdata, container='pick', bounding=False):
+def crop_roi(img, cfgdata, container='pick', bounding_size=25):
 
     margins = cfgdata[container]["area"]
     top_margin = margins["top"]
@@ -59,9 +71,9 @@ def crop_roi(img, cfgdata, container='pick', bounding=False):
     # cropped the necessary region (inside the bin)
     img_crop = img[top_margin:bottom_margin, left_margin:right_margin]
     h_, w_= img_crop.shape
-    if bounding == True:
-        _s = 25
-        cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),_s*2)
+    if bounding_size > 0:
+        # _s = 25
+        cv2.rectangle(img_crop,(0,0),(w_, h_),(0,0,0),bounding_size*2)
     return img_crop
 
 # def crop_roi(img_path, margins=None, bounding=False):
@@ -184,6 +196,23 @@ def get_entanglement_map(img, t_params):
     bmap = em.brightness_map(norm_img)
     return emap
 
+def picknet(img_path, hand_config):
+    img = cv2.imread(img_path)
+    hand_attr = [hand_config.get(k) for k in ["finger_width", "finger_length", "open_width"]]
+    gripper = Gripper(*hand_attr)
+    
+    from bpbot.module_picksep import PickSepClient
+    psc = PickSepClient()
+    ret = psc.infer_picknet(imgpath=img_path)
+    if not ret:
+        return
+    print("[*] Successfully infer grasps by PickNet")
+    # ----- temporal add 
+    g_pick = gripper.calc_grasp_orientation(img, ret[0][0]) # degree
+    print(g_pick)
+    return np.array([g_pick])
+    # ----- end
+    
 def pick_or_sep(img_path, hand_config, bin="pick"):
     img = cv2.imread(img_path)
     # img = adjust_grayscale(img)
@@ -228,6 +257,8 @@ def pick_or_sep(img_path, hand_config, bin="pick"):
         #     if scores_pn[0] >= 0.3 and scores_pn[1] > scores_pn[0]: return 0, g_pick
             # else: return 1, g_pick
         # return scores_pn.argmax(), g_pick
+
+
         return idx, g_pick
 
     elif bin == "drop": 
@@ -361,8 +392,7 @@ def detect_grasp(n_grasp, img_path, g_params, h_params):
     
     if candidates != []:
     # rank grasps
-        grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width, _dismiss=gripper.open_w/2+gripper.finger_w*2+25)
-        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
+        grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width, _dismiss=gripper.open_w/2+gripper.finger_w*2+70)
         return grasps
 
     return
@@ -439,7 +469,6 @@ def detect_nontangle_grasp(n_grasp, img_path, g_params, h_params, t_params):
         candidates[:,1:3] += roi_left_top
         # ranking grasps
         grasps = method.grasp_ranking(candidates, n=n_grasp, h=height, w=width)
-        print(f"[*] Detected {len(grasps)} grasps from {len(candidates)} candidates! ")
         return grasps, emap
     return
 
@@ -692,7 +721,6 @@ def transform_image_to_robot(image_locs, point_array, cfgdata, hand="left", cont
     # else:
     #     # print("load new matrix")
     #     g_rc = np.loadtxt("/home/hlab/bpbot/data/calibration/calibmat_d.txt") # 4x4, unit: m
-
     if len(image_locs) == 3: 
         # including calculate euler angle 
         (u, v, theta) = image_locs # theta: degree

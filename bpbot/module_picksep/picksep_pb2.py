@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rpicksep.proto\"\x12\n\x03Ret\x12\x0b\n\x03ret\x18\x01 \x01(\x0c\"\x1a\n\x07ImgPath\x12\x0f\n\x07imgpath\x18\x01 \x01(\t\".\n\tActionCls\x12\x11\n\tpickorsep\x18\x01 \x01(\x05\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x0c\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x0c\x32\xa6\x01\n\x07PickSep\x12!\n\rinfer_picknet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12,\n\x18infer_picknet_sepnet_pos\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12 \n\x0cinfer_sepnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12(\n\x14infer_picknet_sepnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rpicksep.proto\"\x12\n\x03Ret\x12\x0b\n\x03ret\x18\x01 \x01(\x0c\"\x1a\n\x07ImgPath\x12\x0f\n\x07imgpath\x18\x01 \x01(\t\".\n\tActionCls\x12\x11\n\tpickorsep\x18\x01 \x01(\x05\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x0c\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x0c\x32\xa7\x01\n\x07PickSep\x12!\n\rinfer_picknet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12,\n\x18infer_picknet_sepnet_pos\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12!\n\rinfer_pullnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x12(\n\x14infer_picknet_sepnet\x12\x08.ImgPath\x1a\x04.Ret\"\x00\x62\x06proto3')
 
 
 
@@ -63,5 +63,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ACTION._serialized_start=113
   _ACTION._serialized_end=137
   _PICKSEP._serialized_start=140
-  _PICKSEP._serialized_end=306
+  _PICKSEP._serialized_end=307
 # @@protoc_insertion_point(module_scope)

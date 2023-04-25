@@ -18,19 +18,21 @@ from bpbot.device import PhxClient
 from bpbot.utils import *
 
 def main():
-    actor = HandEyeCalib("calib", "./data/calibration/test")
-    parser = argparse.ArgumentParser('Hand eye calibration tool')
-    parser.add_argument('-f', '--file', help='calibration result folder')
-    parser.add_argument('-m', '--mode', choices=["calib", "calc", "vis"], required=True)
+    # parser = argparse.ArgumentParser('Hand eye calibration tool')
+    # parser.add_argument('-f', '--folder', help='calibration result folder')
+    # parser.add_argument('-m', '--mode', choices=["calib", "calc", "vis"], required=True)
+    # args = parser.parse_args()
+    mode = "calib" 
+    calib_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../data/calibration/20230220"))
+    actor = HandEyeCalib(mode, calib_dir)
 
-    args = parser.parse_args()
-    print("[*] Start hand eye calibration in mode:", args.mode)
-    if args.mode == "calib":
+    print("[*] Start hand eye calibration in mode:", mode)
+    if mode == "calib":
         actor.detect()
         actor.calc()
-    elif args.mode == "calc":
+    elif mode == "calc":
         actor.calc()
-    elif args.mode == "vis":
+    elif mode == "vis":
         actor.vis()
 
 class HandEyeCalib(object):
@@ -42,17 +44,18 @@ class HandEyeCalib(object):
         self.save_eye = os.path.join(calib_dir, "pos_eye.txt")
         self.save_mat = os.path.join(calib_dir, "calibmat.txt")
 
-        mf_path = os.path.join(calib_dir, "calib_3d.dat")
+        mf_path = os.path.join(calib_dir, "motion.dat")
         
     
         if self.mode == "calib" and FOUND_CNOID:
             self.robot = NxtRobot(host='[::]:15005')
             self.camera = PhxClient(host="127.0.0.1:18300")
-            success = load_motionfile(mf_path, dual_arm=False)
-            motion_seq = get_motion()
-            num_seq = int(len(motion_seq)/20)
-            self.motion_seq = np.reshape(motion_seq, (num_seq, 20))
-            print(f"[*] Finish loading {num_seq} motion sequences! ")
+            load_motionfile(mf_path)
+            self.motion_seq = get_motion()
+            print(self.motion_seq.shape)
+            # num_seq = int(len(motion_seq)/20)
+            # self.motion_seq = np.reshape(motion_seq, (num_seq, 20))
+            print(f"[*] Finish loading {self.motion_seq.shape[0]} motion sequences! ")
             
         self.inipos_hand = self.extract_motionfile(mf_path)
     
@@ -61,11 +64,11 @@ class HandEyeCalib(object):
         if FOUND_CNOID: 
             for i, m in enumerate(self.motion_seq):
                 
-                self.robot.setJointAngles(m[1:],tm=m[0]) 
+                self.robot.setJointAngles(m[3:],tm=m[0]) 
 
                 self.camera.triggerframe()
                 gray = self.camera.getgrayscaleimg()
-                image = cv2.txColor(gray, cv2.COLOR_GRAY2RGB)
+                image = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
                 pcd = self.camera.getpcd()
                 ply_path = os.path.join("/home/hlab/Desktop/pcd/", f"{i:02d}.ply")
                 self.camera.saveply(ply_path)
@@ -77,7 +80,7 @@ class HandEyeCalib(object):
                     continue
                 print(f"[*] {i:02d}-th | ", end="")
 
-                if self.mkid in ids.keys(): 
+                if mkid in ids.keys(): 
                     x, y = ids[mkid]
                     # camera_p = pcd_r[y*image.shape[1]+x] / 1000
                     p = pcd[y*image.shape[1]+x]
@@ -87,14 +90,16 @@ class HandEyeCalib(object):
                 else: print(f"[!] No markers detected! ")
             pos_eye = np.asarray(pos_eye)
             pos_hand = np.asarray(pos_hand)
+            print(pos_eye)
+            print(pos_hand)
 
             # unit: m, transfer joint position to board position
             pos_eye /= 1000
             pos_hand[:,0] += 0.079
             pos_hand[:,2] -= 0.030 
 
-            np.savetxt(np.asarray(self.save_eye), pos_eye, fmt='%.06f')
-            np.savetxt(np.asarray(self.save_hand), pos_hand, fmt='%.06f')
+            np.savetxt(self.save_eye, pos_eye, fmt='%.06f')
+            np.savetxt(self.save_hand, pos_hand, fmt='%.06f')
 
             return pos_eye, pos_hand
         else:
