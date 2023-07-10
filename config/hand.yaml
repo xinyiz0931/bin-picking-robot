@@ -44,5 +44,13 @@ smc_rcc_small:
   flange2_height: 5
   gripper_height: 25
   finger_height: 79
+thk_soft:
+  finger_length: 80
+  finger_width: 10
+  open_width: 90
+  tool_changer_height: 31
+  flange_height: 6
+  finger_height: 122
+  gripper_height: 26
 
 

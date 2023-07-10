@@ -418,7 +418,8 @@ class Graspability(object):
         # print("Computing grasps! ")
         if len(candidates) < n:
             n = len(candidates)
-        while (len(candidates) and k < n):
+        print(f"Total {n} grasp candidates!")
+        while (k < n):
             x = candidates[i][1]
             y = candidates[i][2]
             ## consider dismiss/distance to rank grasp candidates
@@ -437,10 +438,10 @@ class Graspability(object):
                         grasps.append(candidates[i])
                         k += 1
             i += 1
-            if k > n:
+            if k > n or i > n:
                 break
         if grasps == []: 
-            print("[!] No valid grasps after ranking! ")
+            print("No valid grasps after ranking! ")
             return grasps 
         return np.asarray(grasps)[:,1:]
 

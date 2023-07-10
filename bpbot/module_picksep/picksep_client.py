@@ -33,7 +33,7 @@ class PickSepClient(object):
             return
 
     
-    def infer_sepnet(self, imgpath):
+    def infer_pullnet(self, imgpath):
         """
         Args:
             imgpath (str): path to one image

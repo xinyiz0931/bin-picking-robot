@@ -33,8 +33,8 @@ print(f"[*] Start at {root_dir} ")
 depth_dir = os.path.join(root_dir, "data/depth/")
 
 img_path = os.path.join(root_dir, "data/depth/depth.png")
-crop_path = os.path.join(root_dir, "data/depth/depth_cropped.png")
-config_path = os.path.join(root_dir, "cfg/config.yaml")
+crop_path = os.path.join(root_dir, "data/depth/cropped.png")
+config_path = os.path.join(root_dir, "config/config.yaml")
 calib_path = os.path.join(root_dir, "data/calibration/calibmat.txt")
 mf_path = os.path.join(root_dir, "data/motion/motion.dat")
 traj_path = os.path.join(root_dir, "data/motion/motion_ik.dat")
@@ -92,7 +92,7 @@ g_pick = grasps[0]
 p_pick_tcp, g_pick_wrist = transform_image_to_robot(g_pick, point_array, cfgdata, hand="right", container="pick")
 
 gen_motion_dynamic(mf_path, g_pick_wrist, orientation='v')
-# gen_motion_pick(mf_path, g_pick_wrist)
+# gen_motionfile_pick(mf_path, g_pick_wrist)
 print("[*] **Pick**! Grasp : (%d,%d,%.1f) -> Tcp : (%.3f,%.3f,%.3f)" % (*g_pick, *p_pick_tcp))
 
 img_grasp = draw_grasp(g_pick, crop_path, cfgdata["hand"]["right"])

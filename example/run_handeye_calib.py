@@ -4,7 +4,7 @@ import cv2
 import argparse
 import numpy as np
 import importlib
-FOUND_CNOID = importlib.util.find_spec("cnoid") is not None
+FOUND_CNOID = importlib.util.find_spec('cnoid') is not None
 if FOUND_CNOID:
     from cnoid.Util import *
     from cnoid.Base import *
@@ -22,17 +22,17 @@ def main():
     # parser.add_argument('-f', '--folder', help='calibration result folder')
     # parser.add_argument('-m', '--mode', choices=["calib", "calc", "vis"], required=True)
     # args = parser.parse_args()
-    mode = "calib" 
+    mode = 'calib' 
     calib_dir = os.path.realpath(os.path.join(os.path.realpath(__file__), "../../data/calibration/20230220"))
     actor = HandEyeCalib(mode, calib_dir)
 
     print("[*] Start hand eye calibration in mode:", mode)
-    if mode == "calib":
+    if mode == 'calib':
         actor.detect()
         actor.calc()
-    elif mode == "calc":
+    elif mode == 'calc':
         actor.calc()
-    elif mode == "vis":
+    elif mode == 'vis':
         actor.vis()
 
 class HandEyeCalib(object):
@@ -40,16 +40,16 @@ class HandEyeCalib(object):
         self.mode = mode
 
         calib_dir = os.path.realpath(folder)
-        self.save_hand = os.path.join(calib_dir, "pos_hand.txt")
-        self.save_eye = os.path.join(calib_dir, "pos_eye.txt")
-        self.save_mat = os.path.join(calib_dir, "calibmat.txt")
+        self.save_hand = os.path.join(calib_dir, 'pos_hand.txt')
+        self.save_eye = os.path.join(calib_dir, 'pos_eye.txt')
+        self.save_mat = os.path.join(calib_dir, 'calibmat.txt')
 
-        mf_path = os.path.join(calib_dir, "motion.dat")
+        mf_path = os.path.join(calib_dir, 'motion.dat')
         
     
-        if self.mode == "calib" and FOUND_CNOID:
+        if self.mode == 'calib' and FOUND_CNOID:
             self.robot = NxtRobot(host='[::]:15005')
-            self.camera = PhxClient(host="127.0.0.1:18300")
+            self.camera = PhxClient(host='127.0.0.1:18300')
             load_motionfile(mf_path)
             self.motion_seq = get_motion()
             print(self.motion_seq.shape)
@@ -189,7 +189,7 @@ class HandEyeCalib(object):
         with open(filepath, 'r+') as fp:
             lines = fp.readlines()
         for line in lines:
-            if "#" in line: # comment in motion file 
+            if '#' in line: # comment in motion file 
                 continue
             # print(line.split(' '))
             xyz.append([float(x) for x in self.extract_number(line)[2:5]])

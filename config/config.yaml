@@ -1,30 +1,26 @@
-exp_mode: 0
-depth_mode: bin
 author: xinyi
 height: 1544
 width: 2064
 obj_height: 14
 table_distance: 1195
 calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
-real2pixel: 1.857703087963384
-pick:
+real2pixel: 2.0344539187762356
+exp:
+  lr_arm: left
+  mode: fge
+  camera_mode: True
+  log_mode: False
+  motionfile_mode: False
+  destination: side
+main:
   height:
-    max: 0.06966930030492402
-    min: -0.05288012453755697
+    max: 0.0807229218388672
+    min: -0.0518527307068577
   area:
-    left: 707
-    top: 329
-    right: 1775
-    bottom: 1232
-drop:
-  height:
-    max: 0.04533891982656879
-    min: 0.010372077580194539
-  area:
-    left: 1434
-    top: 314
-    right: 1902
-    bottom: 829
+    left: 698
+    top: 337
+    right: 1768
+    bottom: 1226
 graspability:
   rotation_step: 22.5
   depth_step: 10

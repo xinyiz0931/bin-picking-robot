@@ -33,7 +33,6 @@ if __name__ == '__main__':
     #     print(dynpick_client.get()[2])
     import timeit
     start_time = timeit.default_timer()
-    print("save start")
     print(dynpick_client.get())
     # dynpick_client.save()
     # time.sleep(3)

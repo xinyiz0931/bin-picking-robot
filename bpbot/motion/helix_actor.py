@@ -1,20 +1,11 @@
-import math
-from bpbot import BinConfig
+from bpbot.motion import PickAndPlaceActor
 
-class HelixActor(object):
+class HelixActor(PickAndPlaceActor):
     def __init__(self, filepath):
-        
-        cfg = BinConfig()
-        cfgdata = cfg.data
-        if filepath is None: 
-            self.filepath = cfg.motionfile_path
-        else:
-            self.filepath = filepath 
-        w_lft = (cfgdata["hand"]["left"]["open_width"]/2/1000) * 180 / math.pi
-        w_rgt = (cfgdata["hand"]["right"]["open_width"]/2/1000) * 180 / math.pi
-        
-        self.initpose = "0 1.00 JOINT_ABS 0 0 0 -10 -25.7 -127.5 0 0 0 23 -25.7 -127.5 -7 0 0 %.3f %.3f %.3f %.3f" % (w_rgt,-w_rgt,w_lft,-w_lft)
-        self.goal_c = [0.070, 0.552]
+        """Helix motion is pre-defined only for left arm"""
+        self.filepath = filepath
+        arm = "L"
+        PickAndPlaceActor.__init__(self,filepath, arm)
     
         self.half_helix = [
             "0 1.00 LARM_XYZ_ABS 0.537  0.160 0.320 -180 -90  145", # o
@@ -41,26 +32,6 @@ class HelixActor(object):
             "0 0.50 LARM_JNT_REL 0 0 0 0 0 0  150", 
             "0 0.50 LARM_JNT_REL 0 0 0 0 0 0 -150"
         ]
-    
-    def get_empty_action(self):
-        open(self.filepath, 'w').close()
-
-    def get_pick_seq(self, xyz, rpy):
-        return [
-            "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy),
-            "0 1.00 LARM_XYZ_ABS %.3f %.3f %.3f %.1f %.1f %.1f" % (*xyz, *rpy),
-            "0 0.50 LHAND_JNT_CLOSE 0 0 0 0 0 0",
-            "0 1.00 LARM_XYZ_ABS %.3f %.3f 0.250 %.1f %.1f %.1f" % (*xyz[:2], *rpy)
-        ]
-
-
-    def get_place_seq(self):
-        return [
-            "0 1.50 LARM_XYZ_ABS %.3f %.3f 0.350 -90.0 -90.0 90.0" % (*self.goal_c,),
-            "0 0.50 LARM_XYZ_ABS %.3f %.3f 0.200 -90.0 -90.0 90.0" % (*self.goal_c,),
-            "0 0.50 LHAND_JNT_OPEN",
-            self.initpose
-        ]
 
     def get_action(self, pose, action_idx):
         """Generate helix motion for picking entangled wire harnesses
@@ -76,7 +47,7 @@ class HelixActor(object):
                 self.helix[:7], self.helix[:7]+self.spin,
                 self.helix, self.helix+self.spin] 
         
-        seqs = self.get_pick_seq(xyz, rpy) + subseqs[action_idx] + self.get_place_seq()
+        seqs = self.get_pick_seq(xyz, rpy) + subseqs[action_idx] + self.get_place_seq(rpy=[-90,-90,90],dest="side")
         with open(self.filepath, 'wt') as fp:
             for s in seqs:
                 print(s, file=fp)

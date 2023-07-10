@@ -96,9 +96,11 @@ class DynPickControl(object):
         def linear(x,a,b):
             return a*x + b
         y = np.array(y)
-        x = np.arange(y.shape[0])
-        _, y = self.filter(x, y, method="median", param=11)
-        print(x.shape, y.shape)
+        # replace all negative numbers
+        y[y<0]=0
+        # x = np.arange(y.shape[0])
+        x = np.linspace(0, 0.4, y.shape[0])
+        # _, y = self.filter(y,x, method="median", param=11)
         
         
         popt, pcov = curve_fit(linear, x, y)
@@ -106,7 +108,6 @@ class DynPickControl(object):
         if np.abs(popt[0]) < 0.004 and np.abs(popt[1]) < 0.3:
         # if popt[0] < 0.01 and np.abs(popt[1]) < 0.1:
             flag = True
-            print("Need regrasping! ")
         else:
             flag = False
         # else:
@@ -123,16 +124,16 @@ class DynPickControl(object):
         #     popt, pcov = curve_fit(linear, x, y)
         #     y_ = linear(x, *popt)
 
-        print(*popt)
         # fig = plt.figure(figsize=(9,3))
         if vis:
             plt.axhline(y=1.5, color='gold', alpha=.7, linestyle='dashed')
-            plt.plot(y, alpha=0.4)
-            plt.plot(y_)
+            plt.plot(x, y, alpha=0.4)
+            plt.plot(x, y_)
             plt.ylim([-10,10])
             plt.title(np.round(popt,3))
             plt.show()
-        return flag
+        # return flag
+        return popt
 
         # try: 
         #     popt, pcov = curve_fit(nonlinear, x, y)
@@ -171,10 +172,13 @@ class DynPickControl(object):
             y_new = np.asarray(y_new).T
         return x_new, y_new
     
-    def filter(self, x, y, method="savgol", param=11):
+    def filter(self, y, x=None, method="median", param=11):
         # k=21
         # k = len(x) if len(x)%2!=0 else len(x) -1
         # k = 39
+        # x = np.arange(len(y))
+        if x is None:
+            x = np.arange(len(y))
         if len(x) <= 11:
             param = len(x) if len(x)%2 != 0 else len(x)-1
         if isinstance(y, list):
@@ -211,7 +215,6 @@ class DynPickControl(object):
             y[-j:,-(i+1)] = x[-1]
         return np.median(y, axis=1)
 
-  
     def plot(self, _data=None, _path=None, filter=False, animation=False):
         if _path is None and _data is None:
             _path = self.out_path
@@ -249,7 +252,7 @@ class DynPickControl(object):
 
         # tm_, ft_ = self.smooth(tm, ft)
         if filter: 
-            tm_, ft_ = self.filter(tm, ft, method="median", param=11)
+            tm_, ft_ = self.filter(ft, tm, method="median", param=11)
             x_ = tm_ - tm_[0]
 
         fig = plt.figure(1, figsize=(16, 10))
@@ -344,7 +347,7 @@ class DynPickControl(object):
         ax1.set_prop_cycle(color=self.colors[:3])
         
         # tm_, ft_ = self.smooth(tm, ft)
-        tm_, ft_ = self.filter(tm, ft, method="median", param=5)
+        tm_, ft_ = self.filter(ft, tm, method="median", param=5)
         # ft_ = self.median_filter_1d(ft)
         
         ax1.set_title('Force')
@@ -431,8 +434,8 @@ class DynPickControl(object):
                 plt.clf()
                 self.plot_data(ft, np.arange(j,j+50))
                 plt.pause(0.005)
-            else:
-                print(line)
+            # else:
+            #     print(line)
 
             if stop > 0 and line[0] > stop*1000:
                 break

@@ -15,9 +15,15 @@ from bpbot.robotcon.nxt.nxtrobot_client import NxtRobot
 from bpbot.device import DynPickClient, DynPickControl
 # import scipy.interpolate as si
 
-# global arguments
-PLAY = True
-tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+from enum import Enum
+class Action(Enum):
+    standby = -1
+    putback = 0
+    transport = 1
+    swing = 2
+    regrasp = 3
+    putok = 4
+
 
 nxt = NxtRobot(host='[::]:15005')
 dc = DynPickClient()
@@ -28,7 +34,7 @@ img_path = os.path.join(root_dir, "data/depth/depth.png")
 crop_path = os.path.join(root_dir, "data/depth/cropped.png")
 draw_path = os.path.join(root_dir, "data/depth/result.png")
 
-config_path = os.path.join(root_dir, "config/config_cable.yaml")
+config_path = os.path.join(root_dir, "config/config_picksep_cable.yaml")
 cfg = BinConfig(config_path=config_path)
 cfgdata = cfg.data
 
@@ -37,11 +43,19 @@ sensitivity = np.array(cfgdata["force_sensor"]["sensitivity"])
 
 # arm = cfgdata["exp"]["lr_arm"]
 arm = "right"
-grasp_mode = cfgdata["exp"]["mode"]
+grasp_mode = cfgdata["exp"]["grasp_mode"]
+log_mode = cfgdata["exp"]["log_mode"]
 max_picking = cfgdata["exp"]["iteration"]
 k_stop = cfgdata["exp"]["k_stop"]
 k_fail = cfgdata["exp"]["k_fail"]
 F0_reset = np.zeros(6)
+N_max_t = 1
+
+if log_mode:
+    EXP_DIR = os.path.join("/home/hlab/Desktop", datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+    os.mkdir(EXP_DIR)
+
+PLAY = cfgdata["exp"]["play_mode"]
 
 def range_in(x, lower, upper):
     return True if x < upper and x > lower else False
@@ -58,12 +72,12 @@ def calc_gradient(l):
     return np.array(g)
 
 def capture(method="fge"): 
+    print("* * * * * * * * * *")
+    print("*     Capture     *")
+    print("* * * * * * * * * *")
     
     point_array = capture_pc()
     if point_array is not None:
-        print("* * * * * * * * * *")
-        print("*     Capture     *")
-        print("* * * * * * * * * *")
         img, img_blur = pc2depth(point_array, cfgdata)
         cv2.imwrite(img_path, img_blur)
         
@@ -110,10 +124,15 @@ def capture(method="fge"):
         cv2.imwrite(draw_path, img_grasp)
 
         # tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        # cv2.imwrite("/home/hlab/Desktop/exp/"+tstr+"_img.png", crop)
-        # cv2.imwrite("/home/hlab/Desktop/exp/"+tstr+"_ret.png", img_grasp)
-    return eef_pose
+        if log_mode:
+            cv2.imwrite(os.path.join(EXP_DIR, "img.png"), crop)
+            cv2.imwrite(os.path.join(EXP_DIR, "ret.png"), img_grasp)
+            
 
+        return eef_pose
+    else:
+        print("No camera available! Return a fix eef pose")
+        return [0.48,0.20,0.20,0,-90,-90]
 
 def pick(pose):
     global ft_reset
@@ -123,6 +142,7 @@ def pick(pose):
     
     success = plan_pick(arm, pose[:3], pose[3:], init=True)
     motion_seq = get_motion()
+    clear_motion()
     if not success: 
         raise SystemExit("Failed! ")
     if PLAY: 
@@ -139,8 +159,7 @@ def pick(pose):
         global F0_reset
         
         F0_reset = np.mean(_ft0, axis=0).astype(int)
-        print("--- recalib F0:", F0_reset)
-
+        # print("--- recalib F0:", F0_reset)
         nxt.playMotion(motion_seq[3:])
 
 
@@ -152,49 +171,66 @@ def lift(poses, tms):
     # success = plan_lift(arm, pose[:3], pose[3:], pose_after[:3], pose_after[3:])
     # success = plan_move(arm, [pose, pose_after], [3,6])
     # success = plan_move(arm, [pose_after], [4])
+    # return [nothing, transport, swing, regrasp]=0,1,2,3
     
     success = plan_move(arm, poses, tms)
     
     motion_seq = get_motion()
+    clear_motion()
     
     if not success: 
         raise SystemExit("Failed! ")
     elif PLAY: 
         # time.sleep(2)
         nxt.playMotion(motion_seq, wait=False)
-        curr_jnt, fout = monitoring(max_tm=np.sum(motion_seq[:,0]), f_thld=k_stop)
-        tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        # np.savetxt("/home/hlab/Desktop/exp/"+tstr+"_lift.txt",fout) 
-        is_linear = fs.fit(fout[:,2], vis=False)
-
+        curr_jnt, out = monitoring(max_tm=np.sum(motion_seq[:,0]), f_thld=k_stop)
+        if log_mode:
+            tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            np.savetxt(os.path.join(EXP_DIR, 'lift_'+tstr+'.txt'), out)
+            # np.savetxt("/home/hlab/Desktop/exp/"+tstr+"_lift.txt",fout) 
+        popt = fs.fit(out[:,2], vis=False)
         # fs.plot(fout, filter=True)
-        return curr_jnt, np.mean(fout[-20:,:],axis=0), is_linear
-    else:
-        return [],[], True
+        if np.abs(popt[0]) < 0.01:
+            return Action.regrasp, curr_jnt
+        elif curr_jnt != []: 
+            return Action.swing, curr_jnt
+        # elif np.mean(fout[20:,2]) < 0.1:
+        #     return Action.putback, [] 
+        else:
+            return Action.transport, curr_jnt
+    else: 
+        return Action.swing, []
+    #     return [], True
 
     
-def regrasp():
+def regrasp(xyz_s, xyz_e):
     print("* * * * * * * * * *")
     print("*     Regrasp     *")
     print("* * * * * * * * * *")
+        
     flip = False
-    front_flip_pose = [0.480,-0.170,0.450,180,0,-90]
-    back_flip_pose = [0.480,-0.170,0.450,0,0,-90]
-    pose_after = [0.500,-0.054,0.570,-102.4,-90,102.4]
+    front_flip_pose = [*xyz_s,180,0,-90]
+    back_flip_pose = [*xyz_s,0,0,-90]
+    # front_flip_pose = [*xyz_s, 180,0,-90]
+    # back_flip_pose = [0.480,-0.170,0.450,0,0,-90]
+    pose_after = [*xyz_e,-102.4,-90,102.4]
+    # pose_after = [0.500,-0.054,0.570,-102.4,-90,102.4]
     # success = plan_move(arm, front_flip_pose[:3], front_flip_pose[3:])
-    success = plan_move(arm, [front_flip_pose], [2])
-    motion_seq = get_motion()
-    if not success:
-        raise SystemExit("Failed! ")
-    elif PLAY:
+    
+    if PLAY:
+        success = plan_move(arm, [front_flip_pose], [2])
+        motion_seq = get_motion()
+        clear_motion()
+        if not success:
+            raise SystemExit("Failed! ")
         nxt.playMotion(motion_seq)
-        _, fout = monitoring(max_tm=0.5, stop=False)
+        _, out1 = monitoring(max_tm=0.75)
         # ft = np.mean(fout[:,-10:], axis=0)
-        ft_front = np.mean(fs.filter(fout)[1], axis=0)
-        print("regrasp m1: ", ft_front)
-        if ft_front[4] > -0.2: 
-            print("May grasp nothing! ") 
-
+        # ft_front = np.mean(fs.filter(fout)[1], axis=0)
+        ft1 = np.mean(out1, axis=0)
+        print("regrasp m1: ", ft1)
+        # if ft_front[4] > -0.2: 
+        #     print("May grasp nothing! ") 
             
         # if not close_to(ft[-1], 0, delta=0.03):
         # if ft_front[-1] > 0.03 or ft_front[-1] < -0.03: 
@@ -202,36 +238,40 @@ def regrasp():
         #     print("FLIP!")
             
         # fs.plot(fout, filter=True)
-    
-        clear_motion([])
         
         success = plan_move(arm, [back_flip_pose], [1])
         motion_seq = get_motion()
+        clear_motion()
+
         if not success:
             raise SystemExit("Failed")
-        elif PLAY: 
-            nxt.playMotion(motion_seq)
-            _, fout = monitoring(max_tm=0.5, stop=False)
-            ft_back = np.mean(fs.filter(np.arange(fout.shape[0]), fout)[1], axis=0)
-            print("regrasp m2: ", ft_back)
+        nxt.playMotion(motion_seq)
+        _, out2 = monitoring(max_tm=0.75)
+        # ft_back = np.mean(fs.filter(fout)[1], axis=0)
+        ft2 = np.mean(out2, axis=0)
+        print("regrasp m2: ", ft2)
 
-            clear_motion([])
-            # mx+my+mz instead of mz
-            if np.sum(np.abs(ft_back[3:6])) < np.sum(np.abs(ft_front[3:6])):
-            # if np.abs(ft_back[5]) < np.abs(ft_front[5]):
-                print("Proceed!")
-                success = plan_regrasp(back_flip_pose[:3], back_flip_pose[3:], pose_after[:3], pose_after[3:])
-            else:
-                print("Flip back! ")
-                success = plan_regrasp(front_flip_pose[:3], front_flip_pose[3:], pose_after[:3], pose_after[3:])
+        # mx+my+mz instead of mz
+        # if np.sum(np.abs(ft2[3:6])) < np.sum(np.abs(ft1[3:6])):
+        if np.abs(ft2[-1]) < np.abs(ft1[-1]):
+        # if np.abs(ft_back[5]) < np.abs(ft_front[5]):
+            print("Proceed!")
+            success = plan_regrasp(back_flip_pose[:3], back_flip_pose[3:], pose_after[:3], pose_after[3:])
+        else:
+            print("Flip back! ")
+            success = plan_regrasp(front_flip_pose[:3], front_flip_pose[3:], pose_after[:3], pose_after[3:])
 
-            motion_seq = get_motion()
-            if not success:
-                raise SystemExit("Failed! ")
+        motion_seq = get_motion()
+        clear_motion()
+        if not success:
+            raise SystemExit("Failed! ")
 
-            elif PLAY:
-                nxt.playMotion(motion_seq)
+        nxt.playMotion(motion_seq)
 
+    if not PLAY:
+        success = plan_regrasp(back_flip_pose[:3], back_flip_pose[3:], pose_after[:3], pose_after[3:])
+        motion_seq = get_motion()
+        clear_motion()
     # print("[*] ------------------------------------------")
     # print("[*] Regrasping motion planning! ")
     # success = plan_regrasp(pose[:3], pose[3:])
@@ -251,6 +291,7 @@ def put_back():
     back_pose = [0.480, -0.010, 0.480, 90, -90, -90]
     success = plan_put(arm, back_pose[:3], back_pose[3:])
     motion_seq = get_motion()
+    clear_motion()
     if not success:
         raise SystemExit("[!] Failed! ")
     elif PLAY: 
@@ -264,42 +305,52 @@ def put_ok():
     back_pose = [-0.100, -0.500, 0.450, 90, -90, -90]
     success = plan_put(arm, back_pose[:3], back_pose[3:])
     motion_seq = get_motion()
+    clear_motion()
     if not success:
         raise SystemExit("Failed! ")
     elif PLAY: 
         nxt.playMotion(motion_seq)
 
-def fling(j3, j4, vel=1):
+def swing(j, repeat=1):
     print("* * * * * * * * * *")
-    print("*      Fling      *")
+    print("*      Swing      *")
     print("* * * * * * * * * *")
     #TODO orientation and velocity
+    # p = [0.480, -0.010, 0.480]
     p = [0.480, -0.010, 0.480]
     q = [90,-90,-90]
 
-    print("Get real position: ", nxt.getJointPosition('RARM_JOINT5'))
-    print("Get sim  position: ", get_position('RARM_JOINT5'))
-    # raise SystemExit("Manually stopped! ")
+    # # print("Get real position: ", nxt.getJointPosition('RARM_JOINT5'))
+    # print("Get sim  position: ", get_position('RARM_JOINT5'))
+    # # raise SystemExit("Manually stopped! ")
 
-    p_ = get_position('RARM_JOINT5') 
+    # p_ = get_position('RARM_JOINT5') 
     
-    if p_[2] > 0.48:
-        print("Need to move to the initial pose for flingling! ")    
-        p = p_
-
-    success = plan_fling(arm, p, q, j3, j4, vel)
+    # if p_[2] > 0.48:
+    #     print("Need to move to the initial pose for swingling! ")    
+    #     p = p_
+    # print(p)
+    p_end = p.copy()
+    # p_end[1] -= 0.30
+    # p_end[2] += 0.2
+    tm = 0.5
+    j = [0,80,0]
+    print("Move from", p, " to ", p_end)
+    # success = plan_swing(arm, p, q, p_end, j, tm, repeat)
+    success = plan_swing(arm, p, q, p_end, j, tm, 1, bilateral=False)
     motion_seq = get_motion()
 
+    clear_motion()
     
     if not success:
         raise SystemExit("Failed! ")
     elif PLAY: 
         nxt.playMotion(motion_seq[:1])
         # time.sleep(1)
-        # delete the heavy entanglement flinging 
+        # delete the heavy entanglement swinging 
         # _, fout = monitoring(0.5, stop=False)
         # ft = np.mean(fout[:,-10:], axis=0)
-        # print("Before fling ground truth", ft)
+        # print("Before swing ground truth", ft)
         # if ft[2] > 5: 
         #     print("Very Heavy TANGLE!")
         #     return
@@ -312,45 +363,64 @@ def transport():
     print("* * * * * * * * * *")
     # success = plan_transport(arm, [],[])
     # back_pose = [-0.050, -0.500, 0.550, 90, -90, -90]
-    back_pose = [-0.100, -0.500, 0.600, 90, -90, -90]
+    back_pose = [-0.200, -0.500, 0.600, 90, -90, -90]
     # success = plan_move(arm, back_pose[:3], back_pose[3:])
     success = plan_move(arm, [back_pose], [5])
     motion_seq = get_motion()
+    clear_motion()
+
     if not success:
         raise SystemExit("Failed! ")
     elif PLAY: 
         nxt.playMotion(motion_seq, wait=False)
 
-        curr_jnt, fout = monitoring(max_tm=np.sum(motion_seq[:,0]), f_thld=k_stop)
-        tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        np.savetxt("/home/hlab/Desktop/exp/"+tstr+"_transport.txt",fout) 
+        curr_jnt, out = monitoring(max_tm=np.sum(motion_seq[:,0]), f_thld=k_stop)
+        if log_mode:
+            tstr = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            np.savetxt(os.path.join(EXP_DIR, 'transport_'+tstr+'.txt'), out)
+        # np.savetxt("/home/hlab/Desktop/exp/"+tstr+"_transport.txt",out) 
         # fs.plot(fout, filter=True)
-        return curr_jnt, np.mean(fout[-10:,:],axis=0)
+        if curr_jnt == []:
+            return Action.transport, curr_jnt
+        else:
+            return Action.swing, curr_jnt
+        # elif np.mean(fout[20:,2]) < 0.1:
+        #     return Action.putback, [] 
+        # else:
+        #     return Action.standby, curr_jnt
     else:
-        return [], []
+        return Action.transport, []
+        # return curr_jnt, np.mean(fout[-10:,:],axis=0)
+    # else:
+    #     return [], []
 
 def spin(vel=1):
     success = plan_spin(arm, vel=vel)
     motion_seq = get_motion()
+    clear_motion()
+
     if not success:
         raise SystemExit("Failed! ")
     elif PLAY: 
         nxt.playMotion(motion_seq, wait=False)
 
 
-def monitoring(max_tm=6, frequeny=20, f_thld=2, stop=True):
+def monitoring(max_tm, frequeny=20, f_thld=None, filter=True):
+    # default: max_tm = 6
+    # print("............... Monitoring ...........")
+    if not PLAY:
+        return None, None, None
     _tm = 1/frequeny 
-    ft_out = []
-    fz_out = []
-    curr_jnt = []
-    print("total monitoring time: ", max_tm)
+    out = []
+    # fz_out = []
+    jnt = []
     # fz_gradient = []
     for i in np.arange(0, max_tm, _tm):
         ft = dc.get()
         ft = (ft-F0_reset)/sensitivity
         # ft[2] = 0 if ft[2] < 0 else ft[2]
-        ft_out.append(ft)
-        if i > 1: # after 1 sec, start to filter 
+        out.append(ft)
+        if i > 1 and f_thld is not None: # after 1 sec, start to filter 
             # detect emergency stop after 1 sec
         # if len(ft_out) < 10:
         #     # ft_ = np.mean(ft_out, axis=0)
@@ -359,24 +429,33 @@ def monitoring(max_tm=6, frequeny=20, f_thld=2, stop=True):
         # else:
             # ft_ = np.mean(ft_out[-10:], axis=0)
             # ft_ = np.mean(fs.filter(ft_out[-10:])[1], axis=0)
-            ft_ = ft
-            fz = ft_[2]
+            # ft_ = ft
+            # fz = ft_[2]
+            fz = ft[2]
             # fz = ft_out_filter[:,2][-1]
             if fz > f_thld:
                 print("Stop! Fz=%.3f [N] > %.3f [N]" % (fz, f_thld))
                 nxt.stopMotion()
-                curr_jnt = nxt.getJointAngles()
+                jnt = nxt.getJointAngles()
                 break
-            fz_out.append(fz)
+            # fz_out.append(fz)
         time.sleep(_tm)
-    time.sleep(0.5)
 
-    ft_out = np.array(ft_out)
-    print("-------- force print --------")
-    plt.plot(fz_out)
-    plt.show()
-    fs.plot(ft_out, filter=True)
-    return curr_jnt, ft_out
+    # stopped_out = [] 
+    # for i in np.arange(0, 1, _tm):
+    #     ft = dc.get()
+    #     ft = (ft-F0_reset)/sensitivity
+    #     stopped_out.append(ft)
+    #     time.sleep(_tm)
+
+    if filter:
+        _, out_ = fs.filter(out)
+        return jnt, out_
+    
+    # print(ft_out)
+    # ft_out = np.array(ft_out)
+    # fs.plot(stopped_out, filter=True)
+    return jnt, out
 
 # ==================================== MAIN ==========================================
 # j4_range = (30,35,40,45)
@@ -390,6 +469,7 @@ j5_range = (50,55,55,55)
 i = 0
 l_fail, l_stop = [k_fail], [k_stop]
 eef_pose_lifted = [0.500,-0.054,0.600,90,-90,-90]
+# eef_pose_lifted = [0.500,-0.154,0.480,90,-90,-90]
 
 while (i < max_picking):
     # initial parameters
@@ -402,7 +482,8 @@ while (i < max_picking):
     # eef_pose = [0.501, 0.052, 0.227, 90,-90,-90]
 
     pick(eef_pose)
-    clear_motion([])
+    # regrasp(xyz_s=[0.480,-0.170,0.450], xyz_e=[0.500,-0.054,0.570])
+    # regrasp(xyz_s=[0.400,-0.400,0.450], xyz_e=[0.500,-0.054,0.570])
 
     while (True):
         # os.system("bash /home/hlab/bpbot/script/start_ft.sh")
@@ -412,27 +493,30 @@ while (i < max_picking):
         # else:
         #     jnt, ft, is_linear = lift([[0.500,-0.054,0.450,90,-90,-90],eef_pose_lifted],[3,3])
         if N_transport == 0: 
-            jnt, ft, is_linear = lift([eef_pose_lifted],[5])
+            action, jnt = lift([eef_pose_lifted],[5])
         else:
-            jnt, ft, is_linear = lift([eef_pose_lifted],[3])
-        clear_motion(jnt)
-        # ********** test action here ************* 
+            action, jnt = lift([eef_pose_lifted],[3])
+        
 
-        spin(vel=0.5)
-        clear_motion()
-        regrasp()
-        clear_motion([])
-        raise SystemExit("Manually terminated! ")
+        # print("          ======== ", action.name, "=========")
+
+        
+        # ********** test action here ************* 
+        # swing(j3=0,j4=30,j5=0,repeat=8)
+
+        # spin(vel=0.5)
+        # clear_motion()
+        # regrasp()
+        # clear_motion([])
         # print("Get real position: ", nxt.getJointPosition('Rarm_JOINT5'))
         # print("Get sim  position: ", get_position('Rarm_JOINT5'))
-        # raise SystemExit("out!")
 
-        # fling(j3=60, j4=55, vel=0.5)
-        # # fling(j3=30, j4=40, vel=0.5)
+        # swing(j3=60, j4=55, vel=0.5)
+        # # swing(j3=30, j4=40, vel=0.5)
         # clear_motion([])
 
         # regrasp()
-        # fling(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=0.5)
+        # swing(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=0.5)
         # clear_motion([])
         # front_flip_pose = [0.480,-0.170,0.450,180,0,-90]
         # success = plan_move(arm, front_flip_pose[:3], front_flip_pose[3:])
@@ -445,32 +529,39 @@ while (i < max_picking):
         # print("Avg. FT: ", ft_front)
 
         # raise SystemExit("Exit here! ")
-        # fling(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=1)
+        # swing(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=1)
         # clear_motion([])
         # ********** test action here ************* 
 
-        if jnt == [] and ft[2] < 0.1:
-            print("grasp nothing! ")
-            nxt.openHandToolLft()
-            nxt.openHandToolRgt()
-            nxt.setInitial(arm='all', tm=3)
-            break
+        # if jnt == [] and ft[2] < 0.1:
+
+        # if action == Action.putback:
+        #     print("grasp nothing! ")
+        #     nxt.openHandToolLft()
+        #     nxt.openHandToolRgt()
+        #     nxt.setInitial(arm='all', tm=3)
+        #     break
+
         # if (jnt==[] and is_linear and ft != [] and ft[2] < 0.3) or N_transport >= 2:
-        elif (jnt== [] and is_linear and ft[2] < 0.3) or (N_transport >= 2 and ft[2] < 1.5):
-            print("regrasp!!!")
-            spin(vel=0.5)
-            clear_motion([])
-            regrasp()
-            clear_motion([])
-            _, fout = monitoring(1, stop=False)
-            ft = np.mean(fs.filter(np.arange(len(fout)), fout, method="median", param=11)[1], axis=0)
-            # ft = np.mean(fout[:,-10:], axis=0)
-            # ft = np.mean(fout, axis=0)
-            if ft[2] > k_fail: 
-                print("After grasping: fling")
-                # os.system("bash /home/hlab/bpbot/script/start_ft.sh")
-                fling(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=0.5)
-                clear_motion([])
+        if action == Action.regrasp or N_transport >= 2:
+        # elif (jnt== [] and is_linear and ft[2] < 0.3) or (N_transport >= 2 and ft[2] < 1.5):
+            # print("regrasp!!!")
+            # temporal remove spin for longer ones
+            # spin(vel=0.5)
+            clear_motion()
+            # regrasp for long cables
+            regrasp(xyz_s=[0.420,-0.350,0.450], xyz_e=[0.500,-0.250,0.570])
+            clear_motion()
+            if PLAY:
+                _, out = monitoring(1)
+                ft = np.mean(out, axis=0)
+                # ft = np.mean(fs.filter(fout)[1], axis=0)
+                # ft = np.mean(fout[:,-10:], axis=0)
+                # ft = np.mean(fout, axis=0)
+                if ft[2] > k_fail: 
+                    # os.system("bash /home/hlab/bpbot/script/start_ft.sh")
+                    swing(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=0.5)
+                    clear_motion()
 
                 # os.system("bash /home/hlab/bpbot/script/stop_ft.sh")
                 # print("Additional, we record the force in ")
@@ -479,73 +570,91 @@ while (i < max_picking):
                 # force_data2 = np.insert(force_data, 0, np.insert(F0_reset, 0, 0))
                 # np.savetxt(recorded_path ,force_data2)
 
-            else:
-                print("After grasping: spin and transport")
-                spin(vel=0.5)
-                clear_motion([])        
+                else:
+                    print("After grasping: some actions and transport")
+                    # spin(vel=0.5)
+                    # clear_motion()        
         
-        elif jnt != []:
+        # elif jnt != []:
+        elif action == Action.swing:
             LIFT_STOPPED = True
-            print("untangling")
-            print("After grasping: fling")
+            print("After grasping: swing")
             # os.system("bash /home/hlab/bpbot/script/start_ft.sh")
-            fling(j3=j4_range[N_transport], j4=j5_range[N_transport], vel=0.5)
-            # fling(j3=30, j4=40, vel=0.5)
-            clear_motion([])
+            # swing(j3=j4_range[N_transport], j4=j5_range[N_transport], j5=0, repeat=2)
+            # swing(j3=45, j4=0, j5=0, repeat=2)
+            swing([50,0,0],repeat=8)
+            # swing(j3=30, j4=40, vel=0.5)
+            clear_motion()
 
-            if PLAY:
-                _, fout = monitoring(1, stop=False)
-                # ft = np.mean(fout[:,-10:], axis=0)
-                ft = np.mean(fs.filter(np.arange(len(fout)), fout, method="median", param=11)[1], axis=0)
-                print("After fling value ", ft)
-                if ft[2] < 0.2:
-                    print("grasp nothing! ")
-                    nxt.openHandToolLft()
-                    nxt.openHandToolRgt()
-                    nxt.setInitial(arm='all', tm=3)
-                    break
+            # if PLAY:
+            #     _, fout = monitoring(1, stop=False)
+            #     # ft = np.mean(fout[:,-10:], axis=0)
+            #     # ft = np.mean(fs.filter(np.arange(len(fout)), fout, method="median", param=11)[1], axis=0)
+            #     ft = np.mean(fs.filter(fout)[1], axis=0)
+            #     print("After swing value ", ft)
+            #     if ft[2] < 0.2:
+            #         print("grasp nothing! ")
+            #         nxt.openHandToolLft()
+            #         nxt.openHandToolRgt()
+            #         nxt.setInitial(arm='all', tm=3)
+            #         break
 
-        else:
-            spin(vel=0.5)
-            clear_motion([])        
+        # else:
+        #     spin(vel=0.5)
+        #     clear_motion()        
         # check again 
 
         
-        jnt, ft = transport()
+        action, jnt = transport()
         clear_motion(jnt)
-        print("F/T output: ", ft)
         
-        if jnt == [] and ft[2] <= k_fail + 0.1: 
-            print("Adjust k_fail", k_fail, 'N -> ', end='')
-            l_fail.append(ft[2])
-            print("l_fail: ", l_fail)
-            # k_fail = np.mean(l_fail)
-            print(k_fail, "[N]")
-            np.savetxt("/home/hlab/Desktop/ffail.txt", l_fail)
+        
+        # if jnt == [] and ft[2] <= k_fail + 0.1: 
+        if action == Action.transport:
+            if PLAY:
+                # _, fout = monitoring(1, stop=False)
+                _, out = monitoring(1, filter=True)
+                # ft = np.mean(fout[:,-10:], axis=0)
+                # ft = np.mean(fs.filter(np.arange(len(fout)), fout, method="median", param=11)[1], axis=0)
+                # ft = np.mean(fs.filter(fout)[1], axis=0)
+                ft = np.mean(out, axis=0)
 
+                print("Adjust k_fail", k_fail, 'N -> ', end='')
+                l_fail.append(ft[2])
+                print("l_fail: ", l_fail)
+                # k_fail = np.mean(l_fail)
+                print(k_fail, "[N]")
+            # np.savetxt("/home/hlab/Desktop/ffail.txt", l_fail)
             put_ok()
             break
-        elif ft[2] < 0.1:
-            print("Grasp nothing")
-            put_back()
+        # elif ft[2] < 0.1:
+        # elif action == Action.putback:
+        elif action == Action.swing:
+            if PLAY:
+                swing([50,0,0],repeat=8)
         else:
-            print("Transport failed, try again")
-            N_transport += 1
+            regrasp(xyz_s=[0.420,-0.350,0.450], xyz_e=[0.500,-0.250,0.570])
+            clear_motion()
+            # print("Grasp nothing")
+            # put_back()
+        # else:
+        #     print("Transport failed, try again")
+        #     N_transport += 1
 
-        if  jnt != [] and LIFT_STOPPED != False:
-            print("Here is timing to decrease k_stop: ", k_stop)
-            # k_stop -= 0.1
-            print(" -> ", k_stop)
+        # if  jnt != [] and LIFT_STOPPED != False:
+        #     print("Here is timing to decrease k_stop: ", k_stop)
+        #     # k_stop -= 0.1
+        #     print(" -> ", k_stop)
         
-        print("# Fling : ", N_transport)
-        if N_transport >= 3:
-            put_back()
-            break
+        print("# Swing : ", N_transport)
+        # if N_transport >= N_max_t:
+        #     put_back()
+        #     break
         
-        if jnt == [] and ft[2] > k_fail: 
-            print("Detected grasping two objects. put back and startover!!!!!")
-            put_back()
-            break
+        # if jnt == [] and ft[2] > k_fail: 
+        #     print("Detected grasping two objects. put back and startover!!!!!")
+        #     put_back()
+        #     break
 
     print("Finish one picking attempt! ")
     i+=1

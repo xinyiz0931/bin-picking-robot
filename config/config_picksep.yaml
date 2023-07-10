@@ -1,0 +1,39 @@
+author: xinyi
+height: 1544
+width: 2064
+obj_height: 14
+table_distance: 1195
+calibmat_path: /home/hlab/bpbot/data/calibration/calibmat.txt
+real2pixel: 2.0344539187762356
+exp:
+  mode: pdp
+  iteration: 1
+  log_mode: false
+  motionfile_mode: false
+main:
+  height:
+    max: 0.0807229218388672
+    min: -0.0518527307068577
+  area:
+    left: 698
+    top: 337
+    right: 1768
+    bottom: 1226
+buffer:
+  height:
+    max: 0.05033891982656879
+    min: 0.010372077580194539
+  area:
+    left: 1638
+    top: 439
+    right: 1667
+    bottom: 463
+graspability:
+  rotation_step: 22.5
+  depth_step: 10
+  hand_depth: 20
+hand:
+  left:
+    type: smc_rcc
+  right:
+    type: smc_ft
