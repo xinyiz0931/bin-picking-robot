@@ -419,7 +419,7 @@ class Graspability(object):
         if len(candidates) < n:
             n = len(candidates)
         print(f"Total {n} grasp candidates!")
-        while (k < n):
+        while (k < n and i < len(candidates)):
             x = candidates[i][1]
             y = candidates[i][2]
             ## consider dismiss/distance to rank grasp candidates
